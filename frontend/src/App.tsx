@@ -1,4 +1,5 @@
 import { ThemeProvider } from "./context/ThemeContext";
+import Sidebar from "./layout/Sidebar";
 
 const App = () => (
   <ThemeProvider>
@@ -7,7 +8,11 @@ const App = () => (
 );
 
 const AppContent = () => {
-  return <div className=""></div>;
+  return (
+    <div className="h-screen border-t border-t-lines">
+      <Sidebar />
+    </div>
+  );
 };
 
 export default App;

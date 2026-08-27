@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { HTMLProps } from "react";
 import { ColorName } from "../types/colors";
+import classNames from "classnames";
 
 const typography = cva("typography", {
   variants: {
@@ -21,12 +22,16 @@ type Props = { color?: ColorName } & VariantProps<typeof typography> &
 const Typography = ({
   children,
   variant,
+  className,
   color = "black",
   ...props
 }: Props) => {
   return (
     <div
-      className={typography({ variant, className: `text-${color}` })}
+      className={typography({
+        variant,
+        className: classNames(`text-${color}`, className),
+      })}
       {...props}
     >
       {children}

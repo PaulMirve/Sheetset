@@ -1,5 +1,30 @@
 @import "tailwindcss";
 
+@theme {
+  --color-black:             #000112;
+  --color-very-dark-grey:    #20212C;
+  --color-dark-grey:         #2B2C37;
+  --color-lines:             #E4EBFA;
+  --color-medium-grey:       #828FA3;
+  --color-light-grey:        #F4F7FD;
+  --color-white:             #FFFFFF;
+  --color-main-purple:       #635FC7;
+  --color-main-purple-hover: #A8A4FF;
+  --color-red:               #EA5555;
+  --color-red-hover:         #FF9898;
+}
+
+[data-theme="dark"] {
+  --color-black:          #FFFFFF;
+  --color-very-dark-grey: #F4F7FD;
+  --color-dark-grey:      #FFFFFF;
+  --color-lines:          #3E3F4E;
+  --color-light-grey:     #20212C;
+  --color-white:          #2B2C37;
+}
+
+@source inline("{bg,text,border,fill}-{black,very-dark-grey,dark-grey,lines,medium-grey,light-grey,white,main-purple,main-purple-hover,red,red-hover}");
+
 @layer base {
   body {
     font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
