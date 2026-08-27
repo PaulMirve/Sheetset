@@ -25,7 +25,7 @@ const BOARDS: Board[] = [
 const Sidebar = () => {
   const { theme, toggleTheme } = useTheme();
   return (
-    <div className="h-full bg-white w-75 border-r-lines border-r flex flex-col py-8 pr-6">
+    <div className="h-full bg-white w-75 border-r-lines border-r flex flex-col py-8 pr-6 [grid-area:sidebar]">
       <div className="px-8.5">
         <Logo />
       </div>
@@ -81,10 +81,14 @@ const BoardRow = ({ active, name }: BoardRowProps) => {
         },
       )}
     >
-      <Icon name="board" size={18} color={active ? "white" : "medium-grey"} />
+      <Icon
+        name="board"
+        size={18}
+        color={active ? "text-light" : "medium-grey"}
+      />
       <Typography
         variant={"heading-m"}
-        color={active ? "white" : "medium-grey"}
+        color={active ? "text-light" : "medium-grey"}
       >
         {name}
       </Typography>

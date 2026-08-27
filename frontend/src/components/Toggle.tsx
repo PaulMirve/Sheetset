@@ -16,7 +16,7 @@ const Toggle = ({ active, className, ...props }: Props) => {
     >
       <div
         className={classnames(
-          "bg-[#FFFFFF] w-3.5 h-3.5 rounded-full absolute top-0.75 left-0.75 transition-all",
+          "bg-text-light w-3.5 h-3.5 rounded-full absolute top-0.75 left-0.75 transition-all",
           { "translate-x-5": active, "translate-x-0": !active },
         )}
       ></div>

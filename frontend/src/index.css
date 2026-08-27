@@ -12,6 +12,7 @@
   --color-main-purple-hover: #A8A4FF;
   --color-red:               #EA5555;
   --color-red-hover:         #FF9898;
+  --color-text-light:        #FFFFFF;
 }
 
 [data-theme="dark"] {
@@ -23,7 +24,7 @@
   --color-white:          #2B2C37;
 }
 
-@source inline("{bg,text,border,fill}-{black,very-dark-grey,dark-grey,lines,medium-grey,light-grey,white,main-purple,main-purple-hover,red,red-hover}");
+@source inline("{bg,text,border,fill}-{black,very-dark-grey,dark-grey,lines,medium-grey,light-grey,white,main-purple,main-purple-hover,red,red-hover,text-light}");
 
 @layer base {
   body {

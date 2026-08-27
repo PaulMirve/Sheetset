@@ -1,5 +1,9 @@
 import { ThemeProvider } from "./context/ThemeContext";
+import Main from "./layout/Main";
+import Navbar from "./layout/Navbar";
 import Sidebar from "./layout/Sidebar";
+import styles from "./App.module.scss";
+import classNames from "classnames";
 
 const App = () => (
   <ThemeProvider>
@@ -9,8 +13,12 @@ const App = () => (
 
 const AppContent = () => {
   return (
-    <div className="h-screen border-t border-t-lines">
+    <div
+      className={classNames("h-screen border-t border-t-lines", styles.main)}
+    >
       <Sidebar />
+      <Navbar />
+      <Main />
     </div>
   );
 };

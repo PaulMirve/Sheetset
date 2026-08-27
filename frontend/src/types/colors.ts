@@ -10,6 +10,7 @@ export const COLOR_NAMES = [
   "main-purple-hover",
   "red",
   "red-hover",
+  "text-light",
 ] as const;
 
 export type ColorName = (typeof COLOR_NAMES)[number];
