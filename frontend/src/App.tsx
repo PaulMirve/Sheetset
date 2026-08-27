@@ -1,4 +1,4 @@
-import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 const App = () => (
   <ThemeProvider>
@@ -7,14 +7,7 @@ const App = () => (
 );
 
 const AppContent = () => {
-  const { theme, toggleTheme } = useTheme();
-
-  return (
-    <div className="">
-      <p>Theme: {theme}</p>
-      <button onClick={toggleTheme}>Toggle theme</button>
-    </div>
-  );
+  return <div className=""></div>;
 };
 
 export default App;
