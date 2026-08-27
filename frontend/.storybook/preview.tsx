@@ -3,6 +3,17 @@ import "../src/index.css";
 import "../src/colors.scss";
 
 const preview: Preview = {
+  globalTypes: {
+    theme: {
+      description: "Color theme",
+      toolbar: {
+        title: "Theme",
+        icon: "circlehollow",
+        items: ["light", "dark"],
+        dynamicTitle: true,
+      },
+    },
+  },
   parameters: {
     controls: {
       matchers: {

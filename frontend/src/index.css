@@ -24,7 +24,7 @@
   --color-white:          #2B2C37;
 }
 
-@source inline("{bg,text,border,fill}-{black,very-dark-grey,dark-grey,lines,medium-grey,light-grey,white,main-purple,main-purple-hover,red,red-hover,text-light}");
+@source inline("{bg,text,border,fill}-{black,very-dark-grey,dark-grey,lines,medium-grey,light-grey,white,main-purple,main-purple-hover,red,red-hover,text-light} hover:bg-{main-purple,main-purple-hover,red,red-hover}");
 
 @layer base {
   body {
