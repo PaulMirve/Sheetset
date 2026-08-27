@@ -1,0 +1,40 @@
+@use "sass:map";
+
+// (light-mode value, dark-mode value)
+$colors: (
+  "black":             (light: #000112, dark: #FFFFFF),
+  "very-dark-grey":    (light: #20212C, dark: #F4F7FD),
+  "dark-grey":         (light: #2B2C37, dark: #FFFFFF),
+  "lines-dark":        (light: #3E3F4E, dark: #E4EBFA),
+  "medium-grey":       (light: #828FA3, dark: #828FA3),
+  "lines-light":       (light: #E4EBFA, dark: #3E3F4E),
+  "light-grey":        (light: #F4F7FD, dark: #20212C),
+  "white":             (light: #FFFFFF, dark: #2B2C37),
+  "main-purple":       (light: #635FC7, dark: #635FC7),
+  "main-purple-hover": (light: #A8A4FF, dark: #A8A4FF),
+  "red":               (light: #EA5555, dark: #EA5555),
+  "red-hover":         (light: #FF9898, dark: #FF9898),
+);
+
+// Light mode (default)
+:root {
+  @each $name, $variants in $colors {
+    --#{$name}: #{map.get($variants, light)};
+  }
+}
+
+// Dark mode override
+[data-theme="dark"] {
+  @each $name, $variants in $colors {
+    --#{$name}: #{map.get($variants, dark)};
+  }
+}
+
+@layer utilities {
+  @each $name, $variants in $colors {
+    .bg-#{$name}     { background-color: var(--#{$name}); }
+    .text-#{$name}   { color:            var(--#{$name}); }
+    .border-#{$name} { border-color:     var(--#{$name}); }
+    .fill-#{$name}   { fill:             var(--#{$name}); }
+  }
+}
