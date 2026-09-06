@@ -2,6 +2,7 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import prettierConfig from "eslint-config-prettier";
 import prettier from "eslint-plugin-prettier";
+import react from "eslint-plugin-react";
 
 export default [
   {
@@ -18,6 +19,7 @@ export default [
     plugins: {
       "@typescript-eslint": tsPlugin,
       prettier,
+      react,
     },
     rules: {
       ...prettierConfig.rules,
@@ -27,6 +29,7 @@ export default [
       "comma-dangle": ["error", "always-multiline"],
       "arrow-parens": ["error", "always"],
       "prettier/prettier": "error",
+      "react/jsx-key": "error",
     },
   },
 ];

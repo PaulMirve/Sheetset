@@ -47,5 +47,5 @@ export const BodyLarge: Story = {
 };
 
 export const Body: Story = {
-  args: { variant: "body", children: "Body" },
+  args: { variant: "body-medium", children: "Body" },
 };
