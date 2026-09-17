@@ -14,30 +14,18 @@ const CONTEXT = import.meta.glob("../assets/icons/*.svg", {
   eager: true,
 }) as Record<string, FC<SVGProps<SVGSVGElement>>>;
 
-const findSVG = (name: string) =>
-  CONTEXT[`../assets/icons/${name}.svg`] ?? null;
+const Icon = ({ color, name, style, size = 17, ...props }: Props) => {
+  const SvgIcon = CONTEXT[`../assets/icons/${name}.svg`];
+  if (!SvgIcon) return null;
 
-const Icon = ({
-  color = "medium-grey",
-  name,
-  style,
-  size = 18,
-  ...props
-}: Props) => {
-  const SvgIcon = findSVG(name);
-
-  if (!SvgIcon) {
-    return null;
-  }
-
+  // No color → inherit currentColor from the parent.
   return (
     <SvgIcon
       width={size}
       height={size}
-      style={{
-        ...(color && { color: `var(--color-${color})` }),
-        ...style,
-      }}
+      aria-hidden
+      className="flex-none"
+      style={{ ...(color && { color: `var(--color-${color})` }), ...style }}
       {...props}
     />
   );

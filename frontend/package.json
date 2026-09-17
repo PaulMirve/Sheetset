@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "prepare": "cd .. && husky frontend/.husky",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -50,6 +52,8 @@
     "eslint-plugin-react-refresh": "^0.5.5",
     "eslint-plugin-storybook": "^10.5.10",
     "globals": "^17.11.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
     "playwright": "latest",
     "prettier": "^3.9.6",
     "sass": "^1.103.1",
@@ -60,5 +64,8 @@
     "vite": "^7.0.4",
     "vite-plugin-svgr": "^5.2.0",
     "vitest": "latest"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": "eslint --fix"
   }
 }

@@ -1,8 +1,14 @@
 import type { Preview } from "@storybook/react-vite";
-import "../src/index.css";
 import "../src/colors.scss";
+import "../src/index.css";
 
 const preview: Preview = {
+  decorators: [
+    (Story, context) => {
+      document.documentElement.dataset.theme = context.globals.theme ?? "light";
+      return <Story />;
+    },
+  ],
   globalTypes: {
     theme: {
       description: "Color theme",

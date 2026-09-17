@@ -1,40 +1,93 @@
 @use "sass:map";
 
-// (light-mode value, dark-mode value)
+// Design tokens from wireframes/DESIGN.md: name → (light, dark).
+// Tailwind maps these to --color-* in index.css.
 $colors: (
-  "black":             (light: #000112, dark: #FFFFFF),
-  "very-dark-grey":    (light: #20212C, dark: #F4F7FD),
-  "dark-grey":         (light: #2B2C37, dark: #FFFFFF),
-  "lines":             (light: #E4EBFA, dark: #3E3F4E),
-  "medium-grey":       (light: #828FA3, dark: #828FA3),
-  "light-grey":        (light: #F4F7FD, dark: #20212C),
-  "white":             (light: #FFFFFF, dark: #2B2C37),
-  "main-purple":       (light: #635FC7, dark: #635FC7),
-  "main-purple-hover": (light: #A8A4FF, dark: #A8A4FF),
-  "red":               (light: #EA5555, dark: #EA5555),
-  "red-hover":         (light: #FF9898, dark: #FF9898),
-  "text-light":        (light: #FFFFFF, dark: #FFFFFF),
+  "ground": (
+    light: #f4f5fa,
+    dark: #13151d,
+  ),
+  "rail": (
+    light: #ffffff,
+    dark: #181b25,
+  ),
+  "surface": (
+    light: #ffffff,
+    dark: #20242f,
+  ),
+  "ink": (
+    light: #1f2333,
+    dark: #eceef5,
+  ),
+  "muted": (
+    light: #5d6378,
+    dark: #a2a8bc,
+  ),
+  "line": (
+    light: rgba(31, 35, 51, 0.08),
+    dark: rgba(255, 255, 255, 0.07),
+  ),
+  "line-strong": (
+    light: rgba(31, 35, 51, 0.18),
+    dark: rgba(255, 255, 255, 0.18),
+  ),
+  "primary": (
+    light: #3563f5,
+    dark: #6e8dff,
+  ),
+  "on-primary": (
+    light: #ffffff,
+    dark: #0d1020,
+  ),
+  "primary-wash": (
+    light: rgba(53, 99, 245, 0.1),
+    dark: rgba(110, 141, 255, 0.16),
+  ),
+  "alert": (
+    light: #dc3b40,
+    dark: #ff6b6f,
+  ),
+  "alert-wash": (
+    light: rgba(220, 59, 64, 0.1),
+    dark: rgba(255, 107, 111, 0.14),
+  ),
+  "hue-1": (
+    light: #3563f5,
+    dark: #6e8dff,
+  ),
+  "hue-2": (
+    light: #f08c00,
+    dark: #ffab3d,
+  ),
+  "hue-3": (
+    light: #8a4fe8,
+    dark: #b18cff,
+  ),
+  "hue-4": (
+    light: #12a67a,
+    dark: #3dd6a3,
+  ),
+  "hue-5": (
+    light: #e24c8f,
+    dark: #ff7eb6,
+  ),
+  "hue-6": (
+    light: #0e9fbf,
+    dark: #45c9e6,
+  ),
 );
 
-// Light mode (default)
+@mixin color-vars($mode) {
+  @each $name, $variants in $colors {
+    --#{$name}: #{map.get($variants, $mode)};
+  }
+}
+
 :root {
-  @each $name, $variants in $colors {
-    --#{$name}: #{map.get($variants, light)};
-  }
+  @include color-vars(light);
 }
 
-// Dark mode override
-[data-theme="dark"] {
-  @each $name, $variants in $colors {
-    --#{$name}: #{map.get($variants, dark)};
-  }
-}
-
-@layer utilities {
-  @each $name, $variants in $colors {
-    .bg-#{$name}     { background-color: var(--#{$name}); }
-    .text-#{$name}   { color:            var(--#{$name}); }
-    .border-#{$name} { border-color:     var(--#{$name}); }
-    .fill-#{$name}   { fill:             var(--#{$name}); }
-  }
+:root[data-theme="dark"] {
+  @include color-vars(dark);
+  color-scheme: dark;
 }

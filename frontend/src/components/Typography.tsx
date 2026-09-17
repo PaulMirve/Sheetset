@@ -3,15 +3,17 @@ import { HTMLProps } from "react";
 import { ColorName } from "../types/colors";
 import classNames from "classnames";
 
-const typography = cva("typography", {
+const typography = cva("", {
   variants: {
     variant: {
-      "heading-xl": "font-bold text-[24px] leading-7.5",
-      "heading-l": "font-bold text-[18px] leading-5.75",
-      "heading-m": "font-bold text-[15px] leading-4.75",
-      "heading-s": "font-bold text-[12px] leading-3.75 tracking-[2.4px]",
-      "body-large": "font-medium text-[13px] leading-5.75",
-      "body-medium": "font-bold text-[12px] leading-3.75",
+      headline: "font-extrabold text-[30px] leading-[1.15] tracking-[-0.025em]",
+      "headline-sm":
+        "font-[750] text-[24px] leading-[1.25] tracking-[-0.015em]",
+      title: "font-bold text-[16px] leading-[1.35]",
+      body: "text-[15.5px] leading-[1.45]",
+      "body-lg": "text-[18px] leading-[1.45]",
+      label: "font-semibold text-[14px] leading-[1.45]",
+      chip: "font-semibold text-[13.5px] leading-none tabular-nums",
     },
   },
 });
@@ -20,23 +22,18 @@ type Props = { color?: ColorName } & VariantProps<typeof typography> &
   HTMLProps<HTMLDivElement>;
 
 const Typography = ({
-  children,
-  variant,
+  variant = "body",
   className,
-  color = "black",
+  color = "ink",
   ...props
-}: Props) => {
-  return (
-    <div
-      className={typography({
-        variant,
-        className: classNames(`text-${color}`, className),
-      })}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-};
+}: Props) => (
+  <div
+    className={typography({
+      variant,
+      className: classNames(`text-${color}`, className),
+    })}
+    {...props}
+  />
+);
 
 export default Typography;

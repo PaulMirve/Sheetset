@@ -1,17 +1,57 @@
 import Button from "@components/Button";
 import Icon from "@components/Icon";
 import Typography from "@components/Typography";
+import { Board } from "@system-types/Board";
+import { hashHue } from "../hue";
 
-const Navbar = () => {
-  return (
-    <div className="bg-white w-full h-24 [grid-area:navbar] border-b border-b-lines flex items-center px-6">
-      <Typography variant={"heading-xl"}>Platform Launch</Typography>
-      <Button disabled className="ml-auto">
-        + Add New Task
-      </Button>
-      <Icon name="ellipsis-vertical" className="cursor-pointer ml-6" />
+type Props = { board: Board; columns: number; done: number; total: number };
+
+const Navbar = ({ board, columns, done, total }: Props) => (
+  <header className="flex items-center justify-between gap-6 px-7 pt-6 pb-5 max-md:flex-col max-md:items-start max-md:gap-3.5 max-md:px-4 max-md:pt-[18px] max-md:pb-3.5">
+    <div className="flex items-center gap-3.5 min-w-0">
+      <span
+        className="tile w-12 h-12 rounded-[14px] text-[22px]"
+        style={hashHue(String(board.id))}
+        aria-hidden
+      >
+        {board.name[0].toUpperCase()}
+      </span>
+      <div className="min-w-0">
+        <Typography variant="headline">
+          <h1>{board.name}</h1>
+        </Typography>
+        <div className="flex items-center flex-wrap gap-x-3.5 gap-y-2 mt-1.5 text-muted text-[14.5px] [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5">
+          <span>
+            <Icon name={board.shared ? "users" : "lock"} />
+            {board.shared ? "Shared" : "Only you"}
+          </span>
+          <span>
+            <Icon name="cols" />
+            {columns} columns
+          </span>
+          <span className="max-lg:hidden! tabular-nums">
+            <span className="w-24 h-1.5 rounded-full bg-line-strong overflow-hidden">
+              <i
+                className="block h-full rounded-full bg-(--hue-4) transition-[width] duration-300 ease-out"
+                style={{
+                  width: `${total ? Math.round((done / total) * 100) : 0}%`,
+                }}
+              />
+            </span>
+            {done} of {total} done
+          </span>
+        </div>
+      </div>
     </div>
-  );
-};
+    <div className="flex items-center gap-2 flex-none max-md:flex-wrap">
+      <Button disabled>
+        <Icon name="plus" /> New task
+      </Button>
+      <Button variant="icon" aria-label="Board options">
+        <Icon name="more" />
+      </Button>
+    </div>
+  </header>
+);
 
 export default Navbar;

@@ -12,16 +12,20 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import DroppableColumn from "@components/DroppableColumn";
-import ToDoCard from "@components/ToDoCard";
-import Typography from "@components/Typography";
+import ToDoCard, { Card } from "@components/ToDoCard";
+import Navbar from "./Navbar";
 import { useState } from "react";
-import { COLUMNS, TODOS } from "../mocks/data";
+import { BOARDS, COLUMNS, TODOS } from "../mocks/data";
 import { ColumnId } from "@system-types/column";
 
 const Main = () => {
   const [todos, setTodos] = useState(TODOS);
   const [activeId, setActiveId] = useState<number | null>(null);
-  const activeTodo = activeId != null ? (todos.find((t) => (t.id as unknown as number) === activeId) ?? null) : null;
+  const [landedId, setLandedId] = useState<number | null>(null);
+  const activeTodo =
+    activeId != null
+      ? (todos.find((t) => (t.id as unknown as number) === activeId) ?? null)
+      : null;
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     setActiveId(active.id as number);
@@ -35,7 +39,7 @@ const Main = () => {
 
     setTodos((prev) => {
       const activeIdx = prev.findIndex(
-        (t) => (t.id as unknown as number) === activeNumId
+        (t) => (t.id as unknown as number) === activeNumId,
       );
       const activeTodo = prev[activeIdx];
 
@@ -44,14 +48,14 @@ const Main = () => {
         const targetColumnId = colNum as unknown as ColumnId;
         if (activeTodo.column === targetColumnId) return prev;
         const without = prev.filter(
-          (t) => (t.id as unknown as number) !== activeNumId
+          (t) => (t.id as unknown as number) !== activeNumId,
         );
         return [...without, { ...activeTodo, column: targetColumnId }];
       }
 
       const overNumId = over.id as number;
       const overIdx = prev.findIndex(
-        (t) => (t.id as unknown as number) === overNumId
+        (t) => (t.id as unknown as number) === overNumId,
       );
       const overTodo = prev[overIdx];
 
@@ -61,7 +65,7 @@ const Main = () => {
       const without = [...prev];
       without.splice(activeIdx, 1);
       const newOverIdx = without.findIndex(
-        (t) => (t.id as unknown as number) === overNumId
+        (t) => (t.id as unknown as number) === overNumId,
       );
       without.splice(newOverIdx, 0, { ...activeTodo, column: overTodo.column });
       return without;
@@ -70,6 +74,7 @@ const Main = () => {
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveId(null);
+    if (over) setLandedId(active.id as number);
     // Cross-column moves already applied in onDragOver; only handle same-column reorder here
     if (!over || active.id === over.id || typeof over.id === "string") return;
 
@@ -78,24 +83,26 @@ const Main = () => {
 
     setTodos((prev) => {
       const activeIdx = prev.findIndex(
-        (t) => (t.id as unknown as number) === activeNumId
+        (t) => (t.id as unknown as number) === activeNumId,
       );
       const overIdx = prev.findIndex(
-        (t) => (t.id as unknown as number) === overNumId
+        (t) => (t.id as unknown as number) === overNumId,
       );
       if (prev[activeIdx].column !== prev[overIdx].column) return prev;
       return arrayMove(prev, activeIdx, overIdx);
     });
   };
 
+  const lastColumn = COLUMNS[COLUMNS.length - 1].id;
+
   return (
-    <div className="bg-light-grey [grid-area:main] p-6 overflow-x-auto">
-      {/* <span className="flex flex-col items-center gap-8">
-         <Typography color="medium-grey" variant={"heading-l"}>
-          This board is empty. Create a new column to get started.
-        </Typography>
-        <Button>+ Add New Column</Button>
-      </span> */}
+    <main className="min-w-0 min-h-0 grid grid-rows-[auto_minmax(0,1fr)]">
+      <Navbar
+        board={BOARDS[0]}
+        columns={COLUMNS.length}
+        done={todos.filter((t) => t.column === lastColumn).length}
+        total={todos.length}
+      />
       <DndContext
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
@@ -103,55 +110,45 @@ const Main = () => {
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div
-          className="grid gap-6"
-          style={{ gridTemplateColumns: `repeat(${COLUMNS.length}, 280px)` }}
-        >
-          {COLUMNS.map((col) => {
+        <div className="flex items-start gap-3.5 overflow-auto px-7 pb-6 max-md:px-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
+          {COLUMNS.map((col, i) => {
             const colTodos = todos.filter((t) => t.column === col.id);
             const colIds = colTodos.map((t) => t.id as unknown as number);
             return (
-              <div key={col.id}>
-                <div className="flex gap-3">
-                  <div
-                    className="rounded-full h-3.75 w-3.75"
-                    style={{ backgroundColor: col.color }}
-                  />
-                  <Typography variant={"heading-s"} color="medium-grey">
-                    {col.name.toUpperCase()} ({colTodos.length})
-                  </Typography>
-                </div>
-                <SortableContext
-                  items={colIds}
-                  strategy={verticalListSortingStrategy}
+              <SortableContext
+                key={col.id}
+                items={colIds}
+                strategy={verticalListSortingStrategy}
+              >
+                <DroppableColumn
+                  column={col}
+                  index={i}
+                  count={colTodos.length}
+                  dragOver={activeTodo?.column === col.id}
                 >
-                  <DroppableColumn id={col.id}>
-                    {colTodos.map((todo) => (
-                      <ToDoCard key={todo.id} {...todo} />
-                    ))}
-                  </DroppableColumn>
-                </SortableContext>
-              </div>
+                  {colTodos.map((todo) => (
+                    <ToDoCard
+                      key={todo.id}
+                      todo={todo}
+                      landed={(todo.id as unknown as number) === landedId}
+                      onLanded={() => setLandedId(null)}
+                    />
+                  ))}
+                </DroppableColumn>
+              </SortableContext>
             );
           })}
         </div>
         <DragOverlay>
           {activeTodo ? (
-            <div className="bg-white px-4 py-5.75 rounded-lg cursor-grabbing shadow-[0px_4px_6px_0px_rgba(54,78,126,0.1015)] rotate-2 opacity-95">
-              <Typography variant={"heading-m"}>{activeTodo.title}</Typography>
-              <Typography
-                className="mt-2"
-                variant={"body-medium"}
-                color="medium-grey"
-              >
-                {activeTodo.subtasks.filter((st) => st.completed).length} of{" "}
-                {activeTodo.subtasks.length}
-              </Typography>
-            </div>
+            <Card
+              todo={activeTodo}
+              className="shadow-lift! rotate-[1.5deg] cursor-grabbing"
+            />
           ) : null}
         </DragOverlay>
       </DndContext>
-    </div>
+    </main>
   );
 };
 

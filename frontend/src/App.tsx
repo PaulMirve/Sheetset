@@ -1,26 +1,14 @@
 import { ThemeProvider } from "./context/ThemeContext";
 import Main from "./layout/Main";
-import Navbar from "./layout/Navbar";
 import Sidebar from "./layout/Sidebar";
-import styles from "./App.module.scss";
-import classNames from "classnames";
 
 const App = () => (
   <ThemeProvider>
-    <AppContent />
-  </ThemeProvider>
-);
-
-const AppContent = () => {
-  return (
-    <div
-      className={classNames("h-screen border-t border-t-lines", styles.main)}
-    >
+    <div className="h-full grid grid-cols-[288px_minmax(0,1fr)] max-md:grid-cols-1 max-md:grid-rows-[auto_minmax(0,1fr)]">
       <Sidebar />
-      <Navbar />
       <Main />
     </div>
-  );
-};
+  </ThemeProvider>
+);
 
 export default App;

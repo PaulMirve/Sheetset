@@ -1,13 +1,19 @@
 export const ICON_NAMES = [
   "board",
   "check",
+  "check-circle",
   "chevron-down",
+  "cols",
   "cross",
-  "ellipsis-vertical",
   "eye-slash",
   "eye",
-  "moon",
-  "sun",
+  "inbox",
+  "lock",
+  "more",
+  "notes",
+  "plus",
+  "theme",
+  "users",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

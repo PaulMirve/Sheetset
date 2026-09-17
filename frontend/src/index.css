@@ -1,33 +1,133 @@
 @import "tailwindcss";
 
-@theme {
-  --color-black:             #000112;
-  --color-very-dark-grey:    #20212C;
-  --color-dark-grey:         #2B2C37;
-  --color-lines:             #E4EBFA;
-  --color-medium-grey:       #828FA3;
-  --color-light-grey:        #F4F7FD;
-  --color-white:             #FFFFFF;
-  --color-main-purple:       #635FC7;
-  --color-main-purple-hover: #A8A4FF;
-  --color-red:               #EA5555;
-  --color-red-hover:         #FF9898;
-  --color-text-light:        #FFFFFF;
+/* Values live in colors.scss; this only exposes them to Tailwind. */
+@theme static {
+  --font-sans: "Figtree", system-ui, sans-serif;
+  --color-ground: var(--ground);
+  --color-rail: var(--rail);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-wash: var(--primary-wash);
+  --color-alert: var(--alert);
+  --color-alert-wash: var(--alert-wash);
+  --shadow-rest:
+    0 1px 2px rgba(31, 35, 51, 0.06), 0 2px 8px rgba(31, 35, 51, 0.04);
+  --shadow-lift:
+    0 4px 10px rgba(31, 35, 51, 0.08), 0 18px 40px -12px rgba(31, 35, 51, 0.22);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-[data-theme="dark"] {
-  --color-black:          #FFFFFF;
-  --color-very-dark-grey: #F4F7FD;
-  --color-dark-grey:      #FFFFFF;
-  --color-lines:          #3E3F4E;
-  --color-light-grey:     #20212C;
-  --color-white:          #2B2C37;
+:root[data-theme="dark"] {
+  --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-lift:
+    0 4px 12px rgba(0, 0, 0, 0.35), 0 20px 44px -12px rgba(0, 0, 0, 0.6);
 }
 
-@source inline("{bg,text,border,fill}-{black,very-dark-grey,dark-grey,lines,medium-grey,light-grey,white,main-purple,main-purple-hover,red,red-hover,text-light} hover:bg-{main-purple,main-purple-hover,red,red-hover}");
+/* Typography `color` prop builds these at runtime */
+@source inline("text-{ink,muted,primary,alert,on-primary}");
 
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
   body {
-    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+  button {
+    cursor: pointer;
+  }
+}
+
+/* Hue helpers: any element with --h (see src/hue.ts) */
+@layer components {
+  .tile {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    color: #fff;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--h) 70%, #10131c);
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
+    background: var(--h);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--h) 22%, transparent);
+  }
+  .count-pill {
+    display: inline-grid;
+    place-items: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 7px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: color-mix(in srgb, var(--h) 58%, var(--color-ink));
+    background: color-mix(in srgb, var(--h) 16%, transparent);
+  }
+  .lane {
+    background: color-mix(in srgb, var(--h) 7%, var(--color-ground));
+    transition: box-shadow 0.16s var(--ease-out);
+  }
+  .lane.drag-over {
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--h) 45%, transparent);
+  }
+  .lane-empty {
+    border: 1.5px dashed color-mix(in srgb, var(--h) 35%, transparent);
+  }
+  .rail-row[aria-current="page"] {
+    background: color-mix(in srgb, var(--h) 13%, transparent);
+  }
+  .landed {
+    animation: land 0.6s var(--ease-out);
+  }
+}
+
+/* Unlayered so it beats the card's bg/shadow utilities. */
+.trace {
+  border: 2px dashed var(--h);
+  background: color-mix(in srgb, var(--h) 10%, transparent);
+  box-shadow: none;
+}
+.trace > * {
+  visibility: hidden;
+}
+
+@keyframes land {
+  from {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--hue-4) 45%, transparent),
+      var(--shadow-lift);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

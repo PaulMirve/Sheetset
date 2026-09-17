@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import Button from "./Button";
+import Icon from "./Icon";
 
 const meta: Meta<typeof Button> = {
   component: Button,
   decorators: [
-    (Story, context) => (
-      <div data-theme={context.globals.theme} className="p-8">
+    (Story) => (
+      <div className="p-8 bg-ground">
         <Story />
       </div>
     ),
@@ -13,9 +14,8 @@ const meta: Meta<typeof Button> = {
   argTypes: {
     variant: {
       control: "select",
-      options: ["primary", "secondary", "destruction"],
+      options: ["primary", "secondary", "quiet", "danger", "icon"],
     },
-    size: { control: "select", options: ["large", "small"] },
   },
 };
 
@@ -23,21 +23,32 @@ export default meta;
 type Story = StoryObj<typeof Button>;
 
 export const Primary: Story = {
-  args: { variant: "primary", size: "large", children: "Button Primary" },
-};
-
-export const Secondary: Story = {
-  args: { variant: "secondary", size: "large", children: "Button Secondary" },
-};
-
-export const Destruction: Story = {
   args: {
-    variant: "destruction",
-    size: "large",
-    children: "Button Destruction",
+    variant: "primary",
+    children: (
+      <>
+        <Icon name="plus" /> New task
+      </>
+    ),
   },
 };
 
-export const Small: Story = {
-  args: { variant: "primary", size: "small" },
+export const Secondary: Story = {
+  args: { variant: "secondary", children: "Button Secondary" },
+};
+
+export const Quiet: Story = {
+  args: { variant: "quiet", children: "Button Quiet" },
+};
+
+export const Danger: Story = {
+  args: { variant: "danger", children: "Button Danger" },
+};
+
+export const IconOnly: Story = {
+  args: {
+    variant: "icon",
+    "aria-label": "More",
+    children: <Icon name="more" />,
+  },
 };

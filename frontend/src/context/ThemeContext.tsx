@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
 
@@ -19,9 +19,14 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = useState<Theme>("light");
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
 
+  // On <html> so colors.scss' :root vars (and --color-* built from them) switch.
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <div data-theme={theme} className="min-h-screen">
+      <div className="h-screen bg-ground text-ink transition-colors duration-200">
         {children}
       </div>
     </ThemeContext.Provider>

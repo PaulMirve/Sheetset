@@ -5,4 +5,5 @@ export type BoardId = Brand<number, "BoardId">;
 export type Board = {
   id: BoardId;
   name: string;
+  shared: boolean;
 };

@@ -1,27 +1,28 @@
 import classnames from "classnames";
-import { HTMLProps } from "react";
+import { ComponentProps } from "react";
 
 type Props = {
   active: boolean;
-} & HTMLProps<HTMLDivElement>;
+} & ComponentProps<"button">;
 
-const Toggle = ({ active, className, ...props }: Props) => {
-  return (
-    <div
+const Toggle = ({ active, className, ...props }: Props) => (
+  <button
+    role="switch"
+    aria-checked={active}
+    className={classnames(
+      "w-10 h-[22px] rounded-full relative transition-colors duration-150",
+      active ? "bg-primary" : "bg-line-strong",
+      className,
+    )}
+    {...props}
+  >
+    <span
       className={classnames(
-        "bg-main-purple w-10 h-5 rounded-full relative cursor-pointer",
-        className,
+        "bg-white w-4 h-4 rounded-full absolute top-[3px] left-[3px] shadow-rest transition-transform duration-150 ease-out",
+        { "translate-x-[18px]": active },
       )}
-      {...props}
-    >
-      <div
-        className={classnames(
-          "bg-text-light w-3.5 h-3.5 rounded-full absolute top-0.75 left-0.75 transition-all",
-          { "translate-x-5": active, "translate-x-0": !active },
-        )}
-      ></div>
-    </div>
-  );
-};
+    />
+  </button>
+);
 
 export default Toggle;

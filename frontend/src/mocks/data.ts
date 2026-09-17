@@ -1,3 +1,4 @@
+import { Board, BoardId } from "@system-types/Board";
 import { Column, ColumnId } from "@system-types/column";
 import { Subtask, SubtaskId } from "@system-types/Subtask";
 import { ToDo, ToDoId } from "@system-types/ToDo";
@@ -17,53 +18,126 @@ const base = {
   updated_by: mockUser,
 };
 
+export const BOARDS: Board[] = [
+  { id: 1 as unknown as BoardId, name: "Platform Launch", shared: false },
+  { id: 2 as unknown as BoardId, name: "Marketing Plan", shared: true },
+  { id: 3 as unknown as BoardId, name: "Roadmap", shared: true },
+];
+
 export const COLUMNS: Column[] = [
   {
     id: 1 as unknown as ColumnId,
     name: "Todo",
-    color: "#49C4E5",
     ...base,
   },
   {
     id: 2 as unknown as ColumnId,
     name: "In Progress",
-    color: "#8471F2",
     ...base,
   },
   {
     id: 3 as unknown as ColumnId,
     name: "Done",
-    color: "#67E2AE",
     ...base,
   },
 ];
 
 const SUBTASKS: Record<number, Subtask[]> = {
   1: [
-    { id: 1 as unknown as SubtaskId, title: "Sketch main board layout", completed: true, ...base },
-    { id: 2 as unknown as SubtaskId, title: "Sketch column and card", completed: false, ...base },
+    {
+      id: 1 as unknown as SubtaskId,
+      title: "Sketch main board layout",
+      completed: true,
+      ...base,
+    },
+    {
+      id: 2 as unknown as SubtaskId,
+      title: "Sketch column and card",
+      completed: false,
+      ...base,
+    },
   ],
   4: [
-    { id: 3 as unknown as SubtaskId, title: "Research dnd libraries", completed: true, ...base },
-    { id: 4 as unknown as SubtaskId, title: "Implement drop zones", completed: false, ...base },
-    { id: 5 as unknown as SubtaskId, title: "Handle cross-column drag", completed: false, ...base },
+    {
+      id: 3 as unknown as SubtaskId,
+      title: "Research dnd libraries",
+      completed: true,
+      ...base,
+    },
+    {
+      id: 4 as unknown as SubtaskId,
+      title: "Implement drop zones",
+      completed: false,
+      ...base,
+    },
+    {
+      id: 5 as unknown as SubtaskId,
+      title: "Handle cross-column drag",
+      completed: false,
+      ...base,
+    },
   ],
   5: [
-    { id: 6 as unknown as SubtaskId, title: "Build card markup", completed: true, ...base },
-    { id: 7 as unknown as SubtaskId, title: "Add subtask count badge", completed: false, ...base },
+    {
+      id: 6 as unknown as SubtaskId,
+      title: "Build card markup",
+      completed: true,
+      ...base,
+    },
+    {
+      id: 7 as unknown as SubtaskId,
+      title: "Add subtask count badge",
+      completed: false,
+      ...base,
+    },
   ],
   6: [
-    { id: 8 as unknown as SubtaskId, title: "Design modal layout", completed: false, ...base },
-    { id: 9 as unknown as SubtaskId, title: "Add status select", completed: false, ...base },
-    { id: 10 as unknown as SubtaskId, title: "Wire subtask checkboxes", completed: false, ...base },
+    {
+      id: 8 as unknown as SubtaskId,
+      title: "Design modal layout",
+      completed: false,
+      ...base,
+    },
+    {
+      id: 9 as unknown as SubtaskId,
+      title: "Add status select",
+      completed: false,
+      ...base,
+    },
+    {
+      id: 10 as unknown as SubtaskId,
+      title: "Wire subtask checkboxes",
+      completed: false,
+      ...base,
+    },
   ],
   7: [
-    { id: 11 as unknown as SubtaskId, title: "Define API endpoints", completed: false, ...base },
-    { id: 12 as unknown as SubtaskId, title: "Add react-query hooks", completed: false, ...base },
+    {
+      id: 11 as unknown as SubtaskId,
+      title: "Define API endpoints",
+      completed: false,
+      ...base,
+    },
+    {
+      id: 12 as unknown as SubtaskId,
+      title: "Add react-query hooks",
+      completed: false,
+      ...base,
+    },
   ],
   9: [
-    { id: 13 as unknown as SubtaskId, title: "Unit test Typography", completed: false, ...base },
-    { id: 14 as unknown as SubtaskId, title: "Unit test ToDoCard", completed: false, ...base },
+    {
+      id: 13 as unknown as SubtaskId,
+      title: "Unit test Typography",
+      completed: false,
+      ...base,
+    },
+    {
+      id: 14 as unknown as SubtaskId,
+      title: "Unit test ToDoCard",
+      completed: false,
+      ...base,
+    },
   ],
 };
 
@@ -100,7 +174,12 @@ export const TODOS: ToDo[] = [
     column: COLUMNS[1].id,
     title: "Implement drag and drop",
     description: "Allow cards to be dragged between columns.",
-    status: { id: ToDoStatusId.InProgress, name: "in_progress", label: "In Progress", order: 2 },
+    status: {
+      id: ToDoStatusId.InProgress,
+      name: "in_progress",
+      label: "In Progress",
+      order: 2,
+    },
     subtasks: SUBTASKS[4],
     ...base,
   },
@@ -109,7 +188,12 @@ export const TODOS: ToDo[] = [
     column: COLUMNS[1].id,
     title: "Add todo card component",
     description: "Card showing title, subtask count, and status.",
-    status: { id: ToDoStatusId.InProgress, name: "in_progress", label: "In Progress", order: 2 },
+    status: {
+      id: ToDoStatusId.InProgress,
+      name: "in_progress",
+      label: "In Progress",
+      order: 2,
+    },
     subtasks: SUBTASKS[5],
     ...base,
   },

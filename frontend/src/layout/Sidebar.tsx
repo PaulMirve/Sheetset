@@ -1,99 +1,89 @@
 import Toggle from "@components/Toggle";
-import Logo from "./Logo";
 import { useTheme } from "@context/ThemeContext";
 import Typography from "@components/Typography";
 import Icon from "@components/Icon";
-import { Board, BoardId } from "@system-types/Board";
-import { brand } from "@system-types/Brand";
-import classNames from "classnames";
+import Button from "@components/Button";
+import { Board } from "@system-types/Board";
+import type { IconName } from "@system-types/IconName";
+import { BOARDS } from "../mocks/data";
+import { hashHue, hue } from "../hue";
 
-const BOARDS: Board[] = [
-  {
-    id: brand<BoardId>(1),
-    name: "Platform Launch",
-  },
-  {
-    id: brand<BoardId>(2),
-    name: "Marketing Plan",
-  },
-  {
-    id: brand<BoardId>(3),
-    name: "Roadmap",
-  },
-];
+const ACTIVE_BOARD = BOARDS[0].id;
 
 const Sidebar = () => {
   const { theme, toggleTheme } = useTheme();
   return (
-    <div className="h-full bg-white w-75 border-r-lines border-r flex flex-col py-8 pr-6 [grid-area:sidebar]">
-      <div className="px-8.5">
-        <Logo />
-      </div>
-      <Typography
-        variant={"heading-s"}
-        color="medium-grey"
-        className="mt-13.5 pl-8"
-      >
-        ALL BOARDS (3)
-      </Typography>
-      <div className="mt-4.5">
-        {BOARDS.map((board, i) => {
-          return (
-            <BoardRow
-              key={board.id}
-              id={board.id}
-              name={board.name}
-              active={i === 0}
-            />
-          );
-        })}
-        <div className="flex items-center ml-8 gap-4 h-12 cursor-pointer ">
-          <Icon name="board" color="main-purple" />
-          <Typography color="main-purple" variant={"heading-m"}>
-            + Create New Board
-          </Typography>
-        </div>
-      </div>
-      <div className="mt-auto bg-light-grey rounded-md h-12 flex items-center justify-center mx-6 gap-6">
-        <Icon name="sun" />
-        <Toggle
-          className=""
-          active={theme === "dark"}
-          onClick={() => {
-            toggleTheme();
-          }}
-        />
-        <Icon name="moon" />
-      </div>
-    </div>
-  );
-};
-
-type BoardRowProps = { active?: boolean } & Board;
-
-const BoardRow = ({ active, name }: BoardRowProps) => {
-  return (
-    <div
-      className={classNames(
-        "flex gap-4 pl-8 h-12 items-center rounded-r-full cursor-pointer",
-        {
-          "bg-main-purple": active,
-        },
-      )}
+    <nav
+      aria-label="Boards"
+      className="flex flex-col min-h-0 bg-rail border-r border-line max-md:border-r-0 max-md:border-b max-md:max-h-[32vh]"
     >
-      <Icon
-        name="board"
-        size={18}
-        color={active ? "text-light" : "medium-grey"}
-      />
-      <Typography
-        variant={"heading-m"}
-        color={active ? "text-light" : "medium-grey"}
-      >
-        {name}
-      </Typography>
-    </div>
+      <div className="flex items-center gap-2.5 px-[18px] pt-[18px] pb-2 max-md:px-4 max-md:pt-3 max-md:pb-1">
+        <span className="tile w-[30px] h-[30px] rounded-[9px]" style={hue(1)}>
+          <Icon name="board" />
+        </span>
+        <span className="font-extrabold text-[18px] tracking-[-0.02em]">
+          Sheetset
+        </span>
+      </div>
+      <div className="flex-1 overflow-auto px-3 pt-1 pb-4">
+        <BoardGroup
+          title="Personal"
+          icon="lock"
+          boards={BOARDS.filter((b) => !b.shared)}
+        />
+        <BoardGroup
+          title="Shared with team"
+          icon="users"
+          boards={BOARDS.filter((b) => b.shared)}
+        />
+        <Button variant="quiet" disabled className="mt-2 w-full justify-start">
+          <Icon name="plus" /> New board
+        </Button>
+      </div>
+      <div className="flex items-center gap-2.5 p-3 px-5 border-t border-line text-muted">
+        <Icon name="theme" />
+        <Typography variant="label" color="muted" className="flex-1">
+          Dark mode
+        </Typography>
+        <Toggle
+          active={theme === "dark"}
+          onClick={toggleTheme}
+          aria-label="Dark mode"
+        />
+      </div>
+    </nav>
   );
 };
+
+type BoardGroupProps = { title: string; icon: IconName; boards: Board[] };
+
+const BoardGroup = ({ title, icon, boards }: BoardGroupProps) => (
+  <div className="mt-[18px] max-md:mt-2">
+    <div className="flex items-center justify-between px-2 pb-1.5">
+      <span className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-muted">
+        <Icon name={icon} size={15} />
+        {title}
+      </span>
+      <span className="text-[12px] font-bold text-muted bg-ground rounded-full px-2 py-px tabular-nums">
+        {boards.length}
+      </span>
+    </div>
+    {boards.map((board) => (
+      <button
+        key={board.id}
+        className="rail-row group flex items-center gap-2.5 w-full px-2 py-1.5 mb-0.5 rounded-[10px] text-left hover:bg-ground transition-colors duration-150"
+        style={hashHue(String(board.id))}
+        aria-current={board.id === ACTIVE_BOARD ? "page" : undefined}
+      >
+        <span className="tile w-[30px] h-[30px] rounded-lg text-[13.5px]">
+          {board.name[0].toUpperCase()}
+        </span>
+        <span className="flex-1 min-w-0 truncate font-[550] group-aria-[current=page]:font-bold">
+          {board.name}
+        </span>
+      </button>
+    ))}
+  </div>
+);
 
 export default Sidebar;
