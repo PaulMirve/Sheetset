@@ -11,7 +11,7 @@ const mockUser: User = {
   last_name: "Miranda",
 };
 
-const base = {
+export const base = {
   created_at: "2026-08-27T00:00:00Z",
   updated_at: "2026-08-27T00:00:00Z",
   created_by: mockUser,

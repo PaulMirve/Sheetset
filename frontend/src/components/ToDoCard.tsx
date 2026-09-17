@@ -3,6 +3,38 @@ import { CSS } from "@dnd-kit/utilities";
 import { ToDo } from "@system-types/ToDo";
 import classNames from "classnames";
 import Icon from "./Icon";
+import Tag from "./Tag";
+import { hashHue, hue } from "../hue";
+
+const day = (offset = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
+};
+
+// Overdue → alert red, due within 2 days → amber, else neutral.
+const DueTag = ({ due }: { due: string }) => {
+  const late = due < day();
+  const soon = !late && due <= day(2);
+  const date = new Date(`${due}T00:00`).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+  return (
+    <Tag
+      icon="cal"
+      style={
+        late
+          ? ({ "--h": "var(--alert)" } as React.CSSProperties)
+          : soon
+            ? hue(2)
+            : undefined
+      }
+    >
+      {late ? `Overdue · ${date}` : date}
+    </Tag>
+  );
+};
 
 type CardProps = {
   todo: ToDo;
@@ -10,7 +42,7 @@ type CardProps = {
 } & Omit<React.ComponentProps<"article">, "className">;
 
 export const Card = ({ todo, className, ...props }: CardProps) => {
-  const { title, description, subtasks } = todo;
+  const { title, description, subtasks, label, due } = todo;
   const done = subtasks.filter((st) => st.completed).length;
   return (
     <article
@@ -29,6 +61,16 @@ export const Card = ({ todo, className, ...props }: CardProps) => {
           {description}
         </div>
       )}
+      {(label || due) && (
+        <div className="flex flex-wrap gap-1.5 min-w-0">
+          {label && (
+            <Tag dot style={hashHue(label)} className="max-w-full">
+              {label}
+            </Tag>
+          )}
+          {due && <DueTag due={due} />}
+        </div>
+      )}
       {(description || subtasks.length > 0) && (
         <div className="flex items-center gap-2.5 min-h-6 pt-[9px] border-t border-line text-muted text-[13.5px] font-semibold">
           {description && (
@@ -44,10 +86,11 @@ export const Card = ({ todo, className, ...props }: CardProps) => {
                   "text-(--hue-4)": done === subtasks.length,
                 },
               )}
-              title="Subtasks done"
+              title={`${done} of ${subtasks.length} subtasks done`}
+              aria-label={`${done} of ${subtasks.length} subtasks done`}
             >
               <Icon name="check-circle" size={15} />
-              {done} of {subtasks.length}
+              {done}/{subtasks.length}
             </span>
           )}
         </div>
@@ -56,9 +99,14 @@ export const Card = ({ todo, className, ...props }: CardProps) => {
   );
 };
 
-type Props = { todo: ToDo; landed?: boolean; onLanded?: () => void };
+type Props = {
+  todo: ToDo;
+  landed?: boolean;
+  onLanded?: () => void;
+  onOpen: () => void;
+};
 
-const ToDoCard = ({ todo, landed, onLanded }: Props) => {
+const ToDoCard = ({ todo, landed, onLanded, onOpen }: Props) => {
   const {
     attributes,
     listeners,
@@ -75,8 +123,16 @@ const ToDoCard = ({ todo, landed, onLanded }: Props) => {
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={classNames({ trace: isDragging, landed })}
       onAnimationEnd={onLanded}
+      onClick={onOpen}
       {...listeners}
       {...attributes}
+      onKeyDown={(e) => {
+        listeners?.onKeyDown?.(e);
+        if (e.key !== "Enter") return;
+        // Otherwise the same Enter submits the modal's form once focus lands in it.
+        e.preventDefault();
+        onOpen();
+      }}
     />
   );
 };

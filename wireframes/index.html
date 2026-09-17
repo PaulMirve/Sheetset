@@ -337,6 +337,33 @@ select.input { appearance: none; padding-right: 32px; background-image: url("dat
 .source a.btn { text-decoration: none; color: var(--ink); }
 .source a.btn svg.i { width: 15px; height: 15px; }
 
+/* Subtasks */
+.subs { display: grid; gap: 6px; }
+.subs-head { display: flex; align-items: center; gap: 10px; }
+.subs-count { margin-left: auto; font-size: 14px; font-weight: 650; color: var(--pencil); transition: color .2s var(--ease); }
+.subs-count.all-done, .card-foot .meta.all-done { color: var(--c4); }
+.subs-bar { height: 4px; margin-bottom: 4px; border-radius: 99px; background: var(--line-strong); overflow: hidden; }
+.subs-bar i { display: block; height: 100%; border-radius: inherit; background: var(--c4); transition: width .3s var(--ease); }
+.sub-row {
+  display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 6px 0 12px; border-radius: 10px;
+  background: var(--paper); border: 1px solid transparent;
+  transition: border-color .16s var(--ease), box-shadow .16s var(--ease), background-color .16s var(--ease);
+}
+.sub-row:hover { border-color: var(--line-strong); }
+.sub-row:focus-within { background: var(--film); border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-wash); }
+.sub-row input[type="checkbox"] { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--blue); cursor: pointer; }
+.sub-text { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: transparent; outline: none; }
+.sub-text:focus-visible { outline: none; }
+.sub-text::placeholder { color: var(--pencil); opacity: .85; }
+.sub-row:has(:checked) .sub-text { color: var(--pencil); text-decoration: line-through; }
+.sub-row .icon-btn { opacity: 0; }
+.sub-row:hover .icon-btn, .sub-row .icon-btn:focus-visible { opacity: 1; }
+.sub-row .icon-btn:hover { color: var(--red); background: var(--red-wash); }
+.sub-row .icon-btn svg.i { width: 15px; height: 15px; }
+@media (hover: none) { .sub-row .icon-btn { opacity: 1; } }
+.sub-add { color: var(--pencil); cursor: text; }
+.sub-add .sub-text { color: var(--ink); }
+
 .nt-heading { margin: 0; font-size: 24px; font-weight: 750; letter-spacing: -.015em; align-self: center; }
 .opt { font-weight: 500; color: var(--pencil); opacity: .75; }
 .field-error { color: var(--red); font-size: 14px; }
@@ -504,7 +531,7 @@ kbd { font: inherit; font-size: 12px; font-weight: 700; padding: 1px 6px; border
 
 <script>
 /* ponytail: localStorage only, plain-text passwords; a prototype, swap for a real auth backend before shipping. */
-const KEY = 'sheetset:v1';
+const KEY = 'sheetset:v2';
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -520,13 +547,15 @@ function seed() {
         mi = u('Mika Lindqvist', 'mika@sheetset.app'), sa = u('Sam Taylor', 'sam@sheetset.app');
   const t = (title, extra = {}) => ({ id: uid(), title, desc: '', label: '', due: '', assignee: '', rev: 0, ...extra });
   const col = (name, tasks) => ({ id: uid(), name, tasks });
+  // '✓ ' prefix marks a subtask as done.
+  const subs = (...titles) => titles.map(x => ({ id: uid(), title: x.replace(/^✓ /, ''), done: x.startsWith('✓ ') }));
   return {
     session: null,
     users: [me, jo, mi, sa],
     boards: [
       { id: uid(), code: 'A-01', name: 'Personal', owner: me.id, members: [me.id], shared: false, rev: 4, updated: today(), columns: [
         col('Inbox', [t('Renew passport', { due: dayOffset(-1), label: 'Admin' }), t('Book dentist appointment'), t('Read "The Timeless Way of Building"', { label: 'Reading' })]),
-        col('This week', [t('Plan Lisbon trip', { desc: 'Flights, a place near Alfama, and one day trip to Sintra.', due: dayOffset(4), label: 'Travel' }), t('Call Grandma')]),
+        col('This week', [t('Plan Lisbon trip', { desc: 'Flights, a place near Alfama, and one day trip to Sintra.', due: dayOffset(4), label: 'Travel', subs: subs('✓ Book flights', 'Find a place near Alfama', 'Plan the Sintra day trip') }), t('Call Grandma')]),
         col('Done', [t('File tax return', { label: 'Admin', rev: 2 })]),
       ] },
       { id: uid(), code: 'A-02', name: 'Home renovation', owner: me.id, members: [me.id], shared: false, rev: 1, updated: dayOffset(-3), columns: [
@@ -537,18 +566,18 @@ function seed() {
       { id: uid(), code: 'T-01', name: 'Spring launch', owner: me.id, members: [me.id, jo.id, mi.id, sa.id], shared: true, rev: 17, updated: today(), columns: [
         col('Backlog', [
           t('Pricing page copy review', { assignee: sa.id, label: 'Content' }),
-          t('Accessibility audit of checkout', { assignee: mi.id, label: 'Design', desc: 'Keyboard paths, focus order, and contrast on the payment step.' }),
+          t('Accessibility audit of checkout', { assignee: mi.id, label: 'Design', desc: 'Keyboard paths, focus order, and contrast on the payment step.', subs: subs('Keyboard paths', 'Focus order', 'Contrast on the payment step') }),
           t('Localise onboarding emails', { label: 'Content' }),
         ]),
         col('In progress', [
           t('Finalize launch video storyboard', { assignee: jo.id, due: dayOffset(2), label: 'Marketing', rev: 3 }),
-          t('Migrate billing to new plans', { assignee: me.id, due: dayOffset(-2), label: 'Engineering', desc: 'Map legacy tiers, dry-run on staging, then schedule the cutover.' }),
+          t('Migrate billing to new plans', { assignee: me.id, due: dayOffset(-2), label: 'Engineering', desc: 'Map legacy tiers, dry-run on staging, then schedule the cutover.', subs: subs('✓ Map legacy tiers', 'Dry-run on staging', 'Schedule the cutover') }),
         ]),
         col('Review', [t('Press kit one-pager', { assignee: mi.id, due: dayOffset(1), label: 'Marketing', rev: 1 })]),
-        col('Shipped', [t('Waitlist landing page', { assignee: sa.id, label: 'Engineering', rev: 5 }), t('Brand refresh sign-off', { assignee: me.id, label: 'Design' })]),
+        col('Shipped', [t('Waitlist landing page', { assignee: sa.id, label: 'Engineering', rev: 5, subs: subs('✓ Write copy', '✓ Build page', '✓ Connect signup form') }), t('Brand refresh sign-off', { assignee: me.id, label: 'Design' })]),
       ] },
       { id: uid(), code: 'T-02', name: 'Hiring: Product Designer', owner: jo.id, members: [jo.id, me.id], shared: true, rev: 6, updated: dayOffset(-1), columns: [
-        col('Applied', [t('Portfolio review: 12 candidates', { assignee: me.id, due: dayOffset(3) })]),
+        col('Applied', [t('Portfolio review: 12 candidates', { assignee: me.id, due: dayOffset(3), subs: subs('✓ First pass on all 12', 'Shortlist five') })]),
         col('Interviewing', [t('Panel with R. Chen', { assignee: jo.id, due: dayOffset(5) })]),
         col('Offer', []),
       ] },
@@ -738,6 +767,7 @@ function laneView(c, i) {
 function cardView(t) {
   const b = board(), a = t.assignee && user(t.assignee), ds = dueState(t.due);
   const showAvatar = b.shared && a;
+  const subs = t.subs || [], sd = subs.filter(x => x.done).length, subsText = `${sd} of ${subs.length} subtasks done`;
   return `<article class="card ${ui.taskId === t.id ? 'open' : ''}" draggable="true" tabindex="0" data-task="${t.id}" aria-label="${esc(t.title)}">
     <div class="card-top"><div class="card-title">${esc(t.title)}</div></div>
     ${t.desc ? `<div class="card-desc">${esc(t.desc)}</div>` : ''}
@@ -746,8 +776,9 @@ function cardView(t) {
       ${t.label ? `<span class="chip label-chip" style="${hue(hashHue(t.label.toLowerCase()))}">${esc(t.label)}</span>` : ''}
       ${t.due ? `<span class="chip num ${ds ? 'due-' + ds : ''}">${icon('cal')}${ds === 'late' ? 'Overdue · ' : ds === 'soon' ? 'Due ' : ''}${fmtDate(t.due)}</span>` : ''}
     </div>` : ''}
-    ${t.desc || t.rev || showAvatar ? `<div class="card-foot">
+    ${t.desc || t.rev || showAvatar || subs.length ? `<div class="card-foot">
       ${t.desc ? `<span class="meta" title="Has notes">${icon('notes')}</span>` : ''}
+      ${subs.length ? `<span class="meta num ${sd === subs.length ? 'all-done' : ''}" title="${subsText}" aria-label="${subsText}">${icon('check')}${sd}/${subs.length}</span>` : ''}
       ${t.rev ? `<span class="meta num" title="Moved ${t.rev} time${t.rev > 1 ? 's' : ''}" aria-label="Moved ${t.rev} time${t.rev > 1 ? 's' : ''}">${icon('move')}${t.rev}</span>` : ''}
       ${showAvatar ? avatar(a, `title="Assigned to ${esc(a.name)}"`) : ''}
     </div>` : ''}
@@ -789,6 +820,7 @@ function drawerView() {
       </div>
       <div class="field"><label class="label" for="d-desc">${icon('notes')}Notes</label>
         <textarea class="input" id="d-desc" placeholder="Add context, links or acceptance criteria">${esc(t.desc)}</textarea></div>
+      <div class="subs" id="d-subs" role="group" aria-label="Subtasks"></div>
     </div>
     <div class="drawer-foot">
       <span id="d-rev">${revText(t)}</span>
@@ -1023,6 +1055,7 @@ function bindDrawer(b) {
   title.oninput = () => { grow(); if (title.value.trim()) { t.title = title.value.trim(); save(); const c = card(); if (c) c.querySelector('.card-title').textContent = t.title; } };
   title.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); title.blur(); } };
   title.onblur = () => { if (!title.value.trim()) title.value = t.title; };
+  bindSubs($('#d-subs'), t.subs ||= [], structural => { save(); if (structural) render(); });
   $('#d-desc').oninput = e => { t.desc = e.target.value; save(); };
   $('#d-desc').onchange = () => render();
   $('#d-label').onchange = e => { t.label = e.target.value.trim(); save(); render(); };
@@ -1037,6 +1070,62 @@ function bindDrawer(b) {
   d.oncancel = e => { e.preventDefault(); closeDrawer(); };
   d.onclick = e => { if (e.target === d) closeDrawer(); };
   $('#d-delete').onclick = () => { ui.taskId = null; withUndo(`Deleted “${t.title}”`, () => { const c = col(); c.tasks.splice(c.tasks.indexOf(t), 1); touch(b); }); };
+}
+
+/* ---------- Subtasks editor (both task modals) ---------- */
+function subsView(list, optional) {
+  const n = list.length, done = list.filter(x => x.done).length;
+  return `<div class="subs-head"><span class="label">${icon('check')}Subtasks${optional ? ' <span class="opt">optional</span>' : ''}</span>
+      ${n ? `<span class="subs-count num ${done === n ? 'all-done' : ''}">${done} of ${n}</span>` : ''}</div>
+    ${n ? `<div class="subs-bar" role="progressbar" aria-label="Subtasks done" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${done}"><i style="width:${done / n * 100}%"></i></div>` : ''}
+    ${list.map(x => `<div class="sub-row" data-sub="${x.id}">
+      <input type="checkbox" ${x.done ? 'checked' : ''} aria-label="Done: ${esc(x.title)}">
+      <input class="sub-text" value="${esc(x.title)}" maxlength="200" autocomplete="off" aria-label="Subtask title">
+      <button type="button" class="icon-btn" data-sub-del aria-label="Remove ${esc(x.title) || 'subtask'}">${icon('trash')}</button>
+    </div>`).join('')}
+    <label class="sub-row sub-add">${icon('plus')}<input class="sub-text sub-new" maxlength="200" autocomplete="off" placeholder="Add a subtask, press Enter" aria-label="New subtask"></label>`;
+}
+// Edits `list` in place; changed(true) when the count or order changed, changed(false) for renames.
+function bindSubs(host, list, changed, optional) {
+  const sub = el => list.find(x => x.id === el?.closest?.('[data-sub]')?.dataset.sub);
+  // Repaint, then put focus back on the same control.
+  const paint = focus => {
+    const id = sub(focus)?.id, isNew = focus?.classList?.contains('sub-new'), what = focus?.type === 'checkbox' ? '[type=checkbox]' : '.sub-text';
+    host.innerHTML = subsView(list, optional);
+    (isNew ? host.querySelector('.sub-new') : id && host.querySelector(`[data-sub="${id}"] ${what}`))?.focus();
+  };
+  const meter = () => {
+    const n = list.length, done = list.filter(x => x.done).length, c = host.querySelector('.subs-count'), bar = host.querySelector('.subs-bar');
+    c.textContent = `${done} of ${n}`; c.classList.toggle('all-done', done === n);
+    bar.setAttribute('aria-valuenow', done); bar.firstElementChild.style.width = done / n * 100 + '%';
+  };
+  const remove = (x, focus) => {
+    list.splice(list.indexOf(x), 1);
+    paint(focus); changed(true);
+  };
+  paint();
+  host.onchange = e => { const x = sub(e.target); if (x && e.target.type === 'checkbox') { x.done = e.target.checked; meter(); changed(true); } };
+  host.oninput = e => { const x = sub(e.target); if (x && e.target.type !== 'checkbox') { x.title = e.target.value; changed(false); } };
+  host.onclick = e => { const x = e.target.closest('[data-sub-del]') && sub(e.target); if (x) remove(x, host.querySelector('.sub-new')); };
+  // A row emptied and left behind is removed rather than saved blank.
+  // (No onfocusout property exists; each host element is new per dialog, so this binds once.)
+  host.addEventListener('focusout', e => {
+    const x = sub(e.target);
+    if (x && e.target.classList.contains('sub-text') && !x.title.trim()) remove(x, host.contains(e.relatedTarget) ? e.relatedTarget : null);
+  });
+  host.onkeydown = e => {
+    if (e.metaKey || e.ctrlKey) return; // ⌘/Ctrl + Enter still submits the dialog
+    const x = sub(e.target);
+    if (e.key === 'Enter' && e.target.classList.contains('sub-new')) {
+      e.preventDefault();
+      const v = e.target.value.trim(); e.target.value = '';
+      if (v) { list.push({ id: uid(), title: v, done: false }); paint(e.target); changed(true); }
+    } else if (e.key === 'Enter' && x) {
+      e.preventDefault(); host.querySelector('.sub-new').focus();
+    } else if (e.key === 'Backspace' && x && e.target.classList.contains('sub-text') && !e.target.value) {
+      e.preventDefault(); remove(x, host.querySelector('.sub-new'));
+    }
+  };
 }
 
 /* ---------- New task modal ---------- */
@@ -1071,6 +1160,7 @@ function openNewTask(colId) {
       </div>
       <div class="field"><label class="label" for="nt-desc">${icon('notes')}Notes <span class="opt">optional</span></label>
         <textarea class="input" id="nt-desc" name="desc" placeholder="Add context, links or acceptance criteria"></textarea></div>
+      <div class="subs" id="nt-subs" role="group" aria-label="Subtasks"></div>
     </div>
     <div class="drawer-foot">
       <span class="kbd-hint"><kbd>${/Mac/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd><kbd>Enter</kbd> to create</span>
@@ -1081,6 +1171,8 @@ function openNewTask(colId) {
   </dialog>`;
   const d = $('#new-task-dlg'), form = $('#nt-form'), title = $('#nt-title');
   const close = () => { d.close(); host.innerHTML = ''; $('#new-task')?.focus(); };
+  const subs = [];
+  bindSubs($('#nt-subs'), subs, () => {}, true);
   d.showModal(); title.focus();
   d.oncancel = e => { e.preventDefault(); close(); };
   d.onclick = e => { if (e.target === d) close(); };
@@ -1097,7 +1189,8 @@ function openNewTask(colId) {
     if (!name) { title.setAttribute('aria-invalid', 'true'); $('#nt-error').textContent = 'Give the task a title.'; title.focus(); return; }
     const c = b.columns.find(x => x.id === f.get('col')) || b.columns[0];
     const t = { id: uid(), title: name, desc: String(f.get('desc') || '').trim(), label: String(f.get('label') || '').trim(),
-      due: String(f.get('due') || ''), assignee: String(f.get('who') || ''), rev: 0 };
+      due: String(f.get('due') || ''), assignee: String(f.get('who') || ''), rev: 0,
+      subs: subs.map(x => ({ ...x, title: x.title.trim() })).filter(x => x.title) };
     c.tasks.push(t); touch(b);
     close(); render();
     const card = document.querySelector(`[data-task="${t.id}"]`);

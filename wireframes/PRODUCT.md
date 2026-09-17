@@ -24,6 +24,7 @@ A kanban board app: multiple boards, each board with its own columns and tasks. 
 - Multiple boards (personal and shared), switchable from the app shell.
 - Per-board columns; tasks within columns; move tasks between columns.
 - Shared boards show task assignees.
+- Tasks can have subtasks: a checklist added, checked off, renamed and removed from the task dialog (and while creating a task); cards show done/total.
 - Create tasks from a meeting: fetch meeting notes from a backend, have an AI produce a summary, decisions and suggested tasks, then review them (all selected by default, deselectable) and add the chosen ones to a column. Suggested assignees are matched to board members by name. Each created task stores its source (meeting id, title, date, platform, link and the quoted note line). Cards show a meeting chip, and the task modal shows the source with an "Open meeting" link.
 
 ## Backend (planned, mocked in the prototype)

@@ -1,5 +1,6 @@
 export const ICON_NAMES = [
   "board",
+  "cal",
   "check",
   "check-circle",
   "chevron-down",
@@ -7,12 +8,17 @@ export const ICON_NAMES = [
   "cross",
   "eye-slash",
   "eye",
+  "grip",
   "inbox",
   "lock",
   "more",
   "notes",
+  "pen",
   "plus",
+  "status",
+  "tag",
   "theme",
+  "trash",
   "users",
 ] as const;
 

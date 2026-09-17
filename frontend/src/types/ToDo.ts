@@ -12,5 +12,7 @@ export type ToDo = {
   description: string;
   status?: ToDoStatus;
   column: ColumnId;
+  due?: string; // YYYY-MM-DD
+  label?: string;
   subtasks: Subtask[];
 } & BaseType;

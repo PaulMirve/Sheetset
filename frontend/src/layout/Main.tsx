@@ -4,7 +4,11 @@ import {
   DragOverEvent,
   DragOverlay,
   DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
   closestCenter,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -15,13 +19,47 @@ import DroppableColumn from "@components/DroppableColumn";
 import ToDoCard, { Card } from "@components/ToDoCard";
 import Navbar from "./Navbar";
 import { useState } from "react";
-import { BOARDS, COLUMNS, TODOS } from "../mocks/data";
+import { BOARDS, COLUMNS, TODOS, base } from "../mocks/data";
 import { ColumnId } from "@system-types/column";
+import { ToDoId } from "@system-types/ToDo";
+import {
+  NewTaskModal,
+  TaskDetailModal,
+  TaskFields,
+} from "@components/TaskModal";
 
 const Main = () => {
   const [todos, setTodos] = useState(TODOS);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [landedId, setLandedId] = useState<number | null>(null);
+  const [openTask, setOpenTask] = useState<ToDoId | "new" | null>(null);
+  const detail = todos.find((t) => t.id === openTask);
+  const labels = [...new Set(todos.flatMap((t) => t.label ?? []))];
+  const sensors = useSensors(
+    // Small distance so a click opens the card instead of starting a drag.
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    // Enter opens the card, so only Space picks it up.
+    useSensor(KeyboardSensor, {
+      keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
+    }),
+  );
+
+  const createTask = (fields: TaskFields) => {
+    const id = Math.max(0, ...todos.map((t) => t.id)) + 1;
+    setTodos((prev) => [...prev, { ...base, ...fields, id: id as ToDoId }]);
+    setLandedId(id);
+  };
+
+  const updateTask = (patch: Partial<TaskFields>) =>
+    setTodos((prev) =>
+      prev.map((t) => (t.id === openTask ? { ...t, ...patch } : t)),
+    );
+
+  // ponytail: no undo toast yet, the design's "Deleted · Undo" comes later.
+  const deleteTask = () => {
+    setTodos((prev) => prev.filter((t) => t.id !== openTask));
+    setOpenTask(null);
+  };
   const activeTodo =
     activeId != null
       ? (todos.find((t) => (t.id as unknown as number) === activeId) ?? null)
@@ -102,8 +140,31 @@ const Main = () => {
         columns={COLUMNS.length}
         done={todos.filter((t) => t.column === lastColumn).length}
         total={todos.length}
+        onNewTask={() => setOpenTask("new")}
       />
+      {openTask === "new" && (
+        <NewTaskModal
+          board={BOARDS[0]}
+          columns={COLUMNS}
+          labels={labels}
+          onCreate={createTask}
+          onClose={() => setOpenTask(null)}
+        />
+      )}
+      {detail && (
+        <TaskDetailModal
+          key={detail.id}
+          todo={detail}
+          board={BOARDS[0]}
+          columns={COLUMNS}
+          labels={labels}
+          onChange={updateTask}
+          onDelete={deleteTask}
+          onClose={() => setOpenTask(null)}
+        />
+      )}
       <DndContext
+        sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
@@ -132,6 +193,7 @@ const Main = () => {
                       todo={todo}
                       landed={(todo.id as unknown as number) === landedId}
                       onLanded={() => setLandedId(null)}
+                      onOpen={() => setOpenTask(todo.id)}
                     />
                   ))}
                 </DroppableColumn>

@@ -87,6 +87,26 @@
     color: color-mix(in srgb, var(--h) 58%, var(--color-ink));
     background: color-mix(in srgb, var(--h) 16%, transparent);
   }
+  .chip {
+    color: color-mix(
+      in srgb,
+      var(--h, var(--color-muted)) 58%,
+      var(--color-ink)
+    );
+    background: color-mix(
+      in srgb,
+      var(--h, var(--color-muted)) 14%,
+      transparent
+    );
+  }
+  .kbd {
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--color-ground);
+    box-shadow: inset 0 -1px 0 var(--color-line-strong);
+  }
   .lane {
     background: color-mix(in srgb, var(--h) 7%, var(--color-ground));
     transition: box-shadow 0.16s var(--ease-out);
@@ -120,6 +140,19 @@
     box-shadow:
       0 0 0 3px color-mix(in srgb, var(--hue-4) 45%, transparent),
       var(--shadow-lift);
+  }
+}
+
+@keyframes modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
   }
 }
 

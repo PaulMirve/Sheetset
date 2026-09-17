@@ -349,6 +349,13 @@ Tasks created from a meeting carry a violet chip (video icon plus the meeting ti
 - **Contents:** a violet video tile, the meeting title, a meta line ("Created from this meeting · date · time · platform") and the quoted source line in a white inset (timestamp, speaker in their hue, text).
 - **Link:** an outline "Open meeting" button with an external-link icon that opens the meeting in a new tab. On phones the button drops to full width below.
 
+### Subtasks
+A checklist in both the task dialog and the New Task dialog, below Notes.
+- **Head:** a check-circle label ("Subtasks", with an "optional" suffix in New Task) and a tabular "2 of 4" count on the right that turns green when all are done. A 4px pill progress bar (hairline-strong track, green fill, 300ms width) sits below it.
+- **Rows:** 44px input-style rows (ground fill, rounded.md, the same hover and focus states as inputs) with a native checkbox (`accent-color` blue), the title as an inline editable text, and a 30px trash icon button that shows on hover or focus (always on touch) and turns alert red on hover. Checked rows are struck through in muted ink.
+- **Add row:** the last row, with a plus icon and "Add a subtask, press Enter". Enter adds and keeps focus there; Enter in a row jumps back to it; Backspace in an empty row deletes it; a row left empty is removed on blur. ⌘/Ctrl + Enter still submits the dialog.
+- **Card:** the foot shows a check-circle meta with "done/total" (e.g. 2/3), green when complete.
+
 ### Drag and Land (signature)
 While a card is dragged, the target lane gets an inset 2px outline at 45% of its hue, and a dashed slot in the lane's hue (10% fill, card radius) marks the drop point. The origin collapses as a fading ghost. On drop, the landed card flashes a green ring over 600ms and the progress bar animates to its new width over 300ms.
 

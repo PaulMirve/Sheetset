@@ -4,9 +4,15 @@ import Typography from "@components/Typography";
 import { Board } from "@system-types/Board";
 import { hashHue } from "../hue";
 
-type Props = { board: Board; columns: number; done: number; total: number };
+type Props = {
+  board: Board;
+  columns: number;
+  done: number;
+  total: number;
+  onNewTask: () => void;
+};
 
-const Navbar = ({ board, columns, done, total }: Props) => (
+const Navbar = ({ board, columns, done, total, onNewTask }: Props) => (
   <header className="flex items-center justify-between gap-6 px-7 pt-6 pb-5 max-md:flex-col max-md:items-start max-md:gap-3.5 max-md:px-4 max-md:pt-[18px] max-md:pb-3.5">
     <div className="flex items-center gap-3.5 min-w-0">
       <span
@@ -44,7 +50,7 @@ const Navbar = ({ board, columns, done, total }: Props) => (
       </div>
     </div>
     <div className="flex items-center gap-2 flex-none max-md:flex-wrap">
-      <Button disabled>
+      <Button onClick={onNewTask}>
         <Icon name="plus" /> New task
       </Button>
       <Button variant="icon" aria-label="Board options">
