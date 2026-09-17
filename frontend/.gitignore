@@ -25,3 +25,6 @@ dist-ssr
 
 *storybook.log
 storybook-static
+
+# Machine-local Xcode toolchain paths (license workaround)
+src-tauri/.cargo/config.toml

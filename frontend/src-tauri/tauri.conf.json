@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "frontend",
+  "productName": "Sheetset",
   "version": "0.1.0",
-  "identifier": "com.paulmirve.frontend",
+  "identifier": "com.paulmirve.sheetset",
   "build": {
     "beforeDevCommand": "yarn dev",
     "devUrl": "http://localhost:1420",
@@ -12,10 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "frontend",
-        "width": 800,
-        "height": 600,
-        "fullscreen": true
+        "title": "Sheetset",
+        "width": 1280,
+        "height": 800,
+        "fullscreen": false,
+        "maximized": false
       }
     ],
     "security": {
