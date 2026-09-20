@@ -209,7 +209,9 @@ select.input { appearance: none; padding-right: 32px; background-image: url("dat
 .menu-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px 10px; }
 
 /* ============ Board ============ */
-.sheet { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+/* Column flow, so an extra child (the epic focus bar) never steals the scrolling row. */
+.sheet { min-width: 0; min-height: 0; display: flex; flex-direction: column; height: 100%; }
+.sheet > .lanes, .sheet > .blank { flex: 1; min-height: 0; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 28px 20px; }
 .head-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .head-main .tile { width: 48px; height: 48px; border-radius: 14px; font-size: 22px; }
@@ -250,7 +252,7 @@ select.input { appearance: none; padding-right: 32px; background-image: url("dat
 .lanes.overflows.at-end { mask-image: none; }
 
 .card {
-  position: relative; display: grid; gap: 10px; padding: 12px 12px 11px; width: 100%; text-align: left;
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 12px 11px; width: 100%; text-align: left;
   background: var(--film); border-radius: var(--r); box-shadow: var(--shadow);
   cursor: grab; transition: box-shadow .2s var(--ease), transform .2s var(--ease), opacity .2s var(--ease);
 }
@@ -338,7 +340,7 @@ select.input { appearance: none; padding-right: 32px; background-image: url("dat
 .source a.btn svg.i { width: 15px; height: 15px; }
 
 /* Subtasks */
-.subs { display: grid; gap: 6px; }
+.subs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .subs-head { display: flex; align-items: center; gap: 10px; }
 .subs-count { margin-left: auto; font-size: 14px; font-weight: 650; color: var(--pencil); transition: color .2s var(--ease); }
 .subs-count.all-done, .card-foot .meta.all-done { color: var(--c4); }
@@ -361,8 +363,98 @@ select.input { appearance: none; padding-right: 32px; background-image: url("dat
 .sub-row .icon-btn:hover { color: var(--red); background: var(--red-wash); }
 .sub-row .icon-btn svg.i { width: 15px; height: 15px; }
 @media (hover: none) { .sub-row .icon-btn { opacity: 1; } }
+.sub-row .dot { width: 8px; height: 8px; margin: 0 5px; box-shadow: none; }
 .sub-add { color: var(--pencil); cursor: text; }
 .sub-add .sub-text { color: var(--ink); }
+
+/* ============ Epics ============ */
+.card.epic { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--h) 28%, transparent), var(--shadow); }
+.card.epic:hover { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--h) 42%, transparent), var(--shadow-lift); }
+.card.epic.open { box-shadow: 0 0 0 2px var(--blue), var(--shadow-lift); }
+.card.epic .card-top { align-items: center; gap: 9px; }
+.card.epic .card-top .tile { width: 26px; height: 26px; border-radius: 8px; }
+.card.epic .card-top .tile svg.i { width: 15px; height: 15px; stroke: #fff; }
+.epic-toggle {
+  display: flex; align-items: center; gap: 7px; width: 100%; padding: 5px 6px; margin: -2px -6px -4px;
+  border-radius: 9px; font-size: 13.5px; font-weight: 650; color: var(--pencil);
+  transition: background-color .16s var(--ease), color .16s var(--ease);
+}
+.epic-toggle:hover { color: color-mix(in srgb, var(--h) 70%, var(--ink)); background: color-mix(in srgb, var(--h) 12%, transparent); }
+.epic-toggle > svg.i { width: 15px; height: 15px; transition: transform .16s var(--ease); }
+.epic-toggle[aria-expanded="true"] > svg.i { transform: rotate(180deg); }
+.epic-toggle .tally { margin-left: auto; font-variant-numeric: tabular-nums; }
+.epic-toggle .tally.all-done { color: var(--c4); }
+.epic-kids { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.epic-row {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 4px 8px;
+  border-radius: 9px; text-align: left; font-size: 14px; background: var(--paper);
+  transition: background-color .16s var(--ease), box-shadow .16s var(--ease), color .16s var(--ease);
+}
+.epic-row:hover { background: color-mix(in srgb, var(--h) 13%, var(--paper)); }
+.epic-row .dot { width: 7px; height: 7px; box-shadow: none; }
+.epic-row > svg.i { width: 14px; height: 14px; }
+.epic-row.done > svg.i { color: var(--c4); }
+.epic-row .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.epic-row.done .t { color: var(--pencil); text-decoration: line-through; }
+.epic-row .chip { height: 21px; padding: 0 7px; }
+.epic-row .chip svg.i { width: 12px; height: 12px; }
+.epic-add { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line-strong); color: var(--pencil); }
+.epic-add:hover { background: transparent; color: color-mix(in srgb, var(--h) 70%, var(--ink)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--h) 48%, transparent); }
+.epic-none {
+  margin: 0; padding: 10px 12px; border-radius: 10px; color: var(--pencil); font-size: 13.5px; text-align: center;
+  border: 1.5px dashed color-mix(in srgb, var(--h) 35%, transparent);
+}
+
+.drawer-body .seg { background: var(--paper); padding: 4px; }
+.drawer-body .seg label { padding: 8px 0; font-size: 14.5px; }
+.epic-chip { max-width: 100%; overflow: hidden; }
+.epic-chip span { overflow: hidden; text-overflow: ellipsis; }
+.epic-chip:hover { background: color-mix(in srgb, var(--h) 24%, transparent); }
+
+.focus-bar {
+  display: flex; align-items: center; gap: 14px; margin: -4px 28px 16px; padding: 12px 14px;
+  border-radius: 16px; background: color-mix(in srgb, var(--h) 9%, var(--film));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--h) 22%, transparent);
+  animation: rise .2s var(--ease);
+}
+.focus-bar .tile { width: 38px; height: 38px; border-radius: 12px; }
+.focus-bar .tile svg.i { width: 19px; height: 19px; stroke: #fff; }
+.focus-main { flex: 1; min-width: 0; display: grid; gap: 5px; }
+.focus-main b { font-size: 16.5px; font-weight: 700; }
+.focus-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; color: var(--pencil); font-size: 14px; }
+.focus-meta .subs-bar { width: 110px; margin: 0; flex: none; }
+.spread { display: flex; flex-wrap: wrap; gap: 4px; }
+.spread .pip {
+  display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--h) 14%, transparent); color: color-mix(in srgb, var(--h) 55%, var(--ink));
+}
+.spread .pip .dot { width: 6px; height: 6px; box-shadow: none; }
+.focus-bar .btn { flex: none; }
+
+/* Epic task list inside the task dialog */
+.epic-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.epic-drow {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 6px 0 12px; border-radius: 10px;
+  background: var(--paper); border: 1px solid transparent;
+  transition: border-color .16s var(--ease), background-color .16s var(--ease);
+}
+.epic-drow:hover { border-color: var(--line-strong); }
+.epic-drow:focus-within { background: var(--film); border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-wash); }
+.epic-drow .dot { width: 8px; height: 8px; box-shadow: none; }
+.epic-drow > svg.i { width: 16px; height: 16px; color: var(--c4); }
+.epic-name { flex: 1; min-width: 0; padding: 4px 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.epic-name:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+.epic-drow.done .epic-name { color: var(--pencil); text-decoration: line-through; }
+.epic-drow .col-chip { flex: none; }
+.epic-drow .icon-btn { opacity: 0; }
+.epic-drow:hover .icon-btn, .epic-drow .icon-btn:focus-visible { opacity: 1; }
+.epic-drow .icon-btn:hover { color: var(--red); background: var(--red-wash); }
+.epic-drow .icon-btn svg.i { width: 15px; height: 15px; }
+@media (hover: none) { .epic-drow .icon-btn { opacity: 1; } }
+.epic-dadd { color: var(--pencil); cursor: text; }
+.epic-dadd input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: transparent; outline: none; color: var(--ink); }
+.epic-dadd input::placeholder { color: var(--pencil); opacity: .85; }
 
 .nt-heading { margin: 0; font-size: 24px; font-weight: 750; letter-spacing: -.015em; align-self: center; }
 .opt { font-weight: 500; color: var(--pencil); opacity: .75; }
@@ -491,6 +583,10 @@ kbd { font: inherit; font-size: 12px; font-weight: 700; padding: 1px 6px; border
   .drawer-foot .kbd-hint { display: none; }
   .source { grid-template-columns: auto minmax(0, 1fr); }
   .source a.btn { grid-column: 1 / -1; }
+  .focus-bar { flex-wrap: wrap; margin: -4px 16px 14px; }
+  .focus-bar .tile { display: none; }
+  .focus-main { flex: 1 1 100%; }
+  .focus-bar .btn { flex: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -527,11 +623,14 @@ kbd { font: inherit; font-size: 12px; font-weight: 700; padding: 1px 6px; border
   <symbol id="i-external" viewBox="0 0 16 16"><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5M11.5 9.5v2.5c0 .8-.7 1.5-1.5 1.5H4c-.8 0-1.5-.7-1.5-1.5V6c0-.8.7-1.5 1.5-1.5h2.5"/></symbol>
   <symbol id="i-video" viewBox="0 0 16 16"><rect x="1.5" y="4" width="9" height="8" rx="2"/><path d="M10.5 7l4-2.2v6.4l-4-2.2"/></symbol>
   <symbol id="i-chev" viewBox="0 0 16 16"><path d="M5 6.5L8 3.5l3 3M5 9.5l3 3 3-3"/></symbol>
+  <symbol id="i-caret" viewBox="0 0 16 16"><path d="M4 6.25L8 10.25l4-4"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 16 16"><path d="M8 1.9l5.5 3.1L8 8.1 2.5 5z"/><path d="M2.5 8l5.5 3.1L13.5 8"/><path d="M2.5 11l5.5 3.1L13.5 11"/></symbol>
+  <symbol id="i-unlink" viewBox="0 0 16 16"><path d="M6.5 9.5l3-3M7 3.6l1-1a2.7 2.7 0 0 1 3.8 3.8l-1 1M9 12.4l-1 1a2.7 2.7 0 0 1-3.8-3.8l1-1"/></symbol>
 </svg>
 
 <script>
 /* ponytail: localStorage only, plain-text passwords; a prototype, swap for a real auth backend before shipping. */
-const KEY = 'sheetset:v2';
+const KEY = 'sheetset:v3';
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -549,6 +648,10 @@ function seed() {
   const col = (name, tasks) => ({ id: uid(), name, tasks });
   // '✓ ' prefix marks a subtask as done.
   const subs = (...titles) => titles.map(x => ({ id: uid(), title: x.replace(/^✓ /, ''), done: x.startsWith('✓ ') }));
+  // An epic is an ordinary task carrying isEpic; its children point back with epic: <id>.
+  const epic = (title, extra = {}) => t(title, { isEpic: true, ...extra });
+  const billing = epic('Billing migration', { desc: 'Move every customer onto the new plan structure before the launch email goes out.', due: dayOffset(12), label: 'Engineering', assignee: me.id });
+  const kitchen = epic('Kitchen refresh', { desc: 'Tiles, lighting and a new worktop, done in one go rather than piecemeal.', due: dayOffset(40) });
   return {
     session: null,
     users: [me, jo, mi, sa],
@@ -559,22 +662,28 @@ function seed() {
         col('Done', [t('File tax return', { label: 'Admin', rev: 2 })]),
       ] },
       { id: uid(), code: 'A-02', name: 'Home renovation', owner: me.id, members: [me.id], shared: false, rev: 1, updated: dayOffset(-3), columns: [
-        col('Ideas', [t('Oak shelving for the study'), t('Replace hallway lighting', { label: 'Electrical' })]),
-        col('Quotes', [t('Get two quotes for kitchen tiling', { due: dayOffset(9) })]),
-        col('Scheduled', []),
+        col('Ideas', [kitchen, t('Oak shelving for the study'), t('Pick a tile sample', { epic: kitchen.id }), t('Replace hallway lighting', { label: 'Electrical' })]),
+        col('Quotes', [t('Get two quotes for kitchen tiling', { due: dayOffset(9), epic: kitchen.id })]),
+        col('Scheduled', [t('Measure for the new worktop', { epic: kitchen.id, rev: 2 })]),
       ] },
       { id: uid(), code: 'T-01', name: 'Spring launch', owner: me.id, members: [me.id, jo.id, mi.id, sa.id], shared: true, rev: 17, updated: today(), columns: [
         col('Backlog', [
           t('Pricing page copy review', { assignee: sa.id, label: 'Content' }),
+          t('Draft the plan-change FAQ', { assignee: sa.id, label: 'Content', epic: billing.id }),
           t('Accessibility audit of checkout', { assignee: mi.id, label: 'Design', desc: 'Keyboard paths, focus order, and contrast on the payment step.', subs: subs('Keyboard paths', 'Focus order', 'Contrast on the payment step') }),
+          t('Audit coupon codes against the new plans', { label: 'Engineering', epic: billing.id }),
           t('Localise onboarding emails', { label: 'Content' }),
         ]),
         col('In progress', [
+          billing,
           t('Finalize launch video storyboard', { assignee: jo.id, due: dayOffset(2), label: 'Marketing', rev: 3 }),
-          t('Migrate billing to new plans', { assignee: me.id, due: dayOffset(-2), label: 'Engineering', desc: 'Map legacy tiers, dry-run on staging, then schedule the cutover.', subs: subs('✓ Map legacy tiers', 'Dry-run on staging', 'Schedule the cutover') }),
+          t('Migrate billing to new plans', { assignee: me.id, due: dayOffset(-2), label: 'Engineering', epic: billing.id, desc: 'Map legacy tiers, dry-run on staging, then schedule the cutover.', subs: subs('✓ Map legacy tiers', 'Dry-run on staging', 'Schedule the cutover') }),
         ]),
-        col('Review', [t('Press kit one-pager', { assignee: mi.id, due: dayOffset(1), label: 'Marketing', rev: 1 })]),
-        col('Shipped', [t('Waitlist landing page', { assignee: sa.id, label: 'Engineering', rev: 5, subs: subs('✓ Write copy', '✓ Build page', '✓ Connect signup form') }), t('Brand refresh sign-off', { assignee: me.id, label: 'Design' })]),
+        col('Review', [
+          t('Press kit one-pager', { assignee: mi.id, due: dayOffset(1), label: 'Marketing', rev: 1 }),
+          t('Legal review of the pricing change notice', { assignee: mi.id, due: dayOffset(2), label: 'Marketing', epic: billing.id, rev: 1 }),
+        ]),
+        col('Shipped', [t('Waitlist landing page', { assignee: sa.id, label: 'Engineering', rev: 5, subs: subs('✓ Write copy', '✓ Build page', '✓ Connect signup form') }), t('Freeze legacy tier signups', { assignee: me.id, label: 'Engineering', epic: billing.id, rev: 2 }), t('Brand refresh sign-off', { assignee: me.id, label: 'Design' })]),
       ] },
       { id: uid(), code: 'T-02', name: 'Hiring: Product Designer', owner: jo.id, members: [jo.id, me.id], shared: true, rev: 6, updated: dayOffset(-1), columns: [
         col('Applied', [t('Portfolio review: 12 candidates', { assignee: me.id, due: dayOffset(3), subs: subs('✓ First pass on all 12', 'Shortlist five') })]),
@@ -588,7 +697,8 @@ function seed() {
 let db;
 try { db = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { db = seed(); }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} };
-const ui = { authMode: 'in', boardId: null, taskId: null, newSheet: false, composer: null, editing: null };
+const ui = { authMode: 'in', boardId: null, taskId: null, newSheet: false, composer: null, editing: null,
+  epicId: null, openEpics: new Set() };
 let theme = (() => { try { return localStorage.getItem(KEY + ':theme'); } catch { return null; } })()
   || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 document.documentElement.dataset.theme = theme;
@@ -623,9 +733,22 @@ const hue = n => `--h:var(--c${(n - 1) % HUES + 1})`;
 const boardHue = b => hue(hashHue(b.id));
 const userHue = id => hue(Math.max(0, db.users.findIndex(u => u.id === id)) + 1);
 const avatar = (u, extra = '') => `<span class="avatar" style="${userHue(u.id)}" ${extra}>${initials(u.name)}</span>`;
-const doneCount = b => b.columns.length > 1 ? b.columns[b.columns.length - 1].tasks.length : 0;
-const taskCount = b => b.columns.reduce((n, c) => n + c.tasks.length, 0);
+// Epics are containers, not work: they never count towards a board's totals.
+const doneCount = b => b.columns.length > 1 ? b.columns[b.columns.length - 1].tasks.filter(t => !t.isEpic).length : 0;
+const taskCount = b => b.columns.reduce((n, c) => n + c.tasks.filter(t => !t.isEpic).length, 0);
 const dueState = d => !d ? '' : d < today() ? 'late' : d <= dayOffset(2) ? 'soon' : '';
+
+/* ---------- Epics: a task other tasks point at ---------- */
+const epicHue = e => hue(hashHue(e.id));
+const allEpics = b => b.columns.flatMap(c => c.tasks.filter(t => t.isEpic));
+const findEpic = id => id && allEpics(board()).find(e => e.id === id) || null;
+// Children in board order, each with the column it currently sits in.
+const epicKids = (b, id) => b.columns.flatMap((c, ci) => c.tasks.filter(t => t.epic === id).map(t => ({ t, c, ci })));
+const epicStat = (b, id) => {
+  const kids = epicKids(b, id), last = b.columns.length > 1 ? b.columns[b.columns.length - 1] : null;
+  const done = kids.filter(k => k.c === last).length;
+  return { kids, n: kids.length, done, pct: kids.length ? Math.round(done / kids.length * 100) : 0, isDone: k => k.c === last };
+};
 
 /* ---------- Auth ---------- */
 function authView() {
@@ -735,25 +858,54 @@ function sheetView() {
         <button class="icon-btn" id="board-menu" aria-label="Board options" aria-haspopup="menu">${icon('more')}</button>
       </div>
     </header>`;
+  const focus = focusView(b);
   const lanes = b.columns.length ? `<div class="lanes" id="lanes">${b.columns.map(laneView).join('')}
       <div class="add-lane"><button class="btn" id="add-lane">${icon('plus')} Add column</button></div></div>`
     : `<div class="lanes"><div class="blank"><span class="tile">${icon('cols')}</span>
         <h2>Add your first column</h2><p>Columns are the stages your work moves through, like To do, Doing and Done.</p>
         <button class="btn btn-primary" id="add-lane">${icon('plus')} Add column</button></div></div>`;
-  return `<main class="sheet">${head}${lanes}</main>`;
+  return `<main class="sheet">${head}${focus}${lanes}</main>`;
+}
+
+// The strip under the header while one epic holds the board.
+function focusView(b) {
+  const e = findEpic(ui.epicId);
+  if (!e) return '';
+  const s = epicStat(b, e.id);
+  return `<div class="focus-bar" style="${epicHue(e)}" role="region" aria-label="Focused epic">
+    <span class="tile" aria-hidden="true">${icon('layers')}</span>
+    <div class="focus-main">
+      <b>${esc(e.title)}</b>
+      <div class="focus-meta">
+        <span class="subs-bar" role="progressbar" aria-label="Tasks done in this epic" aria-valuemin="0" aria-valuemax="${s.n}" aria-valuenow="${s.done}"><i style="width:${s.pct}%"></i></span>
+        <span class="num">${s.done} of ${s.n} done</span>
+        <span class="spread">${b.columns.map((c, i) => {
+          const n = s.kids.filter(k => k.c === c).length;
+          return n ? `<span class="pip" style="${hue(i + 1)}"><span class="dot"></span>${n} ${esc(c.name)}</span>` : '';
+        }).join('')}</span>
+      </div>
+    </div>
+    <button class="btn" id="focus-open">${icon('layers')} Open epic</button>
+    <button class="btn btn-quiet" id="focus-clear">${icon('close')} Show whole board</button>
+  </div>`;
 }
 
 function laneView(c, i) {
   const composing = ui.composer === c.id;
+  // In focus mode a lane shows only that epic's tasks; the epic itself lives in the focus bar.
+  const shown = ui.epicId ? c.tasks.filter(t => t.epic === ui.epicId) : c.tasks;
+  const empty = ui.epicId
+    ? `<div class="lane-empty">${icon('layers')}<span>Nothing from this epic here yet.</span></div>`
+    : `<div class="lane-empty">${icon('inbox')}<span>No tasks yet.<br>Drag one here or add a new one.</span></div>`;
   return `<section class="lane" style="${hue(i + 1)}" data-col="${c.id}" aria-label="${esc(c.name)}">
     <div class="lane-head">
       <span class="dot" aria-hidden="true"></span>
       <h2 class="lane-name" data-rename="${c.id}" title="Double-click to rename">${esc(c.name)}</h2>
-      <span class="lane-count num">${c.tasks.length}</span>
+      <span class="lane-count num">${shown.length}</span>
       <button class="icon-btn" data-colmenu="${c.id}" aria-label="Options for ${esc(c.name)}" aria-haspopup="menu">${icon('more')}</button>
     </div>
     <div class="tasks" data-drop="${c.id}">
-      ${c.tasks.length ? c.tasks.map(cardView).join('') : composing ? '' : `<div class="lane-empty">${icon('inbox')}<span>No tasks yet.<br>Drag one here or add a new one.</span></div>`}
+      ${shown.length ? shown.map(cardView).join('') : composing ? '' : empty}
     </div>
     ${composing ? `<form class="composer" data-composer="${c.id}">
         <label class="sr" for="cmp-${c.id}">Task title</label>
@@ -768,14 +920,21 @@ function cardView(t) {
   const b = board(), a = t.assignee && user(t.assignee), ds = dueState(t.due);
   const showAvatar = b.shared && a;
   const subs = t.subs || [], sd = subs.filter(x => x.done).length, subsText = `${sd} of ${subs.length} subtasks done`;
-  return `<article class="card ${ui.taskId === t.id ? 'open' : ''}" draggable="true" tabindex="0" data-task="${t.id}" aria-label="${esc(t.title)}">
-    <div class="card-top"><div class="card-title">${esc(t.title)}</div></div>
+  const parent = !t.isEpic && !ui.epicId && findEpic(t.epic);
+  const dueChip = d => { const s = dueState(d); return `<span class="chip num ${s ? 'due-' + s : ''}">${icon('cal')}${s === 'late' ? 'Overdue · ' : s === 'soon' ? 'Due ' : ''}${fmtDate(d)}</span>`; };
+  return `<article class="card ${t.isEpic ? 'epic' : ''} ${ui.taskId === t.id ? 'open' : ''}" ${t.isEpic ? `style="${epicHue(t)}"` : ''} draggable="true" tabindex="0" data-task="${t.id}" aria-label="${t.isEpic ? 'Epic: ' : ''}${esc(t.title)}">
+    <div class="card-top">
+      ${t.isEpic ? `<span class="tile" aria-hidden="true">${icon('layers')}</span>` : ''}
+      <div class="card-title">${esc(t.title)}</div>
+    </div>
     ${t.desc ? `<div class="card-desc">${esc(t.desc)}</div>` : ''}
-    ${t.label || t.due || t.source ? `<div class="card-chips">
+    ${t.label || t.due || t.source || parent ? `<div class="card-chips">
+      ${parent ? `<button class="chip epic-chip" style="${epicHue(parent)}" data-focus-epic="${parent.id}" title="Show only “${esc(parent.title)}”">${icon('layers')}<span>${esc(parent.title)}</span></button>` : ''}
       ${t.source ? `<span class="chip src-chip" style="${hue(3)}" title="Created from the meeting “${esc(t.source.title)}”">${icon('video')}<span>${esc(t.source.title)}</span></span>` : ''}
       ${t.label ? `<span class="chip label-chip" style="${hue(hashHue(t.label.toLowerCase()))}">${esc(t.label)}</span>` : ''}
-      ${t.due ? `<span class="chip num ${ds ? 'due-' + ds : ''}">${icon('cal')}${ds === 'late' ? 'Overdue · ' : ds === 'soon' ? 'Due ' : ''}${fmtDate(t.due)}</span>` : ''}
+      ${t.due ? dueChip(t.due) : ''}
     </div>` : ''}
+    ${t.isEpic ? epicCardBody(b, t) : ''}
     ${t.desc || t.rev || showAvatar || subs.length ? `<div class="card-foot">
       ${t.desc ? `<span class="meta" title="Has notes">${icon('notes')}</span>` : ''}
       ${subs.length ? `<span class="meta num ${sd === subs.length ? 'all-done' : ''}" title="${subsText}" aria-label="${subsText}">${icon('check')}${sd}/${subs.length}</span>` : ''}
@@ -785,16 +944,41 @@ function cardView(t) {
   </article>`;
 }
 
+// The rolled-up progress, the disclosure, and the child list when it is open.
+function epicCardBody(b, e) {
+  const s = epicStat(b, e.id), open = ui.openEpics.has(e.id);
+  if (!s.n) return `<div class="epic-none">No tasks in this epic yet.</div>
+    <button type="button" class="epic-row epic-add" data-epic-add="${e.id}">${icon('plus')}<span class="t">Add the first task</span></button>`;
+  return `<div class="subs-bar" role="progressbar" aria-label="Tasks done in this epic" aria-valuemin="0" aria-valuemax="${s.n}" aria-valuenow="${s.done}"><i style="width:${s.pct}%"></i></div>
+    <button type="button" class="epic-toggle" data-epic-toggle="${e.id}" aria-expanded="${open}">
+      ${icon('caret')}<span>${s.n} task${s.n > 1 ? 's' : ''}</span>
+      <span class="tally ${s.done === s.n ? 'all-done' : ''}">${s.done} done</span>
+    </button>
+    ${open ? `<div class="epic-kids">
+      ${s.kids.map(k => `<button type="button" class="epic-row ${s.isDone(k) ? 'done' : ''}" data-open-task="${k.t.id}" style="${hue(k.ci + 1)}" title="${esc(k.t.title)} · ${esc(k.c.name)}">
+        ${s.isDone(k) ? icon('check') : '<span class="dot"></span>'}
+        <span class="t">${esc(k.t.title)}</span>
+        ${k.t.due && !s.isDone(k) ? `<span class="chip num ${dueState(k.t.due) ? 'due-' + dueState(k.t.due) : ''}">${icon('cal')}${fmtDate(k.t.due)}</span>` : ''}
+      </button>`).join('')}
+      <button type="button" class="epic-row epic-add" data-epic-add="${e.id}">${icon('plus')}<span class="t">Add task to this epic</span></button>
+      <button type="button" class="epic-row epic-add" data-focus-epic="${e.id}">${icon('arrow')}<span class="t">Show only this epic</span></button>
+    </div>` : ''}`;
+}
+
 /* ---------- Task modal ---------- */
 function drawerView() {
   const f = ui.taskId && findTask(ui.taskId);
   if (!f) return '';
   const b = board(), { task: t, col } = f, ci = b.columns.indexOf(col);
-  return `<dialog class="drawer" aria-label="Task details" id="drawer">
+  const parent = !t.isEpic && findEpic(t.epic);
+  const others = allEpics(b).filter(e => e.id !== t.id);
+  return `<dialog class="drawer" aria-label="${t.isEpic ? 'Epic details' : 'Task details'}" id="drawer">
     <div class="drawer-head">
       <div class="drawer-crumbs">
         <span class="chip" style="${boardHue(b)}">${icon('board')}${esc(b.name)}</span>
         <span class="chip" id="d-colchip" style="${hue(ci + 1)}">${icon('status')}${esc(col.name)}</span>
+        ${t.isEpic ? `<span class="chip" style="${epicHue(t)}">${icon('layers')}Epic</span>` : ''}
+        ${parent ? `<button class="chip epic-chip" style="${epicHue(parent)}" data-parent="${parent.id}" title="Open “${esc(parent.title)}”">${icon('layers')}<span>${esc(parent.title)}</span></button>` : ''}
       </div>
       <label class="sr" for="d-title">Title</label>
       <textarea class="drawer-title" id="d-title" rows="1" maxlength="200">${esc(t.title)}</textarea>
@@ -817,14 +1001,22 @@ function drawerView() {
         ${b.shared ? `<div class="field"><label class="label" for="d-who">${icon('user')}Assignee</label>
           <select class="input" id="d-who"><option value="">Unassigned</option>${b.members.map(user).map(u => `<option value="${u.id}" ${u.id === t.assignee ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select></div>` : ''}
         <div class="field"><label class="label" for="d-label">${icon('tag')}Label</label><input class="input" id="d-label" value="${esc(t.label)}" placeholder="e.g. Design" maxlength="24"></div>
+        ${t.isEpic ? '' : `<div class="field"><label class="label" for="d-epic">${icon('layers')}Epic</label>
+          <select class="input" id="d-epic" ${others.length ? '' : 'disabled title="This board has no epics yet."'}>
+            <option value="">${others.length ? 'No epic' : 'No epics on this board yet'}</option>
+            ${others.map(e => `<option value="${e.id}" ${e.id === t.epic ? 'selected' : ''}>${esc(e.title)}</option>`).join('')}</select></div>`}
       </div>
       <div class="field"><label class="label" for="d-desc">${icon('notes')}Notes</label>
-        <textarea class="input" id="d-desc" placeholder="Add context, links or acceptance criteria">${esc(t.desc)}</textarea></div>
-      <div class="subs" id="d-subs" role="group" aria-label="Subtasks"></div>
+        <textarea class="input" id="d-desc" placeholder="${t.isEpic ? 'What is this project, and when is it finished?' : 'Add context, links or acceptance criteria'}">${esc(t.desc)}</textarea></div>
+      ${t.isEpic ? `<div id="d-epic-tasks" role="group" aria-label="Tasks in this epic"></div>`
+        : `<div class="subs" id="d-subs" role="group" aria-label="Subtasks"></div>`}
     </div>
     <div class="drawer-foot">
       <span id="d-rev">${revText(t)}</span>
-      <button class="btn btn-danger" id="d-delete">${icon('trash')} Delete task</button>
+      <span class="row-end">
+        ${t.isEpic ? `<button class="btn btn-quiet" id="d-focus">${icon('arrow')}Show only this epic</button>` : ''}
+        <button class="btn btn-danger" id="d-delete">${icon('trash')} Delete ${t.isEpic ? 'epic' : 'task'}</button>
+      </span>
     </div>
   </dialog>`;
 }
@@ -856,6 +1048,7 @@ document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (openMenu.cur) { const a = openMenu.cur.anchor; closeMenu(); a.focus(); }
   else if (ui.composer) { ui.composer = null; render(); }
+  else if (ui.epicId && !ui.taskId) focusEpic(null);
 });
 
 function toast(msg, undo) {
@@ -871,6 +1064,13 @@ function withUndo(msg, mutate) {
   const snap = JSON.stringify(db.boards);
   mutate(); save(); render();
   toast(msg, () => { db.boards = JSON.parse(snap); save(); render(); });
+}
+
+function focusEpic(id) {
+  const prev = ui.epicId;
+  ui.epicId = id; ui.composer = null; render();
+  // Leaving focus puts the cursor back on the epic's own card.
+  (id ? $('#focus-clear') : document.querySelector(`[data-task="${prev}"]`))?.focus();
 }
 
 function closeDrawer() {
@@ -894,7 +1094,7 @@ function inlineRename(el, current, commit) {
 /* ---------- App bindings ---------- */
 function bindApp() {
   const b = board();
-  document.querySelectorAll('[data-board]').forEach(el => el.onclick = () => { ui.boardId = el.dataset.board; ui.taskId = ui.composer = null; render(); });
+  document.querySelectorAll('[data-board]').forEach(el => el.onclick = () => { ui.boardId = el.dataset.board; ui.taskId = ui.composer = ui.epicId = null; render(); });
   const nsOpen = $('#ns-open'); if (nsOpen) nsOpen.onclick = () => { ui.newSheet = true; render(); $('#ns-name').focus(); };
   const ns = $('#new-sheet');
   if (ns) {
@@ -928,6 +1128,7 @@ function bindApp() {
   $('#board-menu').onclick = e => openMenu(e.currentTarget, [
     { icon: 'pen', label: 'Rename board', run: () => inlineRename(title, b.name, v => { b.name = v; touch(b); }) },
     { icon: 'cols', label: 'Add column', run: addLane },
+    ...(b.columns.length ? [{ icon: 'layers', label: 'New epic', run: () => openNewTask(b.columns[0].id, null, true) }] : []),
     ...(b.columns.length ? [{ icon: 'spark', label: 'Create tasks from a meeting', run: openMeetings }] : []),
     ...(b.owner === db.session ? ['-', { icon: 'trash', label: 'Delete board', danger: true, run: () => withUndo(`Deleted “${b.name}”`, () => { db.boards = db.boards.filter(x => x.id !== b.id); ui.boardId = null; }) }]
       : ['-', { icon: 'out', label: 'Leave board', danger: true, run: () => withUndo(`Left “${b.name}”`, () => { b.members = b.members.filter(id => id !== db.session); ui.boardId = null; }) }]),
@@ -942,7 +1143,7 @@ function bindApp() {
   $('#add-lane') && ($('#add-lane').onclick = addLane);
   $('#add-lane-top').onclick = addLane;
   $('#from-meeting').onclick = openMeetings;
-  const nt = $('#new-task'); if (nt) nt.onclick = () => openNewTask(b.columns[0].id);
+  const nt = $('#new-task'); if (nt) nt.onclick = () => openNewTask(b.columns[0].id, ui.epicId);
 
   function openComposer(id) { ui.composer = id; render(); const ta = $(`#cmp-${id}`); ta.focus(); ta.closest('.lane').scrollIntoView({ inline: 'nearest', block: 'nearest' }); }
   document.querySelectorAll('[data-compose]').forEach(el => el.onclick = () => openComposer(el.dataset.compose));
@@ -952,7 +1153,8 @@ function bindApp() {
       const v = ta.value.trim();
       if (!v) { ta.focus(); return; }
       const c = b.columns.find(c => c.id === form.dataset.composer);
-      c.tasks.push({ id: uid(), title: v.slice(0, 200), desc: '', label: '', due: '', assignee: '', rev: 0 });
+      // While an epic holds the board, quick-added tasks join it.
+      c.tasks.push({ id: uid(), title: v.slice(0, 200), desc: '', label: '', due: '', assignee: '', rev: 0, ...(ui.epicId ? { epic: ui.epicId } : {}) });
       touch(b); render(); openComposer(c.id);
     };
     form.onsubmit = e => { e.preventDefault(); submit(); };
@@ -979,9 +1181,27 @@ function bindApp() {
   });
 
   document.querySelectorAll('[data-task]').forEach(card => {
-    card.onclick = () => { ui.taskId = card.dataset.task; render(); $('#d-title')?.focus(); };
-    card.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } };
+    card.onclick = e => {
+      // Controls inside the card (epic disclosure, child rows, chips) act on their own.
+      if (e.target.closest('[data-epic-toggle], [data-open-task], [data-epic-add], [data-focus-epic]')) return;
+      ui.taskId = card.dataset.task; render(); $('#d-title')?.focus();
+    };
+    card.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === card) { e.preventDefault(); card.click(); } };
   });
+  document.querySelectorAll('[data-epic-toggle]').forEach(btn => btn.onclick = () => {
+    const id = btn.dataset.epicToggle;
+    ui.openEpics.has(id) ? ui.openEpics.delete(id) : ui.openEpics.add(id);
+    render();
+    document.querySelector(`[data-epic-toggle="${id}"]`)?.focus();
+  });
+  document.querySelectorAll('[data-open-task]').forEach(btn => btn.onclick = () => { ui.taskId = btn.dataset.openTask; render(); $('#d-title')?.focus(); });
+  document.querySelectorAll('[data-epic-add]').forEach(btn => btn.onclick = () => {
+    const e = findEpic(btn.dataset.epicAdd);
+    openNewTask(findTask(e.id).col.id, e.id);
+  });
+  document.querySelectorAll('[data-focus-epic]').forEach(btn => btn.onclick = () => focusEpic(btn.dataset.focusEpic));
+  $('#focus-clear') && ($('#focus-clear').onclick = () => focusEpic(null));
+  $('#focus-open') && ($('#focus-open').onclick = () => { ui.taskId = ui.epicId; render(); $('#d-title')?.focus(); });
   const lanes = $('#lanes');
   if (lanes) {
     const edge = () => { lanes.classList.toggle('overflows', lanes.scrollWidth > lanes.clientWidth + 1); lanes.classList.toggle('at-end', lanes.scrollLeft + lanes.clientWidth >= lanes.scrollWidth - 2); };
@@ -1055,7 +1275,11 @@ function bindDrawer(b) {
   title.oninput = () => { grow(); if (title.value.trim()) { t.title = title.value.trim(); save(); const c = card(); if (c) c.querySelector('.card-title').textContent = t.title; } };
   title.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); title.blur(); } };
   title.onblur = () => { if (!title.value.trim()) title.value = t.title; };
-  bindSubs($('#d-subs'), t.subs ||= [], structural => { save(); if (structural) render(); });
+  if (t.isEpic) bindEpicTasks($('#d-epic-tasks'), b, t);
+  else bindSubs($('#d-subs'), t.subs ||= [], structural => { save(); if (structural) render(); });
+  const par = $('[data-parent]'); if (par) par.onclick = () => { ui.taskId = par.dataset.parent; render(); $('#d-title')?.focus(); };
+  const ep = $('#d-epic'); if (ep) ep.onchange = e => { t.epic = e.target.value || undefined; save(); render(); };
+  const fo = $('#d-focus'); if (fo) fo.onclick = () => { ui.taskId = null; focusEpic(t.id); };
   $('#d-desc').oninput = e => { t.desc = e.target.value; save(); };
   $('#d-desc').onchange = () => render();
   $('#d-label').onchange = e => { t.label = e.target.value.trim(); save(); render(); };
@@ -1069,29 +1293,73 @@ function bindDrawer(b) {
   $('#drawer-close').onclick = closeDrawer;
   d.oncancel = e => { e.preventDefault(); closeDrawer(); };
   d.onclick = e => { if (e.target === d) closeDrawer(); };
-  $('#d-delete').onclick = () => { ui.taskId = null; withUndo(`Deleted “${t.title}”`, () => { const c = col(); c.tasks.splice(c.tasks.indexOf(t), 1); touch(b); }); };
+  $('#d-delete').onclick = () => {
+    // Deleting an epic never deletes work: its tasks stay on the board and lose the link.
+    const kids = t.isEpic ? epicKids(b, t.id) : [];
+    const msg = kids.length ? `Deleted “${t.title}” · ${kids.length} task${kids.length > 1 ? 's' : ''} kept on the board` : `Deleted “${t.title}”`;
+    ui.taskId = null; if (ui.epicId === t.id) ui.epicId = null;
+    withUndo(msg, () => { kids.forEach(k => delete k.t.epic); const c = col(); c.tasks.splice(c.tasks.indexOf(t), 1); touch(b); });
+  };
 }
 
-/* ---------- Subtasks editor (both task modals) ---------- */
-function subsView(list, optional) {
+/* ---------- Tasks in this epic (inside the epic's dialog) ---------- */
+function bindEpicTasks(host, b, e) {
+  const paint = focusNew => {
+    const s = epicStat(b, e.id);
+    host.className = 'subs'; host.setAttribute('style', epicHue(e));
+    host.innerHTML = `<div class="subs-head"><span class="label">${icon('layers')}Tasks in this epic</span>
+        ${s.n ? `<span class="subs-count num ${s.done === s.n ? 'all-done' : ''}">${s.done} of ${s.n} done</span>` : ''}</div>
+      ${s.n ? `<div class="subs-bar" role="progressbar" aria-label="Tasks done in this epic" aria-valuemin="0" aria-valuemax="${s.n}" aria-valuenow="${s.done}"><i style="width:${s.pct}%"></i></div>` : ''}
+      <div class="epic-list">
+        ${s.kids.map(k => `<div class="epic-drow ${s.isDone(k) ? 'done' : ''}" style="${hue(k.ci + 1)}" data-kid="${k.t.id}">
+          ${s.isDone(k) ? icon('check') : '<span class="dot"></span>'}
+          <button type="button" class="epic-name" data-go="${k.t.id}">${esc(k.t.title)}</button>
+          <span class="chip col-chip">${icon('status')}${esc(k.c.name)}</span>
+          <button type="button" class="icon-btn" data-unlink="${k.t.id}" aria-label="Remove “${esc(k.t.title)}” from this epic" title="Remove from epic">${icon('unlink')}</button>
+        </div>`).join('')}
+        ${s.n ? '' : `<p class="epic-none">No tasks yet. Add the first one below — it lands in ${esc(findTask(e.id).col.name)}.</p>`}
+        <label class="epic-drow epic-dadd">${icon('plus')}
+          <input class="epic-new" maxlength="200" autocomplete="off" placeholder="Add a task to this epic, press Enter" aria-label="New task in this epic"></label>
+      </div>`;
+    if (focusNew) host.querySelector('.epic-new').focus();
+  };
+  paint();
+  host.onclick = ev => {
+    const go = ev.target.closest('[data-go]'), un = ev.target.closest('[data-unlink]');
+    if (go) { ui.taskId = go.dataset.go; render(); $('#d-title')?.focus(); }
+    if (un) { const k = findTask(un.dataset.unlink); delete k.task.epic; save(); paint(); render(); }
+  };
+  host.onkeydown = ev => {
+    if (ev.key !== 'Enter' || !ev.target.classList.contains('epic-new') || ev.metaKey || ev.ctrlKey) return;
+    ev.preventDefault();
+    const v = ev.target.value.trim(); ev.target.value = '';
+    if (!v) return;
+    findTask(e.id).col.tasks.push({ id: uid(), title: v.slice(0, 200), desc: '', label: '', due: '', assignee: '', rev: 0, epic: e.id });
+    touch(b); paint(true); render();
+  };
+}
+
+/* ---------- Subtasks editor (both task modals; `epic` turns it into a first-tasks composer) ---------- */
+function subsView(list, { optional, epic } = {}) {
   const n = list.length, done = list.filter(x => x.done).length;
-  return `<div class="subs-head"><span class="label">${icon('check')}Subtasks${optional ? ' <span class="opt">optional</span>' : ''}</span>
-      ${n ? `<span class="subs-count num ${done === n ? 'all-done' : ''}">${done} of ${n}</span>` : ''}</div>
-    ${n ? `<div class="subs-bar" role="progressbar" aria-label="Subtasks done" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${done}"><i style="width:${done / n * 100}%"></i></div>` : ''}
+  const word = epic ? 'task' : 'subtask';
+  return `<div class="subs-head"><span class="label">${icon(epic ? 'layers' : 'check')}${epic ? 'First tasks' : 'Subtasks'}${optional ? ' <span class="opt">optional</span>' : ''}</span>
+      ${!epic && n ? `<span class="subs-count num ${done === n ? 'all-done' : ''}">${done} of ${n}</span>` : ''}</div>
+    ${!epic && n ? `<div class="subs-bar" role="progressbar" aria-label="Subtasks done" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${done}"><i style="width:${done / n * 100}%"></i></div>` : ''}
     ${list.map(x => `<div class="sub-row" data-sub="${x.id}">
-      <input type="checkbox" ${x.done ? 'checked' : ''} aria-label="Done: ${esc(x.title)}">
-      <input class="sub-text" value="${esc(x.title)}" maxlength="200" autocomplete="off" aria-label="Subtask title">
-      <button type="button" class="icon-btn" data-sub-del aria-label="Remove ${esc(x.title) || 'subtask'}">${icon('trash')}</button>
+      ${epic ? '<span class="dot" aria-hidden="true"></span>' : `<input type="checkbox" ${x.done ? 'checked' : ''} aria-label="Done: ${esc(x.title)}">`}
+      <input class="sub-text" value="${esc(x.title)}" maxlength="200" autocomplete="off" aria-label="${epic ? 'Task' : 'Subtask'} title">
+      <button type="button" class="icon-btn" data-sub-del aria-label="Remove ${esc(x.title) || word}">${icon('trash')}</button>
     </div>`).join('')}
-    <label class="sub-row sub-add">${icon('plus')}<input class="sub-text sub-new" maxlength="200" autocomplete="off" placeholder="Add a subtask, press Enter" aria-label="New subtask"></label>`;
+    <label class="sub-row sub-add">${icon('plus')}<input class="sub-text sub-new" maxlength="200" autocomplete="off" placeholder="Add a ${word}, press Enter" aria-label="New ${word}"></label>`;
 }
 // Edits `list` in place; changed(true) when the count or order changed, changed(false) for renames.
-function bindSubs(host, list, changed, optional) {
+function bindSubs(host, list, changed, opts = {}) {
   const sub = el => list.find(x => x.id === el?.closest?.('[data-sub]')?.dataset.sub);
   // Repaint, then put focus back on the same control.
   const paint = focus => {
     const id = sub(focus)?.id, isNew = focus?.classList?.contains('sub-new'), what = focus?.type === 'checkbox' ? '[type=checkbox]' : '.sub-text';
-    host.innerHTML = subsView(list, optional);
+    host.innerHTML = subsView(list, opts);
     (isNew ? host.querySelector('.sub-new') : id && host.querySelector(`[data-sub="${id}"] ${what}`))?.focus();
   };
   const meter = () => {
@@ -1129,24 +1397,31 @@ function bindSubs(host, list, changed, optional) {
 }
 
 /* ---------- New task modal ---------- */
-function openNewTask(colId) {
+function openNewTask(colId, epicId, asEpic, keepTitle) {
   const b = board();
   let host = $('#new-host');
   if (!host) { host = document.createElement('div'); host.id = 'new-host'; document.body.append(host); }
   const col = b.columns.find(c => c.id === colId) || b.columns[0], ci = b.columns.indexOf(col);
+  const parent = !asEpic && findEpic(epicId);
+  const epics = allEpics(b);
   host.innerHTML = `<dialog class="drawer enter" id="new-task-dlg" aria-labelledby="nt-heading">
     <form method="dialog" id="nt-form" novalidate style="display:contents">
     <div class="drawer-head">
       <div class="drawer-crumbs">
         <span class="chip" style="${boardHue(b)}">${icon('board')}${esc(b.name)}</span>
         <span class="chip" id="nt-colchip" style="${hue(ci + 1)}">${icon('status')}${esc(col.name)}</span>
+        ${parent ? `<span class="chip" style="${epicHue(parent)}">${icon('layers')}<span>${esc(parent.title)}</span></span>` : ''}
       </div>
-      <h2 id="nt-heading" class="nt-heading">New task</h2>
+      <h2 id="nt-heading" class="nt-heading">${asEpic ? 'New epic' : 'New task'}</h2>
       <button type="button" class="icon-btn" id="nt-close" aria-label="Close">${icon('close')}</button>
     </div>
     <div class="drawer-body">
-      <div class="field"><label class="label" for="nt-title">${icon('pen')}Title</label>
-        <input class="input" id="nt-title" name="title" maxlength="200" placeholder="What needs doing?" required autocomplete="off">
+      <div class="seg" role="radiogroup" aria-label="What are you creating?">
+        <label><input type="radio" name="kind" value="task" ${asEpic ? '' : 'checked'}>${icon('board')}<span>Task</span></label>
+        <label><input type="radio" name="kind" value="epic" ${asEpic ? 'checked' : ''}>${icon('layers')}<span>Epic</span></label>
+      </div>
+      <div class="field"><label class="label" for="nt-title">${icon('pen')}${asEpic ? 'Epic name' : 'Title'}</label>
+        <input class="input" id="nt-title" name="title" maxlength="200" placeholder="${asEpic ? 'What is the project?' : 'What needs doing?'}" value="${esc(keepTitle || '')}" required autocomplete="off">
         <span class="field-error" id="nt-error" role="alert"></span></div>
       <div class="grid-2">
         <div class="field"><label class="label" for="nt-col">${icon('status')}Column</label>
@@ -1157,26 +1432,35 @@ function openNewTask(colId) {
         <div class="field"><label class="label" for="nt-label">${icon('tag')}Label <span class="opt">optional</span></label>
           <input class="input" id="nt-label" name="label" placeholder="e.g. Design" maxlength="24" list="nt-labels" autocomplete="off">
           <datalist id="nt-labels">${[...new Set(b.columns.flatMap(c => c.tasks.map(t => t.label)).filter(Boolean))].map(l => `<option value="${esc(l)}">`).join('')}</datalist></div>
+        ${asEpic || !epics.length ? '' : `<div class="field"><label class="label" for="nt-epic">${icon('layers')}Epic <span class="opt">optional</span></label>
+          <select class="input" id="nt-epic" name="epic"><option value="">No epic</option>
+            ${epics.map(e => `<option value="${e.id}" ${e.id === epicId ? 'selected' : ''}>${esc(e.title)}</option>`).join('')}</select></div>`}
       </div>
       <div class="field"><label class="label" for="nt-desc">${icon('notes')}Notes <span class="opt">optional</span></label>
-        <textarea class="input" id="nt-desc" name="desc" placeholder="Add context, links or acceptance criteria"></textarea></div>
-      <div class="subs" id="nt-subs" role="group" aria-label="Subtasks"></div>
+        <textarea class="input" id="nt-desc" name="desc" placeholder="${asEpic ? 'What is this project, and when is it finished?' : 'Add context, links or acceptance criteria'}"></textarea></div>
+      <div class="subs" id="nt-subs" role="group" aria-label="${asEpic ? 'First tasks in this epic' : 'Subtasks'}" ${asEpic ? `style="${hue(hashHue(col.id))}"` : ''}></div>
     </div>
     <div class="drawer-foot">
       <span class="kbd-hint"><kbd>${/Mac/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd><kbd>Enter</kbd> to create</span>
       <span class="row-end"><button type="button" class="btn btn-quiet" id="nt-cancel">Cancel</button>
-      <button type="submit" class="btn btn-primary" id="nt-submit">${icon('plus')}Create task</button></span>
+      <button type="submit" class="btn btn-primary" id="nt-submit">${icon('plus')}Create ${asEpic ? 'epic' : 'task'}</button></span>
     </div>
     </form>
   </dialog>`;
   const d = $('#new-task-dlg'), form = $('#nt-form'), title = $('#nt-title');
   const close = () => { d.close(); host.innerHTML = ''; $('#new-task')?.focus(); };
   const subs = [];
-  bindSubs($('#nt-subs'), subs, () => {}, true);
+  bindSubs($('#nt-subs'), subs, () => {}, { optional: true, epic: asEpic });
   d.showModal(); title.focus();
   d.oncancel = e => { e.preventDefault(); close(); };
   d.onclick = e => { if (e.target === d) close(); };
   $('#nt-close').onclick = $('#nt-cancel').onclick = close;
+  // Switching kind rebuilds the dialog; what was typed in the title comes along.
+  d.querySelectorAll('[name="kind"]').forEach(r => r.onchange = () => {
+    const keep = title.value, where = $('#nt-col')?.value || colId;
+    close();
+    openNewTask(where, epicId, r.value === 'epic', keep);
+  });
   $('#nt-col').onchange = e => {
     const c = b.columns.find(x => x.id === e.target.value), chip = $('#nt-colchip');
     chip.setAttribute('style', hue(b.columns.indexOf(c) + 1)); chip.lastChild.textContent = c.name;
@@ -1186,16 +1470,22 @@ function openNewTask(colId) {
   form.onsubmit = e => {
     e.preventDefault();
     const f = new FormData(form), name = String(f.get('title')).trim();
-    if (!name) { title.setAttribute('aria-invalid', 'true'); $('#nt-error').textContent = 'Give the task a title.'; title.focus(); return; }
+    if (!name) { title.setAttribute('aria-invalid', 'true'); $('#nt-error').textContent = asEpic ? 'Give the epic a name.' : 'Give the task a title.'; title.focus(); return; }
     const c = b.columns.find(x => x.id === f.get('col')) || b.columns[0];
+    const kept = subs.map(x => x.title.trim()).filter(Boolean);
     const t = { id: uid(), title: name, desc: String(f.get('desc') || '').trim(), label: String(f.get('label') || '').trim(),
       due: String(f.get('due') || ''), assignee: String(f.get('who') || ''), rev: 0,
-      subs: subs.map(x => ({ ...x, title: x.title.trim() })).filter(x => x.title) };
-    c.tasks.push(t); touch(b);
+      ...(asEpic ? { isEpic: true } : { epic: String(f.get('epic') || epicId || '') || undefined,
+        subs: subs.map(x => ({ ...x, title: x.title.trim() })).filter(x => x.title) }) };
+    c.tasks.push(t);
+    // An epic's first tasks are real tasks, created beside it in the same column.
+    if (asEpic) { ui.openEpics.add(t.id); kept.forEach(title => c.tasks.push({ id: uid(), title, desc: '', label: '', due: '', assignee: '', rev: 0, epic: t.id })); }
+    touch(b);
     close(); render();
     const card = document.querySelector(`[data-task="${t.id}"]`);
     card?.classList.add('landed'); card?.focus({ preventScroll: true }); card?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-    toast(`Task added to ${c.name}`);
+    toast(asEpic ? (kept.length ? `Epic “${name}” created with ${kept.length} task${kept.length > 1 ? 's' : ''}` : `Epic “${name}” created`)
+      : `Task added to ${c.name}`);
   };
 }
 
