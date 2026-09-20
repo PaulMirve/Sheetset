@@ -1,29 +1,35 @@
-import sqlite3
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from ..core.security import hash_password
-from ..db.session import db
-
-PUBLIC_COLUMNS = "id, email, first_name, last_name, is_active"
+from ..db.models import User
 
 
-def create(email: str, password: str, first_name: str, last_name: str) -> int | None:
+def create(
+    db: Session, email: str, password: str, first_name: str, last_name: str
+) -> User | None:
     """Insert a user, or return None if the email is taken."""
+    user = User(
+        email=email,
+        pw=hash_password(password),
+        first_name=first_name.strip(),
+        last_name=last_name.strip(),
+    )
+    db.add(user)
     try:
-        cur = db.execute(
-            "INSERT INTO users (email, pw, first_name, last_name) VALUES (?, ?, ?, ?)",
-            (email, hash_password(password), first_name.strip(), last_name.strip()),
-        )
         db.commit()
-        return cur.lastrowid
-    except sqlite3.IntegrityError:
+    except IntegrityError as e:
+        db.rollback()
+        if "users.email" not in str(e.orig):
+            raise
         return None
+    return user
 
 
-def get_by_email(email: str) -> sqlite3.Row | None:
-    return db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+def get_by_email(db: Session, email: str) -> User | None:
+    return db.scalar(select(User).where(User.email == email))
 
 
-def get_by_id(user_id: int) -> sqlite3.Row | None:
-    return db.execute(
-        f"SELECT {PUBLIC_COLUMNS} FROM users WHERE id = ?", (user_id,)
-    ).fetchone()
+def get_by_id(db: Session, user_id: int) -> User | None:
+    return db.get(User, user_id)

@@ -25,10 +25,12 @@ def test_auth_flow():
     assert c.get("/me", headers={"Authorization": f"Bearer {token}x"}).status_code == 401
     assert c.get("/me").status_code == 401
 
-    from app.db.session import db
+    from app.db.models import User
+    from app.db.session import SessionLocal
 
-    db.execute("UPDATE users SET is_active = 0 WHERE id = 1")
-    db.commit()
+    with SessionLocal() as s:
+        s.get(User, 1).is_active = False
+        s.commit()
     assert c.get("/me", headers={"Authorization": f"Bearer {token}"}).status_code == 403
     assert c.post("/login", json={"email": "a@b.co", "password": "REDACTED_LOCAL_CREDENTIAL"}).status_code == 403
 

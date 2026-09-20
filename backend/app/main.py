@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api.router import api_router
 from .core.config import CORS_ORIGINS
+from .db import Base, engine
+
+Base.metadata.create_all(engine)
 
 app = FastAPI(title="Kanban API")
 app.add_middleware(

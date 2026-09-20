@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class Credentials(BaseModel):
@@ -12,6 +12,8 @@ class SignUp(Credentials):
 
 
 class User(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     email: str
     first_name: str
