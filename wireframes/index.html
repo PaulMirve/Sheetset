@@ -527,19 +527,36 @@ kbd { font: inherit; font-size: 12px; font-weight: 700; padding: 1px 6px; border
 .sugg-head .check { margin-left: auto; }
 .sugg { display: grid; gap: 8px; }
 .sugg-row {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start;
   padding: 12px 14px; border-radius: 14px; background: var(--film); box-shadow: inset 0 0 0 1.5px var(--line-strong);
-  cursor: pointer; transition: box-shadow .16s var(--ease), background-color .16s var(--ease), opacity .16s var(--ease);
+  transition: box-shadow .16s var(--ease), background-color .16s var(--ease), opacity .16s var(--ease);
 }
+.sugg-pick { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; cursor: pointer; }
 .sugg-row:hover { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--blue) 50%, transparent); }
-.sugg-row:has(input:checked) { background: color-mix(in srgb, var(--blue) 6%, var(--film)); box-shadow: inset 0 0 0 1.5px var(--blue); }
-.sugg-row:not(:has(input:checked)) .sugg-main { opacity: .55; }
-.sugg-row input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--blue); cursor: pointer; }
+.sugg-row:has([data-sugg]:checked) { background: color-mix(in srgb, var(--blue) 6%, var(--film)); box-shadow: inset 0 0 0 1.5px var(--blue); }
+.sugg-row.editing { box-shadow: inset 0 0 0 1.5px var(--blue), var(--shadow-lift); }
+.sugg-row:not(:has([data-sugg]:checked)) .sugg-main { opacity: .55; }
+.sugg-row [data-sugg] { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--blue); cursor: pointer; }
+.sugg-acts { display: flex; gap: 2px; }
+.sugg-acts [aria-expanded="true"] { color: var(--blue); background: var(--blue-wash); }
+.sugg-edited { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; vertical-align: 1px; font-size: 13px; font-weight: 600; color: var(--blue); }
+/* Details editor, opened inside the suggestion's own row */
+.sugg-edit {
+  grid-column: 1 / -1; display: grid; gap: 14px; margin: 2px -2px 0; padding: 14px 2px 0;
+  border-top: 1px solid var(--line); cursor: auto; animation: rise .2s var(--ease);
+}
+.sugg-edit .grid-2 { gap: 12px 14px; }
+.sugg-edit textarea.input { min-height: 84px; }
+.sugg-quote { display: flex; gap: 10px; margin: 0; padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--c2) 12%, var(--film)); font-size: 14.5px; line-height: 1.5; }
+.sugg-quote time { color: var(--pencil); font-size: 13.5px; padding-top: 1px; }
+.sugg-quote b { font-weight: 700; color: color-mix(in srgb, var(--h) 60%, var(--ink)); }
+.field-hint { color: var(--pencil); font-size: 13.5px; }
+.sugg-edit-foot { display: flex; align-items: center; gap: 6px; }
+.sugg-edit-foot .btn:last-child { margin-left: auto; }
 .sugg-title { font-weight: 650; font-size: 15.5px; line-height: 1.35; }
 .sugg-why { margin-top: 2px; color: var(--pencil); font-size: 14px; }
 .sugg-main .card-chips { margin-top: 8px; align-items: center; }
 .sugg-main .avatar { width: 24px; height: 24px; font-size: 10px; box-shadow: none; }
-.src-btn { color: var(--pencil); }
 
 .skel { display: grid; gap: 10px; }
 .skel i { display: block; height: 14px; border-radius: 8px; background: linear-gradient(90deg, var(--paper) 25%, color-mix(in srgb, var(--c3) 12%, var(--paper)) 50%, var(--paper) 75%); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
@@ -550,6 +567,203 @@ kbd { font: inherit; font-size: 12px; font-weight: 700; padding: 1px 6px; border
 @keyframes spin { to { transform: rotate(360deg); } }
 .meet-error { display: grid; justify-items: start; gap: 10px; padding: 16px; border-radius: 14px; background: var(--red-wash); }
 
+/* ============ Task page: the complete view of one task or epic ============ */
+.detail { min-width: 0; height: 100%; overflow: auto; }
+.detail-inner { max-width: 1200px; margin: 0 auto; padding: 18px 28px 48px; display: grid; gap: 22px; }
+.detail-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-height: 40px; }
+.detail-bar .back { margin-left: -10px; font-weight: 650; color: var(--ink); }
+.detail-bar .back .tile { width: 22px; height: 22px; border-radius: 7px; font-size: 12px; }
+.crumb-sep { display: inline-grid; color: var(--pencil); opacity: .6; }
+.crumb-sep svg.i { width: 14px; height: 14px; transform: rotate(-90deg); }
+.crumb-here { font-weight: 600; color: var(--pencil); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 32ch; }
+.detail-bar .row-end { margin-left: auto; align-items: center; }
+
+.detail-head { display: flex; align-items: flex-start; gap: 16px; }
+.detail-head > .tile { width: 52px; height: 52px; border-radius: 16px; margin-top: 2px; }
+.detail-head > .tile svg.i { width: 26px; height: 26px; stroke: #fff; }
+.detail-head > div { flex: 1; min-width: 0; display: grid; gap: 10px; }
+.detail-title {
+  width: 100%; border: 0; background: transparent; resize: none; overflow: hidden; padding: 4px 12px; margin: -4px 0 0 -12px;
+  border-radius: 12px; font-size: 32px; font-weight: 800; line-height: 1.18; letter-spacing: -.025em; text-wrap: balance;
+  transition: background-color .16s var(--ease), box-shadow .16s var(--ease);
+}
+.detail-title:hover { background: var(--film); }
+.detail-title:focus { outline: none; background: var(--film); box-shadow: 0 0 0 2px var(--blue), 0 0 0 6px var(--blue-wash); }
+.detail-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.detail-meta .avatar { width: 19px; height: 19px; font-size: 9px; margin-left: -4px; box-shadow: none; }
+.chip.done-chip { --h: var(--c4); }
+
+/* The board's flow, with this task's place in it. Clicking a stage moves the task. */
+.stages { display: flex; align-items: center; margin: 0; padding: 2px; list-style: none; overflow-x: auto; }
+.stages li { display: flex; align-items: center; flex: 1 0 auto; }
+.stages li:first-child { flex: none; }
+.stages li + li::before { content: ""; flex: 1 0 18px; height: 2px; margin: 0 6px; border-radius: 2px; background: var(--line-strong); transition: background-color .24s var(--ease); }
+.stages li.reached::before { background: color-mix(in srgb, var(--h) 55%, transparent); }
+.stage {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 15px 0 12px; border-radius: 999px; flex: none;
+  font-weight: 600; white-space: nowrap; color: var(--pencil); background: var(--film); box-shadow: inset 0 0 0 1.5px var(--line-strong);
+  transition: background-color .16s var(--ease), box-shadow .16s var(--ease), color .16s var(--ease);
+}
+.stage .dot { width: 9px; height: 9px; background: transparent; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--h) 60%, transparent); }
+.stage svg.i { width: 16px; height: 16px; color: var(--h); }
+.stage:hover { color: var(--ink); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--h) 60%, transparent); background: color-mix(in srgb, var(--h) 6%, var(--film)); }
+li.past .stage { color: color-mix(in srgb, var(--h) 58%, var(--ink)); background: color-mix(in srgb, var(--h) 12%, var(--film)); box-shadow: none; }
+li.here .stage {
+  height: 44px; padding: 0 18px 0 14px; font-weight: 700; cursor: default;
+  color: color-mix(in srgb, var(--h) 62%, var(--ink)); background: color-mix(in srgb, var(--h) 16%, var(--film)); box-shadow: inset 0 0 0 2px var(--h);
+}
+li.here .stage .dot { width: 10px; height: 10px; background: var(--h); box-shadow: 0 0 0 3px color-mix(in srgb, var(--h) 22%, transparent); }
+li.here .stage small { font-weight: 600; font-size: 13.5px; color: color-mix(in srgb, var(--h) 45%, var(--pencil)); }
+
+/* An epic's tasks spread across the board's columns. */
+.spread-wrap { display: grid; gap: 10px; }
+.spread-top { display: flex; align-items: baseline; gap: 10px; font-size: 15.5px; color: var(--pencil); }
+.spread-top b { color: var(--ink); font-weight: 700; }
+.spread-top .all-done { color: var(--c4); }
+.spread-bar { display: flex; gap: 3px; height: 12px; }
+.spread-bar i { min-width: 12px; border-radius: 99px; background: color-mix(in srgb, var(--h) 80%, var(--film)); transition: flex-grow .3s var(--ease); }
+.spread-bar.empty { border-radius: 99px; background: var(--line-strong); }
+.spread-wrap .spread { gap: 6px; }
+.spread-wrap .pip { height: 25px; }
+.spread-wrap .pip.zero { opacity: .5; }
+.spread-wrap .pip svg.i { width: 13px; height: 13px; }
+
+.detail-sheet { display: grid; grid-template-columns: minmax(0, 1fr) 320px; background: var(--film); border-radius: 20px; box-shadow: var(--shadow); }
+.detail-main { min-width: 0; padding: 26px 30px 30px; display: grid; gap: 30px; align-content: start; }
+.detail-main .label { font-size: 16px; font-weight: 700; color: var(--ink); gap: 8px; }
+.detail-main .label svg.i { width: 17px; height: 17px; color: var(--pencil); }
+.detail-main textarea.input { min-height: 132px; overflow: hidden; resize: none; }
+.detail-side { border-left: 1px solid var(--line); padding: 24px; }
+.side-inner { position: sticky; top: 20px; display: grid; gap: 16px; }
+.side-rule { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+.facts { display: grid; gap: 12px; margin: 0; font-size: 14.5px; }
+.facts > div { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.facts dt { display: inline-flex; align-items: center; gap: 7px; color: var(--pencil); font-weight: 600; }
+.facts dt svg.i { width: 15px; height: 15px; }
+.facts dd { margin: 0 0 0 auto; font-weight: 600; text-align: right; }
+.facts .avatar { width: 24px; height: 24px; font-size: 10px; }
+.side-inner > .btn { width: 100%; }
+
+.kid-group { display: grid; gap: 6px; }
+.kid-head { display: flex; align-items: center; gap: 8px; margin: 6px 0 0 2px; font-size: 14px; font-weight: 700; color: color-mix(in srgb, var(--h) 58%, var(--ink)); }
+.kid-head .dot { width: 8px; height: 8px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--h) 22%, transparent); }
+.kid-head .lane-count { min-width: 22px; height: 22px; font-size: 12.5px; }
+.epic-drow .meta { display: inline-flex; align-items: center; gap: 4px; font-size: 13.5px; font-weight: 600; color: var(--pencil); flex: none; }
+.epic-drow .meta svg.i { width: 15px; height: 15px; color: currentColor; }
+.epic-drow .meta.all-done { color: var(--c4); }
+.epic-drow > .avatar { width: 24px; height: 24px; font-size: 10px; box-shadow: none; }
+.epic-drow .chip { flex: none; }
+
+/* Activity: history and comments on one line of time */
+.sec-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.sec-head .seg { margin-left: auto; background: var(--paper); }
+.sec-head .seg label { padding: 5px 12px; font-size: 13.5px; }
+.feed { margin: 0; padding: 0; list-style: none; }
+.ev { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; padding-bottom: 16px; }
+.ev::before { content: ""; position: absolute; left: 13px; top: 34px; bottom: 4px; width: 2px; border-radius: 2px; background: var(--line); }
+.ev:last-child::before { display: none; }
+.ev > .avatar { box-shadow: none; }
+.ev-mark {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+  color: color-mix(in srgb, var(--h, var(--pencil)) 62%, var(--ink)); background: color-mix(in srgb, var(--h, var(--pencil)) 15%, var(--film));
+}
+.ev-mark svg.i { width: 14px; height: 14px; }
+.ev-line { padding-top: 4px; color: var(--pencil); font-size: 14.5px; }
+.ev-line b { color: var(--ink); font-weight: 650; }
+.ev-line time { white-space: nowrap; }
+.ev-col { display: inline-flex; align-items: center; gap: 5px; font-weight: 650; color: color-mix(in srgb, var(--h, var(--pencil)) 58%, var(--ink)); }
+.ev-col .dot { width: 7px; height: 7px; box-shadow: none; background: var(--h, var(--pencil)); }
+.ev-task { font-weight: 650; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; text-align: left; }
+.ev-task:hover { text-decoration-color: var(--blue); }
+.bubble { margin: 6px 0 0; padding: 10px 14px; border-radius: 4px 14px 14px 14px; background: var(--paper); color: var(--ink); font-size: 15.5px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 68ch; }
+.bubble.mine { background: color-mix(in srgb, var(--blue) 8%, var(--paper)); }
+.ev .icon-btn { opacity: 0; margin-top: 2px; }
+.ev:hover .icon-btn, .ev .icon-btn:focus-visible { opacity: 1; }
+.ev .icon-btn:hover { color: var(--red); background: var(--red-wash); }
+.ev .icon-btn svg.i { width: 15px; height: 15px; }
+@media (hover: none) { .ev .icon-btn { opacity: 1; } }
+.feed-empty { margin: 0 0 16px; padding: 14px 16px; border-radius: 12px; border: 1.5px dashed var(--line-strong); color: var(--pencil); font-size: 14.5px; }
+.say { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; }
+.say > .avatar { box-shadow: none; margin-top: 8px; }
+.say-box { display: grid; gap: 8px; }
+.detail-main .say textarea.input { min-height: 84px; }
+.say-foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; color: var(--pencil); font-size: 14px; }
+.say-foot .kbd-hint { margin-right: auto; }
+.drawer-tools { display: flex; gap: 2px; align-self: start; }
+
+/* Files: photos as a thumbnail grid, everything else as rows */
+.files { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; position: relative; border-radius: 14px; }
+.files .subs-head .btn { margin-left: 8px; height: 34px; }
+.files .subs-count { margin-left: auto; }
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.photo { position: relative; display: grid; gap: 6px; margin: 0; min-width: 0; }
+.photo > button:first-child {
+  display: block; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--line); cursor: zoom-in; transition: box-shadow .2s var(--ease), transform .2s var(--ease);
+}
+.photo > button:first-child:hover { box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo img:not([src]) { visibility: hidden; }
+.photo figcaption { font-size: 13.5px; color: var(--pencil); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+.photo .icon-btn { position: absolute; top: 6px; right: 6px; background: var(--film); box-shadow: var(--shadow); opacity: 0; }
+.photo:hover .icon-btn, .photo .icon-btn:focus-visible { opacity: 1; }
+.photo .icon-btn:hover { color: var(--red); background: var(--film); }
+.file-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.file-row {
+  display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 6px 6px 8px; border-radius: 12px;
+  background: var(--paper); border: 1px solid transparent; transition: border-color .16s var(--ease);
+}
+.file-row:hover { border-color: var(--line-strong); }
+.file-row .tile { width: 36px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--h) 16%, transparent); color: color-mix(in srgb, var(--h) 62%, var(--ink)); box-shadow: none; }
+.file-row .tile svg.i { width: 18px; height: 18px; }
+.file-main { flex: 1; min-width: 0; display: grid; text-align: left; }
+.file-main b { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-main:hover b { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+.file-main small { color: var(--pencil); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-row [data-file-del] { opacity: 0; }
+.file-row:hover [data-file-del], .file-row [data-file-del]:focus-visible { opacity: 1; }
+.file-row [data-file-del]:hover, .photo [data-file-del]:hover { color: var(--red); background: var(--red-wash); }
+@media (hover: none) { .photo .icon-btn, .file-row [data-file-del] { opacity: 1; } }
+.files-drop {
+  display: grid; justify-items: center; gap: 4px; width: 100%; padding: 20px 16px; border-radius: 14px;
+  border: 1.5px dashed var(--line-strong); color: var(--pencil); font-size: 14.5px; text-align: center;
+  transition: border-color .16s var(--ease), background-color .16s var(--ease), color .16s var(--ease);
+}
+.files-drop > svg.i { width: 22px; height: 22px; color: var(--blue); }
+.files-drop u { color: var(--blue); font-weight: 650; text-decoration: none; }
+.files-drop small { font-size: 13.5px; opacity: .85; }
+.files-drop:hover { border-color: var(--blue); background: var(--blue-wash); color: var(--ink); }
+/* While files are dragged over the page or dialog, the section becomes the target. */
+.files.dropping::after {
+  content: "Drop to attach"; position: absolute; inset: -8px; z-index: 3; display: grid; place-items: center; border-radius: 16px;
+  font-weight: 700; color: var(--blue); background: color-mix(in srgb, var(--blue) 10%, var(--film)); border: 2px dashed var(--blue);
+}
+.card-foot .meta.clip { gap: 3px; }
+
+/* Photo viewer */
+.viewer {
+  width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: #f3f4f8;
+}
+.viewer[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); animation: fade .2s var(--ease); }
+.viewer::backdrop { background: rgba(12, 13, 19, .9); }
+.viewer-bar { display: flex; align-items: center; gap: 12px; padding: 14px 16px 14px 24px; }
+.viewer-bar > div { flex: 1; min-width: 0; display: grid; }
+.viewer-bar b { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.viewer-bar small { color: rgba(243, 244, 248, .7); font-size: 13.5px; }
+.viewer .icon-btn { width: 40px; height: 40px; border-radius: 12px; color: rgba(243, 244, 248, .8); }
+.viewer .icon-btn:hover { color: #fff; background: rgba(255, 255, 255, .12); }
+.viewer-stage { position: relative; display: grid; place-items: center; min-height: 0; padding: 8px 72px 32px; }
+.viewer-stage img { max-width: 100%; max-height: calc(100vh - 120px); object-fit: contain; border-radius: 12px; box-shadow: 0 20px 60px -20px rgba(0, 0, 0, .6); animation: rise .24s var(--ease); }
+.viewer-stage .nav { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%; background: rgba(255, 255, 255, .1); }
+.viewer-stage .nav:first-child { left: 16px; }
+.viewer-stage .nav:last-child { right: 16px; }
+
+@media (max-width: 980px) {
+  .detail-sheet { grid-template-columns: minmax(0, 1fr); }
+  .detail-side { order: -1; border-left: 0; border-bottom: 1px solid var(--line); }
+  .side-inner { position: static; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .side-inner > .side-rule, .side-inner > .facts, .side-inner > .btn { grid-column: 1 / -1; }
+}
 @media (max-width: 980px) {
   .meet-body { grid-template-columns: 1fr; overflow: auto; }
   .pane { overflow: visible; }
@@ -587,6 +801,19 @@ kbd { font: inherit; font-size: 12px; font-weight: 700; padding: 1px 6px; border
   .focus-bar .tile { display: none; }
   .focus-main { flex: 1 1 100%; }
   .focus-bar .btn { flex: 1; }
+  .detail-inner { padding: 12px 16px 32px; gap: 18px; }
+  .detail-bar .crumb-here { display: none; }
+  .detail-head > .tile { display: none; }
+  .detail-title { font-size: 24px; }
+  .stages { margin: 0 -16px; padding: 2px 16px; }
+  .detail-sheet { border-radius: 16px; }
+  .detail-main, .detail-side { padding: 18px 16px; }
+  .say-foot .kbd-hint { display: none; }
+  .epic-drow .chip, .epic-drow .meta { display: none; }
+  .photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .viewer-stage { padding: 8px 12px 88px; }
+  .viewer-stage .nav { top: auto; bottom: 20px; transform: none; }
+  .viewer-bar { padding-left: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -625,12 +852,20 @@ kbd { font: inherit; font-size: 12px; font-weight: 700; padding: 1px 6px; border
   <symbol id="i-chev" viewBox="0 0 16 16"><path d="M5 6.5L8 3.5l3 3M5 9.5l3 3 3-3"/></symbol>
   <symbol id="i-caret" viewBox="0 0 16 16"><path d="M4 6.25L8 10.25l4-4"/></symbol>
   <symbol id="i-layers" viewBox="0 0 16 16"><path d="M8 1.9l5.5 3.1L8 8.1 2.5 5z"/><path d="M2.5 8l5.5 3.1L13.5 8"/><path d="M2.5 11l5.5 3.1L13.5 11"/></symbol>
-  <symbol id="i-unlink" viewBox="0 0 16 16"><path d="M6.5 9.5l3-3M7 3.6l1-1a2.7 2.7 0 0 1 3.8 3.8l-1 1M9 12.4l-1 1a2.7 2.7 0 0 1-3.8-3.8l1-1"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 16 16"><path d="M13 7.6l-5.3 5.3a3.1 3.1 0 0 1-4.4-4.4l5.6-5.6a2.1 2.1 0 0 1 3 3l-5.5 5.5a1 1 0 0 1-1.5-1.5L10 4.8"/></symbol>
+  <symbol id="i-image" viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="2.5"/><circle cx="6" cy="6.3" r="1.2"/><path d="M2.5 12l3.5-3.5 2.5 2.5 2-2 3 3"/></symbol>
+  <symbol id="i-file" viewBox="0 0 16 16"><path d="M9 2H4.5A1.5 1.5 0 0 0 3 3.5v9A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5V6z"/><path d="M9 2v4h4"/></symbol>
+  <symbol id="i-download" viewBox="0 0 16 16"><path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 16 16"><path d="M8 11V3M4.5 6L8 2.5 11.5 6M3 13.5h10"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 16 16"><path d="M9.5 2.5h4v4M13.5 2.5L9 7M6.5 13.5h-4v-4M2.5 13.5L7 9"/></symbol>
+  <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.8 9.2l2.4-2.4M7 4.6l1-1a2.7 2.7 0 0 1 3.8 3.8l-1 1M9 11.4l-1 1a2.7 2.7 0 0 1-3.8-3.8l1-1"/></symbol>
+  <symbol id="i-comment" viewBox="0 0 16 16"><path d="M3.5 3h9A1.5 1.5 0 0 1 14 4.5v6a1.5 1.5 0 0 1-1.5 1.5H7.5L4.5 14.3V12h-1A1.5 1.5 0 0 1 2 10.5v-6A1.5 1.5 0 0 1 3.5 3z"/></symbol>
+  <symbol id="i-unlink"viewBox="0 0 16 16"><path d="M6.5 9.5l3-3M7 3.6l1-1a2.7 2.7 0 0 1 3.8 3.8l-1 1M9 12.4l-1 1a2.7 2.7 0 0 1-3.8-3.8l1-1"/></symbol>
 </svg>
 
 <script>
 /* ponytail: localStorage only, plain-text passwords; a prototype, swap for a real auth backend before shipping. */
-const KEY = 'sheetset:v3';
+const KEY = 'sheetset:v5';
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -650,9 +885,14 @@ function seed() {
   const subs = (...titles) => titles.map(x => ({ id: uid(), title: x.replace(/^✓ /, ''), done: x.startsWith('✓ ') }));
   // An epic is an ordinary task carrying isEpic; its children point back with epic: <id>.
   const epic = (title, extra = {}) => t(title, { isEpic: true, ...extra });
-  const billing = epic('Billing migration', { desc: 'Move every customer onto the new plan structure before the launch email goes out.', due: dayOffset(12), label: 'Engineering', assignee: me.id });
+  // An activity entry `h` hours ago.
+  const ev = (h, who, kind, data) => ({ id: uid(), at: new Date(Date.now() - h * 36e5).toISOString(), who: who.id, kind, ...data });
+  const billing = epic('Billing migration', { desc: 'Move every customer onto the new plan structure before the launch email goes out.', due: dayOffset(12), label: 'Engineering', assignee: me.id, log: [
+    ev(340, me, 'created'), ev(338, me, 'moved', { from: 'Backlog', to: 'In progress' }),
+    ev(98, sa, 'comment', { text: 'I’ll hold the FAQ until the legal notice is final, so the wording matches.' }),
+  ] });
   const kitchen = epic('Kitchen refresh', { desc: 'Tiles, lighting and a new worktop, done in one go rather than piecemeal.', due: dayOffset(40) });
-  return {
+  const data = {
     session: null,
     users: [me, jo, mi, sa],
     boards: [
@@ -676,14 +916,33 @@ function seed() {
         ]),
         col('In progress', [
           billing,
-          t('Finalize launch video storyboard', { assignee: jo.id, due: dayOffset(2), label: 'Marketing', rev: 3 }),
-          t('Migrate billing to new plans', { assignee: me.id, due: dayOffset(-2), label: 'Engineering', epic: billing.id, desc: 'Map legacy tiers, dry-run on staging, then schedule the cutover.', subs: subs('✓ Map legacy tiers', 'Dry-run on staging', 'Schedule the cutover') }),
+          t('Finalize launch video storyboard', { assignee: jo.id, due: dayOffset(2), label: 'Marketing', rev: 3, log: [
+            ev(260, jo, 'created'), ev(200, jo, 'moved', { from: 'Backlog', to: 'In progress' }),
+            ev(30, mi, 'comment', { text: 'Final product shots land Wednesday. I’ll drop them in the shared folder.' }),
+          ] }),
+          t('Migrate billing to new plans', { assignee: me.id, due: dayOffset(-2), label: 'Engineering', epic: billing.id, desc: 'Map legacy tiers, dry-run on staging, then schedule the cutover.', subs: subs('✓ Map legacy tiers', 'Dry-run on staging', 'Schedule the cutover'), rev: 1, log: [
+            ev(300, me, 'created'), ev(150, sa, 'assigned', { to: me.id }), ev(146, me, 'moved', { from: 'Backlog', to: 'In progress' }),
+            ev(122, jo, 'comment', { text: 'Staging has the new plan IDs now, so the dry-run can go ahead whenever you’re ready.' }),
+            ev(74, me, 'sub', { title: 'Map legacy tiers', done: true }),
+            ev(52, me, 'comment', { text: 'The dry-run found two legacy tiers with no mapping (Team Annual and Starter Plus). Writing those before we cut over.' }),
+            ev(27, sa, 'due', { to: dayOffset(-2) }),
+            ev(3, mi, 'comment', { text: 'Legal wants the pricing notice out before the cutover date. Can we line the two up?' }),
+            ev(51, me, 'file', { name: 'tier-mapping.svg' }), ev(51, me, 'file', { name: 'dry-run-results.csv' }),
+          ], files: [
+            { id: 'seed-tiers', name: 'tier-mapping.svg', type: 'image/svg+xml', size: 1840, at: ev(51, me).at, who: me.id },
+            { id: 'seed-board', name: 'whiteboard-cutover-plan.svg', type: 'image/svg+xml', size: 1610, at: ev(30, jo).at, who: jo.id },
+            { id: 'seed-csv', name: 'dry-run-results.csv', type: 'text/csv', size: 214, at: ev(51, me).at, who: me.id },
+          ] }),
         ]),
         col('Review', [
           t('Press kit one-pager', { assignee: mi.id, due: dayOffset(1), label: 'Marketing', rev: 1 }),
-          t('Legal review of the pricing change notice', { assignee: mi.id, due: dayOffset(2), label: 'Marketing', epic: billing.id, rev: 1 }),
+          t('Legal review of the pricing change notice', { assignee: mi.id, due: dayOffset(2), label: 'Marketing', epic: billing.id, rev: 1, log: [
+            ev(210, mi, 'created'), ev(20, mi, 'moved', { from: 'In progress', to: 'Review' }),
+          ] }),
         ]),
-        col('Shipped', [t('Waitlist landing page', { assignee: sa.id, label: 'Engineering', rev: 5, subs: subs('✓ Write copy', '✓ Build page', '✓ Connect signup form') }), t('Freeze legacy tier signups', { assignee: me.id, label: 'Engineering', epic: billing.id, rev: 2 }), t('Brand refresh sign-off', { assignee: me.id, label: 'Design' })]),
+        col('Shipped', [t('Waitlist landing page', { assignee: sa.id, label: 'Engineering', rev: 5, subs: subs('✓ Write copy', '✓ Build page', '✓ Connect signup form') }), t('Freeze legacy tier signups', { assignee: me.id, label: 'Engineering', epic: billing.id, rev: 2, log: [
+          ev(330, me, 'created'), ev(49, me, 'moved', { from: 'Review', to: 'Shipped' }),
+        ] }), t('Brand refresh sign-off', { assignee: me.id, label: 'Design' })]),
       ] },
       { id: uid(), code: 'T-02', name: 'Hiring: Product Designer', owner: jo.id, members: [jo.id, me.id], shared: true, rev: 6, updated: dayOffset(-1), columns: [
         col('Applied', [t('Portfolio review: 12 candidates', { assignee: me.id, due: dayOffset(3), subs: subs('✓ First pass on all 12', 'Shortlist five') })]),
@@ -692,13 +951,19 @@ function seed() {
       ] },
     ],
   };
+  // Every other task gets a plain "created" entry by the board's owner, a week or two back.
+  data.boards.forEach(b => b.columns.forEach(c => c.tasks.forEach((x, i) => {
+    x.log ||= [ev(24 * (6 + (i * 5) % 9) + i * 3, { id: b.owner }, 'created')];
+  })));
+  return data;
 }
 
 let db;
 try { db = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { db = seed(); }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} };
 const ui = { authMode: 'in', boardId: null, taskId: null, newSheet: false, composer: null, editing: null,
-  epicId: null, openEpics: new Set() };
+  epicId: null, openEpics: new Set(), detailId: null, feed: 'all' };
+ui.detailId = null; // set by readRoute() once a session exists, just before the first render
 let theme = (() => { try { return localStorage.getItem(KEY + ':theme'); } catch { return null; } })()
   || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 document.documentElement.dataset.theme = theme;
@@ -710,12 +975,87 @@ const board = () => db.boards.find(b => b.id === ui.boardId);
 const findTask = id => { for (const c of board()?.columns || []) { const t = c.tasks.find(t => t.id === id); if (t) return { col: c, task: t }; } return null; };
 const touch = b => { b.rev++; b.updated = today(); save(); };
 
+/* ---------- Activity log: what happened to a task, by whom, when ---------- */
+const entry = (kind, data) => ({ id: uid(), at: new Date().toISOString(), who: db.session, kind, ...data });
+const log = (t, kind, data) => (t.log ||= []).push(entry(kind, data));
+const logOf = t => [...(t.log || [])].sort((x, y) => x.at < y.at ? -1 : 1);
+const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+const ago = iso => {
+  const s = (Date.now() - new Date(iso)) / 1000;
+  return s < 60 ? 'just now' : s < 3600 ? rtf.format(-Math.round(s / 60), 'minute') : s < 86400 ? rtf.format(-Math.round(s / 3600), 'hour')
+    : s < 7 * 86400 ? rtf.format(-Math.round(s / 86400), 'day') : fmtDate(iso.slice(0, 10));
+};
+const days = iso => { const d = Math.floor((Date.now() - new Date(iso)) / 864e5); return d < 1 ? 'Since today' : d === 1 ? '1 day' : `${d} days`; };
+
+/* ---------- Files: metadata on the task (t.files), contents in IndexedDB ---------- */
+/* ponytail: a removed file's blob stays in IndexedDB so Undo works; sweep orphans when a real backend stores files. */
+const blobs = (() => {
+  let open;
+  const store = mode => (open ||= new Promise((ok, fail) => {
+    const r = indexedDB.open('sheetset-files', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('blobs');
+    r.onsuccess = () => ok(r.result); r.onerror = () => fail(r.error);
+  })).then(idb => idb.transaction('blobs', mode).objectStore('blobs'));
+  const req = r => new Promise((ok, fail) => { r.onsuccess = () => ok(r.result); r.onerror = () => fail(r.error); });
+  return { put: (id, b) => store('readwrite').then(s => req(s.put(b, id))), get: id => store('readonly').then(s => req(s.get(id))) };
+})();
+const blobUrls = new Map();
+const fileUrl = id => blobUrls.has(id) ? Promise.resolve(blobUrls.get(id))
+  : blobs.get(id).then(b => b ? (blobUrls.set(id, URL.createObjectURL(b)), blobUrls.get(id)) : null);
+const MAX_FILE = 10 * 1024 * 1024;
+const isImage = f => /^image\//.test(f.type);
+const fmtSize = n => n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1)} MB`;
+const extOf = name => (name.match(/\.([a-z0-9]+)$/i)?.[1] || 'file').toLowerCase();
+
+// Demo attachments, drawn here so the seeded task has real files to open.
+const SEED_FILES = {
+  'seed-tiers': ['image/svg+xml', `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" font-family="system-ui,sans-serif"><rect width="800" height="600" fill="#f4f5fa"/>
+    <text x="48" y="72" font-size="30" font-weight="800" fill="#1f2333">Legacy tiers → new plans</text>
+    ${[['Starter', '#3563f5', 'Basic'], ['Starter Plus', '#dc3b40', '?'], ['Team', '#8a4fe8', 'Team'], ['Team Annual', '#dc3b40', '?'], ['Business', '#12a67a', 'Scale']].map(([a, c, z], i) =>
+      `<rect x="48" y="${120 + i * 88}" width="250" height="64" rx="14" fill="#fff"/><circle cx="80" cy="${152 + i * 88}" r="8" fill="${c}"/><text x="100" y="${160 + i * 88}" font-size="22" font-weight="600" fill="#1f2333">${a}</text>
+       <path d="M318 ${152 + i * 88}h150" stroke="${c}" stroke-width="4" stroke-dasharray="${z === '?' ? '10 10' : '0'}"/>
+       <rect x="488" y="${120 + i * 88}" width="250" height="64" rx="14" fill="${z === '?' ? '#fdecec' : '#fff'}"/><text x="520" y="${160 + i * 88}" font-size="22" font-weight="600" fill="${z === '?' ? '#dc3b40' : '#1f2333'}">${z === '?' ? 'No mapping yet' : z}</text>`).join('')}</svg>`],
+  'seed-board': ['image/svg+xml', `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" font-family="system-ui,sans-serif"><rect width="800" height="600" fill="#fbfbf7"/>
+    <text x="48" y="72" font-size="30" font-weight="800" fill="#1f2333">Cutover plan</text>
+    ${[['Fri', 'Rerun dry-run', '#f08c00'], ['Mon', 'Go / no-go', '#8a4fe8'], ['Tue', 'Send notice', '#0e9fbf'], ['Wed', 'Cut over', '#12a67a']].map(([d, t, c], i) =>
+      `<g transform="rotate(${[-3, 2, -1, 3][i]} ${150 + i * 170} 300)"><rect x="${72 + i * 170}" y="200" width="150" height="160" rx="8" fill="${c}" opacity=".22"/>
+       <text x="${88 + i * 170}" y="240" font-size="18" font-weight="700" fill="${c}">${d}</text><text x="${88 + i * 170}" y="276" font-size="19" font-weight="600" fill="#1f2333">${t}</text></g>`).join('')}
+    <path d="M150 420 C 300 480, 500 480, 660 420" stroke="#1f2333" stroke-width="3" fill="none" stroke-dasharray="8 8"/></svg>`],
+  'seed-csv': ['text/csv', 'legacy_tier,customers,new_plan,status\nStarter,1204,Basic,mapped\nStarter Plus,86,,missing\nTeam,431,Team,mapped\nTeam Annual,57,,missing\nBusiness,112,Scale,mapped\n'],
+};
+Object.entries(SEED_FILES).forEach(([id, [type, body]]) => blobs.put(id, new Blob([body], { type })).catch(() => {}));
+
+/* ---------- Route: #/task/<id> opens the task page, so it can be linked and Back works ---------- */
+function readRoute() {
+  const id = location.hash.match(/^#\/task\/(\w+)$/)?.[1];
+  const b = id && db.boards.find(b => b.members.includes(db.session) && b.columns.some(c => c.tasks.some(t => t.id === id)));
+  if (b) ui.boardId = b.id;
+  return b ? id : null;
+}
+function openDetail(id) {
+  const from = ui.detailId;
+  ui.detailId = id; ui.taskId = ui.composer = null;
+  if ((location.hash || '#') !== (id ? `#/task/${id}` : '#')) location.hash = id ? `/task/${id}` : '';
+  render();
+  if (id) { $('#detail').scrollTop = 0; $('#dt-back').focus(); }
+  else document.querySelector(`[data-task="${from}"]`)?.focus();
+}
+window.onhashchange = () => {
+  const id = readRoute();
+  if (id !== ui.detailId) { ui.detailId = id; ui.taskId = null; render(); }
+};
+
 function render() {
   const root = $('#root');
   if (!me()) { root.innerHTML = authView(); ui.shownTask = null; bindAuth(); return; }
   if (!board() || !board().members.includes(db.session)) ui.boardId = myBoards()[0]?.id || null;
+  if (ui.detailId && !findTask(ui.detailId)) ui.detailId = null;
   if (!$('#app-shell')) root.innerHTML = '<div id="app-shell"></div><div id="dlg-host"></div>';
-  $('#app-shell').innerHTML = `<div class="app">${railView()}${sheetView()}</div>`;
+  // Re-rendering the same task page keeps its scroll position.
+  const keep = ui.detailId && ui.detailId === ui.shownDetail ? $('#detail')?.scrollTop : 0;
+  $('#app-shell').innerHTML = `<div class="app">${railView()}${ui.detailId ? detailView() : sheetView()}</div>`;
+  if (keep) $('#detail').scrollTop = keep;
+  ui.shownDetail = ui.detailId;
   bindApp();
   // The modal is rebuilt only when a different task opens, so edits inside it keep focus.
   if (ui.shownTask !== ui.taskId) {
@@ -736,6 +1076,7 @@ const avatar = (u, extra = '') => `<span class="avatar" style="${userHue(u.id)}"
 // Epics are containers, not work: they never count towards a board's totals.
 const doneCount = b => b.columns.length > 1 ? b.columns[b.columns.length - 1].tasks.filter(t => !t.isEpic).length : 0;
 const taskCount = b => b.columns.reduce((n, c) => n + c.tasks.filter(t => !t.isEpic).length, 0);
+const dueChip = d => { const s = dueState(d); return `<span class="chip num ${s ? 'due-' + s : ''}">${icon('cal')}${s === 'late' ? 'Overdue · ' : s === 'soon' ? 'Due ' : ''}${fmtDate(d)}</span>`; };
 const dueState = d => !d ? '' : d < today() ? 'late' : d <= dayOffset(2) ? 'soon' : '';
 
 /* ---------- Epics: a task other tasks point at ---------- */
@@ -921,7 +1262,6 @@ function cardView(t) {
   const showAvatar = b.shared && a;
   const subs = t.subs || [], sd = subs.filter(x => x.done).length, subsText = `${sd} of ${subs.length} subtasks done`;
   const parent = !t.isEpic && !ui.epicId && findEpic(t.epic);
-  const dueChip = d => { const s = dueState(d); return `<span class="chip num ${s ? 'due-' + s : ''}">${icon('cal')}${s === 'late' ? 'Overdue · ' : s === 'soon' ? 'Due ' : ''}${fmtDate(d)}</span>`; };
   return `<article class="card ${t.isEpic ? 'epic' : ''} ${ui.taskId === t.id ? 'open' : ''}" ${t.isEpic ? `style="${epicHue(t)}"` : ''} draggable="true" tabindex="0" data-task="${t.id}" aria-label="${t.isEpic ? 'Epic: ' : ''}${esc(t.title)}">
     <div class="card-top">
       ${t.isEpic ? `<span class="tile" aria-hidden="true">${icon('layers')}</span>` : ''}
@@ -935,8 +1275,9 @@ function cardView(t) {
       ${t.due ? dueChip(t.due) : ''}
     </div>` : ''}
     ${t.isEpic ? epicCardBody(b, t) : ''}
-    ${t.desc || t.rev || showAvatar || subs.length ? `<div class="card-foot">
+    ${t.desc || t.rev || showAvatar || subs.length || t.files?.length ? `<div class="card-foot">
       ${t.desc ? `<span class="meta" title="Has notes">${icon('notes')}</span>` : ''}
+      ${t.files?.length ? `<span class="meta clip num" title="${t.files.length} attachment${t.files.length > 1 ? 's' : ''}" aria-label="${t.files.length} attachment${t.files.length > 1 ? 's' : ''}">${icon('clip')}${t.files.length}</span>` : ''}
       ${subs.length ? `<span class="meta num ${sd === subs.length ? 'all-done' : ''}" title="${subsText}" aria-label="${subsText}">${icon('check')}${sd}/${subs.length}</span>` : ''}
       ${t.rev ? `<span class="meta num" title="Moved ${t.rev} time${t.rev > 1 ? 's' : ''}" aria-label="Moved ${t.rev} time${t.rev > 1 ? 's' : ''}">${icon('move')}${t.rev}</span>` : ''}
       ${showAvatar ? avatar(a, `title="Assigned to ${esc(a.name)}"`) : ''}
@@ -982,18 +1323,13 @@ function drawerView() {
       </div>
       <label class="sr" for="d-title">Title</label>
       <textarea class="drawer-title" id="d-title" rows="1" maxlength="200">${esc(t.title)}</textarea>
-      <button class="icon-btn" id="drawer-close" aria-label="Close details">${icon('close')}</button>
+      <span class="drawer-tools">
+        <button class="icon-btn" id="drawer-full" aria-label="Open full page" title="Open full page">${icon('expand')}</button>
+        <button class="icon-btn" id="drawer-close" aria-label="Close details">${icon('close')}</button>
+      </span>
     </div>
     <div class="drawer-body">
-      ${t.source ? `<section class="source" style="${hue(3)}" aria-label="Source meeting">
-        <span class="tile">${icon('video')}</span>
-        <div class="source-main">
-          <b>${esc(t.source.title)}</b>
-          <small class="num">Created from this meeting · ${fmtDate(t.source.date)} · ${esc(t.source.time)} · ${esc(t.source.platform)}</small>
-          ${t.source.quote ? `<blockquote>${t.source.at ? `<time class="num">${esc(t.source.at)}</time>` : ''}<span><b style="${personHue(t.source.who)}">${esc(t.source.who.split(' ')[0])}</b> ${esc(t.source.quote)}</span></blockquote>` : ''}
-        </div>
-        ${t.source.url ? `<a class="btn" href="${esc(t.source.url)}" target="_blank" rel="noopener noreferrer">Open meeting${icon('external')}<span class="sr"> (opens in a new tab)</span></a>` : ''}
-      </section>` : ''}
+      ${sourceView(t)}
       <div class="grid-2">
         <div class="field"><label class="label" for="d-col">${icon('status')}Column</label>
           <select class="input" id="d-col">${b.columns.map(c => `<option value="${c.id}" ${c.id === col.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
@@ -1008,6 +1344,7 @@ function drawerView() {
       </div>
       <div class="field"><label class="label" for="d-desc">${icon('notes')}Notes</label>
         <textarea class="input" id="d-desc" placeholder="${t.isEpic ? 'What is this project, and when is it finished?' : 'Add context, links or acceptance criteria'}">${esc(t.desc)}</textarea></div>
+      <section class="files" id="d-files" aria-label="Files"></section>
       ${t.isEpic ? `<div id="d-epic-tasks" role="group" aria-label="Tasks in this epic"></div>`
         : `<div class="subs" id="d-subs" role="group" aria-label="Subtasks"></div>`}
     </div>
@@ -1020,7 +1357,383 @@ function drawerView() {
     </div>
   </dialog>`;
 }
+const sourceView = t => !t.source ? '' : `<section class="source" style="${hue(3)}" aria-label="Source meeting">
+  <span class="tile">${icon('video')}</span>
+  <div class="source-main">
+    <b>${esc(t.source.title)}</b>
+    <small class="num">Created from this meeting · ${fmtDate(t.source.date)} · ${esc(t.source.time)} · ${esc(t.source.platform)}</small>
+    ${t.source.quote ? `<blockquote>${t.source.at ? `<time class="num">${esc(t.source.at)}</time>` : ''}<span><b style="${personHue(t.source.who)}">${esc(t.source.who.split(' ')[0])}</b> ${esc(t.source.quote)}</span></blockquote>` : ''}
+  </div>
+  ${t.source.url ? `<a class="btn" href="${esc(t.source.url)}" target="_blank" rel="noopener noreferrer">Open meeting${icon('external')}<span class="sr"> (opens in a new tab)</span></a>` : ''}
+</section>`;
 const revText = t => `${icon('check')}Saved automatically${t.rev ? ` · moved ${t.rev} time${t.rev > 1 ? 's' : ''}` : ''}`;
+
+/* ---------- Task page: the complete view of one task or epic ---------- */
+function detailView() {
+  const b = board(), { task: t, col } = findTask(ui.detailId);
+  const parent = !t.isEpic && findEpic(t.epic), others = allEpics(b).filter(e => e.id !== t.id);
+  const kind = t.isEpic ? 'epic' : 'task', entries = logOf(t);
+  const made = entries.find(e => e.kind === 'created'), mover = user(made?.who);
+  const since = [...entries].reverse().find(e => e.kind === 'moved')?.at || made?.at;
+  const sep = `<span class="crumb-sep" aria-hidden="true">${icon('caret')}</span>`;
+  const people = t.isEpic && [...new Set(epicKids(b, t.id).map(k => k.t.assignee).filter(Boolean))].map(user).filter(Boolean);
+  return `<main class="detail" id="detail" aria-label="${t.isEpic ? 'Epic' : 'Task'}: ${esc(t.title)}">
+  <div class="detail-inner">
+    <nav class="detail-bar" aria-label="Breadcrumb">
+      <button class="btn btn-quiet back" id="dt-back">${icon('arrow-left')}<span class="tile" style="${boardHue(b)}" aria-hidden="true">${esc(b.name[0].toUpperCase())}</span>${esc(b.name)}</button>
+      ${parent ? `${sep}<button class="chip epic-chip" style="${epicHue(parent)}" data-detail="${parent.id}" title="Open the epic">${icon('layers')}<span>${esc(parent.title)}</span></button>` : ''}
+      ${sep}<span class="crumb-here" aria-current="page">${esc(t.title)}</span>
+      <span class="row-end">
+        <button class="btn btn-quiet" id="dt-link">${icon('link')}Copy link</button>
+        <button class="icon-btn" id="dt-menu" aria-label="More actions" aria-haspopup="menu" aria-expanded="false">${icon('more')}</button>
+      </span>
+    </nav>
+
+    <header class="detail-head">
+      ${t.isEpic ? `<span class="tile" style="${epicHue(t)}" aria-hidden="true">${icon('layers')}</span>` : ''}
+      <div>
+        <label class="sr" for="dt-title">${t.isEpic ? 'Epic name' : 'Title'}</label>
+        <textarea class="detail-title" id="dt-title" rows="1" maxlength="200">${esc(t.title)}</textarea>
+        <div class="detail-meta" id="dt-meta">${detailMeta(b, t, col)}</div>
+      </div>
+    </header>
+
+    ${t.isEpic ? spreadView(b, t) : stagesView(b, col, since)}
+
+    <div class="detail-sheet">
+      <div class="detail-main">
+        ${sourceView(t)}
+        <div class="field"><label class="label" for="dt-desc">${icon('notes')}${t.isEpic ? 'About this epic' : 'Notes'}</label>
+          <textarea class="input" id="dt-desc" placeholder="${t.isEpic ? 'What is this project, and when is it finished?' : 'Add context, links or acceptance criteria'}">${esc(t.desc)}</textarea></div>
+        ${t.isEpic ? `<section class="subs" id="dt-kids" aria-label="Tasks in this epic">${kidsView(b, t)}</section>`
+          : `<div class="subs" id="dt-subs" role="group" aria-label="Subtasks"></div>`}
+        <section class="files" id="dt-files" aria-label="Files"></section>
+        <section aria-labelledby="dt-act">
+          <div class="sec-head">
+            <span class="label" id="dt-act">${icon('comment')}Activity</span>
+            <div class="seg" role="radiogroup" aria-label="Show">
+              ${[['all', 'All'], ['comments', 'Comments'], ['history', 'History']].map(([v, l]) =>
+                `<label><input type="radio" name="dt-feed" value="${v}" ${ui.feed === v ? 'checked' : ''}><span>${l}</span></label>`).join('')}
+            </div>
+          </div>
+          <div id="dt-feed">${feedView(b, t)}</div>
+          <form class="say" id="dt-say">
+            ${avatar(me())}
+            <div class="say-box">
+              <label class="sr" for="dt-comment">Comment</label>
+              <textarea class="input" id="dt-comment" maxlength="2000" placeholder="${t.isEpic ? 'Write an update on this epic…' : 'Write a comment…'}"></textarea>
+              <div class="say-foot">
+                <span class="kbd-hint"><kbd>${/Mac/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd><kbd>Enter</kbd> to send</span>
+                <button class="btn btn-primary" id="dt-send" disabled>${icon('comment')}Comment</button>
+              </div>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <aside class="detail-side" aria-label="Properties">
+        <div class="side-inner">
+          <div class="field"><label class="label" for="dt-col">${icon('status')}Column</label>
+            <select class="input" id="dt-col">${b.columns.map(c => `<option value="${c.id}" ${c.id === col.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
+          ${b.shared ? `<div class="field"><label class="label" for="dt-who">${icon('user')}${t.isEpic ? 'Owner' : 'Assignee'}</label>
+            <select class="input" id="dt-who"><option value="">Unassigned</option>${b.members.map(user).filter(Boolean).map(u => `<option value="${u.id}" ${u.id === t.assignee ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select></div>` : ''}
+          <div class="field"><label class="label" for="dt-due">${icon('cal')}Due date</label><input class="input num" id="dt-due" type="date" value="${esc(t.due)}"></div>
+          <div class="field"><label class="label" for="dt-label">${icon('tag')}Label</label><input class="input" id="dt-label" value="${esc(t.label)}" placeholder="e.g. Design" maxlength="24"></div>
+          ${t.isEpic ? '' : `<div class="field"><label class="label" for="dt-epic">${icon('layers')}Epic</label>
+            <select class="input" id="dt-epic" ${others.length ? '' : 'disabled title="This board has no epics yet."'}>
+              <option value="">${others.length ? 'No epic' : 'No epics on this board yet'}</option>
+              ${others.map(e => `<option value="${e.id}" ${e.id === t.epic ? 'selected' : ''}>${esc(e.title)}</option>`).join('')}</select></div>`}
+          <hr class="side-rule">
+          <dl class="facts">
+            ${made ? `<div><dt>${icon('plus')}Created</dt><dd class="num">${mover ? esc(mover.name.split(' ')[0]) + ' · ' : ''}${fmtDate(made.at.slice(0, 10))}</dd></div>` : ''}
+            ${since ? `<div><dt>${icon('status')}Time in column</dt><dd class="num">${days(since)}</dd></div>` : ''}
+            ${t.rev ? `<div><dt>${icon('move')}Moved</dt><dd class="num">${t.rev} time${t.rev > 1 ? 's' : ''}</dd></div>` : ''}
+            ${people?.length ? `<div><dt>${icon('users')}People</dt><dd class="avatars">${people.map(u => avatar(u, `title="${esc(u.name)}"`)).join('')}</dd></div>` : ''}
+          </dl>
+          <hr class="side-rule">
+          ${t.isEpic ? `<button class="btn" id="dt-focus">${icon('arrow')}Show only this epic</button>`
+            : `<button class="btn" id="dt-find">${icon('board')}Show on the board</button>`}
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>`;
+}
+
+function detailMeta(b, t, col) {
+  const a = t.assignee && user(t.assignee), last = b.columns.length > 1 && col === b.columns[b.columns.length - 1];
+  const s = t.isEpic && epicStat(b, t.id);
+  return `${t.isEpic ? `<span class="chip" style="${epicHue(t)}">${icon('layers')}Epic · ${s.n} task${s.n === 1 ? '' : 's'}</span>` : ''}
+    ${last && !t.isEpic ? `<span class="chip done-chip">${icon('check')}Done</span>` : ''}
+    ${a ? `<span class="chip" style="${userHue(a.id)}">${avatar(a)}${esc(a.name)}</span>` : ''}
+    ${t.due ? dueChip(t.due) : ''}
+    ${t.label ? `<span class="chip label-chip" style="${hue(hashHue(t.label.toLowerCase()))}">${esc(t.label)}</span>` : ''}
+    ${t.source ? `<span class="chip src-chip" style="${hue(3)}">${icon('video')}<span>${esc(t.source.title)}</span></span>` : ''}`;
+}
+
+// The board's columns as a track; the task sits on one stage and moves with a click.
+function stagesView(b, col, since) {
+  const ci = b.columns.indexOf(col);
+  return `<ol class="stages" aria-label="Column">${b.columns.map((c, i) => `<li class="${i < ci ? 'past' : i === ci ? 'here' : ''} ${i <= ci ? 'reached' : ''}" style="${hue(i + 1)}">
+    <button class="stage" data-stage="${c.id}" ${i === ci ? 'aria-current="step"' : `title="Move to ${esc(c.name)}"`}>
+      ${i < ci ? icon('check') : '<span class="dot"></span>'}${esc(c.name)}${i === ci && since ? `<small class="num">· ${days(since).toLowerCase()}</small>` : ''}
+    </button></li>`).join('')}</ol>`;
+}
+
+// Where an epic's tasks sit across the board, one segment per column.
+function spreadView(b, e) {
+  const s = epicStat(b, e.id);
+  return `<section class="spread-wrap" aria-label="Where this epic’s tasks are">
+    <div class="spread-top"><b class="num ${s.n && s.done === s.n ? 'all-done' : ''}">${s.done} of ${s.n} done</b>${s.n ? `<span class="num">${s.pct}%</span>` : '<span>Add tasks below to see them spread across the board.</span>'}</div>
+    <div class="spread-bar ${s.n ? '' : 'empty'}" role="img" aria-label="${b.columns.map(c => `${s.kids.filter(k => k.c === c).length} in ${esc(c.name)}`).join(', ')}">
+      ${b.columns.map((c, i) => { const n = s.kids.filter(k => k.c === c).length; return n ? `<i style="${hue(i + 1)};flex-grow:${n}" title="${n} in ${esc(c.name)}"></i>` : ''; }).join('')}
+    </div>
+    ${s.n ? `<div class="spread">${b.columns.map((c, i) => { const n = s.kids.filter(k => k.c === c).length, last = i === b.columns.length - 1;
+      return `<span class="pip ${n ? '' : 'zero'}" style="${hue(i + 1)}">${last && b.columns.length > 1 ? icon('check') : '<span class="dot"></span>'}<span class="num">${n}</span> ${esc(c.name)}</span>`; }).join('')}</div>` : ''}
+  </section>`;
+}
+
+// An epic's tasks, grouped by the column they sit in.
+function kidsView(b, e) {
+  const s = epicStat(b, e.id), home = findTask(e.id).col;
+  const groups = b.columns.map((c, i) => ({ c, i, kids: s.kids.filter(k => k.c === c) })).filter(g => g.kids.length);
+  return `<div class="subs-head"><span class="label">${icon('layers')}Tasks in this epic</span>
+      ${s.n ? `<span class="subs-count num ${s.done === s.n ? 'all-done' : ''}">${s.done} of ${s.n} done</span>` : ''}</div>
+    ${groups.map(g => `<div class="kid-group" style="${hue(g.i + 1)}">
+      <h3 class="kid-head"><span class="dot" aria-hidden="true"></span>${esc(g.c.name)}<span class="lane-count num">${g.kids.length}</span></h3>
+      <div class="epic-list">${g.kids.map(k => {
+        const done = s.isDone(k), subs = k.t.subs || [], sd = subs.filter(x => x.done).length, a = k.t.assignee && user(k.t.assignee);
+        return `<div class="epic-drow ${done ? 'done' : ''}">
+          ${done ? icon('check') : '<span class="dot" aria-hidden="true"></span>'}
+          <button type="button" class="epic-name" data-detail="${k.t.id}">${esc(k.t.title)}</button>
+          ${subs.length ? `<span class="meta num ${sd === subs.length ? 'all-done' : ''}" title="${sd} of ${subs.length} subtasks done">${icon('check')}${sd}/${subs.length}</span>` : ''}
+          ${k.t.due && !done ? dueChip(k.t.due) : ''}
+          ${b.shared && a ? avatar(a, `title="Assigned to ${esc(a.name)}"`) : ''}
+          <button type="button" class="icon-btn" data-unlink="${k.t.id}" aria-label="Remove “${esc(k.t.title)}” from this epic" title="Remove from epic">${icon('unlink')}</button>
+        </div>`; }).join('')}</div>
+    </div>`).join('')}
+    ${s.n ? '' : `<p class="epic-none">No tasks yet. Add the first one below. It lands in ${esc(home.name)}.</p>`}
+    <label class="epic-drow epic-dadd">${icon('plus')}
+      <input id="k-new" class="epic-new" maxlength="200" autocomplete="off" placeholder="Add a task to this epic, press Enter" aria-label="New task in this epic"></label>`;
+}
+
+// History and comments in one timeline. An epic's timeline also carries what happened to its tasks.
+function feedView(b, t) {
+  const kids = t.isEpic ? epicKids(b, t.id).flatMap(k => logOf(k.t).filter(e => e.kind === 'moved' || e.kind === 'comment').map(e => ({ e, t: k.t, kid: true }))) : [];
+  const items = [...logOf(t).map(e => ({ e, t })), ...kids].sort((x, y) => x.e.at < y.e.at ? -1 : 1)
+    .filter(({ e }) => ui.feed === 'all' || (ui.feed === 'comments') === (e.kind === 'comment'));
+  if (!items.length) return `<p class="feed-empty">${ui.feed === 'comments' ? 'No comments yet. Start the conversation below.' : 'Nothing has happened here yet. Moves, edits and comments will show up here.'}</p>`;
+  const colRef = name => { const i = b.columns.findIndex(c => c.name === name); return `<span class="ev-col" ${i < 0 ? '' : `style="${hue(i + 1)}"`}><span class="dot"></span>${esc(name)}</span>`; };
+  return `<ol class="feed">${items.map(({ e, t: on, kid }) => {
+    const u = user(e.who), who = `<b>${e.who === db.session ? 'You' : u ? esc(u.name.split(' ')[0]) : 'Someone'}</b>`;
+    const obj = kid ? `<button type="button" class="ev-task" data-detail="${on.id}">${esc(on.title)}</button>` : 'this';
+    const when = `<time class="num" datetime="${e.at}" title="${new Date(e.at).toLocaleString()}">${ago(e.at)}</time>`;
+    if (e.kind === 'comment') return `<li class="ev">${u ? avatar(u) : `<span class="ev-mark">${icon('user')}</span>`}
+      <div><div class="ev-line">${who} commented${kid ? ` on ${obj}` : ''} · ${when}</div><p class="bubble ${e.who === db.session ? 'mine' : ''}">${esc(e.text)}</p></div>
+      ${e.who === db.session ? `<button type="button" class="icon-btn" data-uncomment="${e.id}" data-on="${on.id}" aria-label="Delete your comment" title="Delete comment">${icon('trash')}</button>` : '<span></span>'}</li>`;
+    const to = e.kind === 'assigned' && user(e.to), ci = b.columns.findIndex(c => c.name === e.to);
+    const [ic, h, text] = {
+      created: ['plus', '', `created ${obj}${e.from ? ` from the meeting <b>${esc(e.from)}</b>` : ''}`],
+      moved: ['move', ci < 0 ? '' : hue(ci + 1), `moved ${obj} from ${colRef(e.from)} to ${colRef(e.to)}`],
+      assigned: ['user', to ? userHue(to.id) : '', to ? `assigned ${obj} to <b>${e.to === db.session ? 'you' : esc(to.name.split(' ')[0])}</b>` : `unassigned ${obj}`],
+      due: ['cal', '', e.to ? `set the due date to <b class="num">${fmtDate(e.to)}</b>` : 'removed the due date'],
+      sub: ['check', '--h:var(--c4)', `${e.done ? 'checked off' : 'reopened'} <b>${esc(e.title)}</b>`],
+      file: ['clip', '', `${e.removed ? 'removed' : 'attached'} <b>${esc(e.name)}</b>`],
+    }[e.kind] || ['status', '', 'changed this'];
+    return `<li class="ev"><span class="ev-mark" ${h ? `style="${h}"` : ''}>${icon(ic)}</span><div class="ev-line">${who} ${text} · ${when}</div><span></span></li>`;
+  }).join('')}</ol>`;
+}
+
+function bindDetail(b) {
+  const t = findTask(ui.detailId).task, col = () => findTask(t.id).col;
+  // Selects re-render the page, then hand focus back to the control that changed.
+  const again = sel => { render(); $(sel)?.focus(); };
+  const paintFeed = () => { $('#dt-feed').innerHTML = feedView(b, t); };
+  const grow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
+  const moveTo = (id, sel) => {
+    const from = col(), to = b.columns.find(c => c.id === id);
+    if (!to || from === to) return;
+    from.tasks.splice(from.tasks.indexOf(t), 1); to.tasks.push(t); t.rev++;
+    log(t, 'moved', { from: from.name, to: to.name }); touch(b); again(sel);
+  };
+
+  $('#dt-back').onclick = () => openDetail(null);
+  $('#detail').onclick = e => {
+    const go = e.target.closest('[data-detail]'), un = e.target.closest('[data-unlink]'), del = e.target.closest('[data-uncomment]');
+    if (go) openDetail(go.dataset.detail);
+    if (un) { delete findTask(un.dataset.unlink).task.epic; save(); again('#k-new'); }
+    if (del) { const on = findTask(del.dataset.on).task; on.log = on.log.filter(x => x.id !== del.dataset.uncomment); save(); paintFeed(); $('#dt-comment').focus(); }
+  };
+  document.querySelectorAll('[data-stage]').forEach(s => s.onclick = () => moveTo(s.dataset.stage, `[data-stage="${s.dataset.stage}"]`));
+
+  const title = $('#dt-title');
+  grow(title);
+  title.oninput = () => { grow(title); if (title.value.trim()) { t.title = title.value.trim(); save(); $('.crumb-here').textContent = t.title; } };
+  title.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); title.blur(); } };
+  title.onblur = () => { if (!title.value.trim()) { title.value = t.title; grow(title); } };
+  const desc = $('#dt-desc');
+  grow(desc);
+  desc.oninput = () => { grow(desc); t.desc = desc.value; save(); };
+
+  $('#dt-col').onchange = e => moveTo(e.target.value, '#dt-col');
+  const who = $('#dt-who'); if (who) who.onchange = e => { t.assignee = e.target.value; log(t, 'assigned', { to: t.assignee }); touch(b); again('#dt-who'); };
+  $('#dt-due').onchange = e => { t.due = e.target.value; log(t, 'due', { to: t.due }); save(); again('#dt-due'); };
+  // Text fields repaint only the chips under the title, so a click elsewhere is never lost to a re-render.
+  $('#dt-label').onchange = e => { t.label = e.target.value.trim(); save(); $('#dt-meta').innerHTML = detailMeta(b, t, col()); };
+  const ep = $('#dt-epic'); if (ep) ep.onchange = e => { t.epic = e.target.value || undefined; save(); again('#dt-epic'); };
+
+  bindFiles($('#dt-files'), $('#detail'), t, paintFeed);
+  if (!t.isEpic) bindSubs($('#dt-subs'), t.subs ||= [], () => save(), { onCheck: x => { log(t, 'sub', { title: x.title, done: x.done }); paintFeed(); } });
+  const kid = $('#k-new');
+  if (kid) kid.onkeydown = e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const v = kid.value.trim(); if (!v) return;
+    col().tasks.push({ id: uid(), title: v.slice(0, 200), desc: '', label: '', due: '', assignee: '', rev: 0, log: [entry('created')], epic: t.id });
+    touch(b); again('#k-new');
+  };
+
+  document.querySelectorAll('[name="dt-feed"]').forEach(r => r.onchange = () => { ui.feed = r.value; paintFeed(); });
+  const say = $('#dt-say'), box = $('#dt-comment'), send = $('#dt-send');
+  box.oninput = () => { grow(box); send.disabled = !box.value.trim(); };
+  box.onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); say.requestSubmit(); } };
+  say.onsubmit = e => {
+    e.preventDefault();
+    const v = box.value.trim(); if (!v) return;
+    log(t, 'comment', { text: v.slice(0, 2000) }); save();
+    if (ui.feed === 'history') { ui.feed = 'all'; $('[name="dt-feed"][value="all"]').checked = true; }
+    paintFeed(); box.value = ''; box.style.height = ''; send.disabled = true; box.focus();
+  };
+
+  $('#dt-link').onclick = () => navigator.clipboard?.writeText(location.href).then(() => toast('Link copied'), () => toast('Couldn’t copy. Use the address bar instead.'));
+  const find = $('#dt-find');
+  if (find) find.onclick = () => {
+    openDetail(null);
+    const card = document.querySelector(`[data-task="${t.id}"]`);
+    card?.classList.add('landed'); card?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  };
+  const fo = $('#dt-focus'); if (fo) fo.onclick = () => { openDetail(null); focusEpic(t.id); };
+  $('#dt-menu').onclick = e => openMenu(e.currentTarget, [
+    { icon: 'expand', label: 'Open quick view', run: () => { ui.taskId = t.id; render(); $('#d-title')?.focus(); } },
+    '-',
+    { icon: 'trash', label: `Delete ${t.isEpic ? 'epic' : 'task'}`, danger: true, run: () => {
+      // Same rule as the dialog: deleting an epic keeps its tasks.
+      const kids = t.isEpic ? epicKids(b, t.id) : [];
+      const msg = kids.length ? `Deleted “${t.title}” · ${kids.length} task${kids.length > 1 ? 's' : ''} kept on the board` : `Deleted “${t.title}”`;
+      if (ui.epicId === t.id) ui.epicId = null;
+      ui.detailId = null; location.hash = '';
+      withUndo(msg, () => { kids.forEach(k => delete k.t.epic); const c = col(); c.tasks.splice(c.tasks.indexOf(t), 1); touch(b); });
+    } },
+  ], true);
+}
+
+/* ---------- Files section (task page and quick view) ---------- */
+function filesView(t) {
+  const list = t.files || [], photos = list.filter(isImage), docs = list.filter(f => !isImage(f));
+  const meta = f => { const u = user(f.who); return `${fmtSize(f.size)}${u ? ` · ${f.who === db.session ? 'You' : esc(u.name.split(' ')[0])}` : ''} · ${ago(f.at)}`; };
+  return `<div class="subs-head"><span class="label">${icon('clip')}Files</span>
+      ${list.length ? `<span class="subs-count num">${list.length}</span><button type="button" class="btn btn-quiet" data-file-add>${icon('plus')}Add files</button>` : ''}</div>
+    <input type="file" multiple hidden data-file-input>
+    ${photos.length ? `<div class="photos">${photos.map(f => `<figure class="photo">
+        <button type="button" data-file-view="${f.id}" aria-label="View ${esc(f.name)}"><img data-blob="${f.id}" alt="${esc(f.name)}"></button>
+        <figcaption title="${esc(f.name)} · ${meta(f)}">${esc(f.name)}</figcaption>
+        <button type="button" class="icon-btn" data-file-del="${f.id}" aria-label="Remove ${esc(f.name)}" title="Remove">${icon('trash')}</button>
+      </figure>`).join('')}</div>` : ''}
+    ${docs.length ? `<div class="file-list">${docs.map(f => `<div class="file-row" style="${hue(hashHue(extOf(f.name)))}">
+        <span class="tile" aria-hidden="true">${icon('file')}</span>
+        <button type="button" class="file-main" data-file-open="${f.id}" title="Open ${esc(f.name)} in a new tab"><b>${esc(f.name)}</b><small class="num">${meta(f)}</small></button>
+        <button type="button" class="icon-btn" data-file-get="${f.id}" aria-label="Download ${esc(f.name)}" title="Download">${icon('download')}</button>
+        <button type="button" class="icon-btn" data-file-del="${f.id}" aria-label="Remove ${esc(f.name)}" title="Remove">${icon('trash')}</button>
+      </div>`).join('')}</div>` : ''}
+    ${list.length ? '' : `<button type="button" class="files-drop" data-file-add>${icon('upload')}
+      <span>Drop photos or files here, or <u>browse</u></span><small>Up to 10 MB each. You can also paste a screenshot.</small></button>`}`;
+}
+
+// host: the Files section. zone: the surface that accepts drops and pastes (the page or the dialog).
+function bindFiles(host, zone, t, changed) {
+  const paint = () => {
+    host.innerHTML = filesView(t);
+    host.querySelectorAll('img[data-blob]').forEach(img => fileUrl(img.dataset.blob).then(u => { if (u) img.src = u; }));
+  };
+  const add = async list => {
+    const ok = [], big = [];
+    for (const file of list) {
+      if (file.size > MAX_FILE) { big.push(file.name); continue; }
+      const f = { id: uid(), name: file.name || `Pasted image ${new Date().toLocaleTimeString()}.png`, type: file.type, size: file.size, at: new Date().toISOString(), who: db.session };
+      try { await blobs.put(f.id, file); ok.push(f); } catch { return toast('This browser can’t store files here. Try a normal window.'); }
+    }
+    if (ok.length) {
+      (t.files ||= []).push(...ok); ok.forEach(f => log(t, 'file', { name: f.name })); save(); paint(); changed();
+      toast(ok.length > 1 ? `${ok.length} files attached` : `Attached “${ok[0].name}”`);
+    }
+    if (big.length) toast(`${big.length > 1 ? `${big.length} files are` : `“${big[0]}” is`} over 10 MB, so ${big.length > 1 ? 'they weren’t' : 'it wasn’t'} attached.`);
+  };
+  const open = (id, download) => fileUrl(id).then(u => {
+    if (!u) return toast('That file is no longer in this browser.');
+    const f = t.files.find(x => x.id === id), a = document.createElement('a');
+    a.href = u; if (download) a.download = f.name; else { a.target = '_blank'; a.rel = 'noopener'; }
+    a.click();
+  });
+  const remove = id => {
+    const i = t.files.findIndex(x => x.id === id), f = t.files[i];
+    t.files.splice(i, 1); log(t, 'file', { name: f.name, removed: true }); save(); paint(); changed();
+    toast(`Removed “${f.name}”`, () => { t.files.splice(i, 0, f); t.log = t.log.filter(e => !(e.kind === 'file' && e.removed && e.name === f.name)); save(); paint(); changed(); });
+  };
+  paint();
+  host.onclick = e => {
+    const el = e.target.closest('[data-file-add], [data-file-view], [data-file-open], [data-file-get], [data-file-del]');
+    if (!el) return;
+    if (el.matches('[data-file-add]')) host.querySelector('[data-file-input]').click();
+    else if (el.dataset.fileView) openViewer(t, el.dataset.fileView, remove);
+    else if (el.dataset.fileOpen) open(el.dataset.fileOpen);
+    else if (el.dataset.fileGet) open(el.dataset.fileGet, true);
+    else if (el.dataset.fileDel) remove(el.dataset.fileDel);
+  };
+  host.onchange = e => { if (e.target.matches('[data-file-input]')) { add([...e.target.files]); e.target.value = ''; } };
+  // Only file drags light up the section; dragging a card between lanes is left alone.
+  const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
+  let depth = 0;
+  zone.addEventListener('dragenter', e => { if (hasFiles(e)) { depth++; host.classList.add('dropping'); } });
+  zone.addEventListener('dragleave', e => { if (hasFiles(e) && --depth <= 0) { depth = 0; host.classList.remove('dropping'); } });
+  zone.addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
+  zone.addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); depth = 0; host.classList.remove('dropping'); add([...e.dataTransfer.files]); });
+  zone.addEventListener('paste', e => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); add(f); } });
+}
+
+/* ---------- Photo viewer: full screen, arrows and ←/→ step through the task's photos ---------- */
+function openViewer(t, id, remove) {
+  const photos = t.files.filter(isImage);
+  let i = photos.findIndex(f => f.id === id);
+  const v = document.createElement('dialog');
+  v.className = 'viewer'; v.setAttribute('aria-label', 'Photo viewer');
+  document.body.append(v);
+  const show = () => {
+    const f = photos[i], u = user(f.who);
+    v.innerHTML = `<header class="viewer-bar"><div><b>${esc(f.name)}</b>
+        <small class="num">${photos.length > 1 ? `${i + 1} of ${photos.length} · ` : ''}${fmtSize(f.size)}${u ? ` · ${esc(u.name)}` : ''} · ${ago(f.at)}</small></div>
+        <button class="icon-btn" data-v="get" aria-label="Download" title="Download">${icon('download')}</button>
+        <button class="icon-btn" data-v="del" aria-label="Remove this photo" title="Remove">${icon('trash')}</button>
+        <button class="icon-btn" data-v="close" aria-label="Close viewer">${icon('close')}</button></header>
+      <div class="viewer-stage">
+        ${photos.length > 1 ? `<button class="icon-btn nav" data-v="prev" aria-label="Previous photo">${icon('arrow-left')}</button>` : ''}
+        <img alt="${esc(f.name)}">
+        ${photos.length > 1 ? `<button class="icon-btn nav" data-v="next" aria-label="Next photo">${icon('arrow')}</button>` : ''}
+      </div>`;
+    fileUrl(f.id).then(src => { if (src) v.querySelector('img').src = src; });
+    v.querySelector('[data-v="close"]').focus();
+  };
+  const step = d => { i = (i + d + photos.length) % photos.length; show(); };
+  const close = () => { v.close(); v.remove(); document.querySelector(`[data-file-view="${photos[i]?.id}"]`)?.focus(); };
+  v.onclick = e => {
+    const a = e.target.closest('[data-v]')?.dataset.v;
+    if (a === 'prev') step(-1); if (a === 'next') step(1); if (a === 'close' || e.target.classList.contains('viewer-stage')) close();
+    if (a === 'get') fileUrl(photos[i].id).then(u => { const l = document.createElement('a'); l.href = u; l.download = photos[i].name; l.click(); });
+    if (a === 'del') { const f = photos[i]; close(); remove(f.id); }
+  };
+  v.onkeydown = e => { if (e.key === 'ArrowLeft') step(-1); if (e.key === 'ArrowRight') step(1); };
+  v.oncancel = e => { e.preventDefault(); close(); };
+  show(); v.showModal();
+}
 
 /* ---------- Menus & toast ---------- */
 function openMenu(anchor, items, alignRight) {
@@ -1048,7 +1761,7 @@ document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (openMenu.cur) { const a = openMenu.cur.anchor; closeMenu(); a.focus(); }
   else if (ui.composer) { ui.composer = null; render(); }
-  else if (ui.epicId && !ui.taskId) focusEpic(null);
+  else if (ui.epicId && !ui.taskId && !ui.detailId) focusEpic(null);
 });
 
 function toast(msg, undo) {
@@ -1094,7 +1807,7 @@ function inlineRename(el, current, commit) {
 /* ---------- App bindings ---------- */
 function bindApp() {
   const b = board();
-  document.querySelectorAll('[data-board]').forEach(el => el.onclick = () => { ui.boardId = el.dataset.board; ui.taskId = ui.composer = ui.epicId = null; render(); });
+  document.querySelectorAll('[data-board]').forEach(el => el.onclick = () => { ui.boardId = el.dataset.board; ui.taskId = ui.composer = ui.epicId = ui.detailId = null; if (location.hash) location.hash = ''; render(); });
   const nsOpen = $('#ns-open'); if (nsOpen) nsOpen.onclick = () => { ui.newSheet = true; render(); $('#ns-name').focus(); };
   const ns = $('#new-sheet');
   if (ns) {
@@ -1118,10 +1831,11 @@ function bindApp() {
       { icon: 'theme', label: theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme', run: () => {
         theme = theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = theme;
         try { localStorage.setItem(KEY + ':theme', theme); } catch {} } }, '-',
-      { icon: 'out', label: 'Sign out', run: () => { db.session = null; ui.taskId = ui.composer = null; ui.authMode = 'in'; save(); render(); } },
+      { icon: 'out', label: 'Sign out', run: () => { db.session = null; ui.taskId = ui.composer = ui.detailId = null; if (location.hash) location.hash = ''; ui.authMode = 'in'; save(); render(); } },
     ]);
   };
   if (!b) return;
+  if (ui.detailId) return bindDetail(b);
 
   const title = $('#board-title');
   title.ondblclick = () => inlineRename(title, b.name, v => { b.name = v; touch(b); });
@@ -1154,7 +1868,7 @@ function bindApp() {
       if (!v) { ta.focus(); return; }
       const c = b.columns.find(c => c.id === form.dataset.composer);
       // While an epic holds the board, quick-added tasks join it.
-      c.tasks.push({ id: uid(), title: v.slice(0, 200), desc: '', label: '', due: '', assignee: '', rev: 0, ...(ui.epicId ? { epic: ui.epicId } : {}) });
+      c.tasks.push({ id: uid(), title: v.slice(0, 200), desc: '', label: '', due: '', assignee: '', rev: 0, log: [entry('created')], ...(ui.epicId ? { epic: ui.epicId } : {}) });
       touch(b); render(); openComposer(c.id);
     };
     form.onsubmit = e => { e.preventDefault(); submit(); };
@@ -1201,7 +1915,7 @@ function bindApp() {
   });
   document.querySelectorAll('[data-focus-epic]').forEach(btn => btn.onclick = () => focusEpic(btn.dataset.focusEpic));
   $('#focus-clear') && ($('#focus-clear').onclick = () => focusEpic(null));
-  $('#focus-open') && ($('#focus-open').onclick = () => { ui.taskId = ui.epicId; render(); $('#d-title')?.focus(); });
+  $('#focus-open') && ($('#focus-open').onclick = () => openDetail(ui.epicId));
   const lanes = $('#lanes');
   if (lanes) {
     const edge = () => { lanes.classList.toggle('overflows', lanes.scrollWidth > lanes.clientWidth + 1); lanes.classList.toggle('at-end', lanes.scrollLeft + lanes.clientWidth >= lanes.scrollWidth - 2); };
@@ -1244,7 +1958,7 @@ function bindDrag(b) {
       const idx = before ? to.tasks.findIndex(t => t.id === before) : to.tasks.length;
       to.tasks.splice(idx < 0 ? to.tasks.length : idx, 0, from.task);
       const moved = from.col !== to;
-      if (moved) { from.task.rev++; touch(b); } else save();
+      if (moved) { from.task.rev++; log(from.task, 'moved', { from: from.col.name, to: to.name }); touch(b); } else save();
       const id = dragId, fromCol = from.col.id; dragId = null;
       render();
       const landed = document.querySelector(`[data-task="${id}"]`);
@@ -1276,21 +1990,23 @@ function bindDrawer(b) {
   title.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); title.blur(); } };
   title.onblur = () => { if (!title.value.trim()) title.value = t.title; };
   if (t.isEpic) bindEpicTasks($('#d-epic-tasks'), b, t);
-  else bindSubs($('#d-subs'), t.subs ||= [], structural => { save(); if (structural) render(); });
+  else bindSubs($('#d-subs'), t.subs ||= [], structural => { save(); if (structural) render(); }, { onCheck: x => log(t, 'sub', { title: x.title, done: x.done }) });
   const par = $('[data-parent]'); if (par) par.onclick = () => { ui.taskId = par.dataset.parent; render(); $('#d-title')?.focus(); };
   const ep = $('#d-epic'); if (ep) ep.onchange = e => { t.epic = e.target.value || undefined; save(); render(); };
   const fo = $('#d-focus'); if (fo) fo.onclick = () => { ui.taskId = null; focusEpic(t.id); };
   $('#d-desc').oninput = e => { t.desc = e.target.value; save(); };
+  bindFiles($('#d-files'), d, t, () => render());
   $('#d-desc').onchange = () => render();
   $('#d-label').onchange = e => { t.label = e.target.value.trim(); save(); render(); };
-  $('#d-due').onchange = e => { t.due = e.target.value; save(); render(); };
-  const who = $('#d-who'); if (who) who.onchange = e => { t.assignee = e.target.value; touch(b); render(); };
+  $('#d-due').onchange = e => { t.due = e.target.value; log(t, 'due', { to: t.due }); save(); render(); };
+  const who = $('#d-who'); if (who) who.onchange = e => { t.assignee = e.target.value; log(t, 'assigned', { to: t.assignee }); touch(b); render(); };
   $('#d-col').onchange = e => {
     const to = b.columns.find(c => c.id === e.target.value);
     const from = col(); if (from === to) return;
-    from.tasks.splice(from.tasks.indexOf(t), 1); to.tasks.push(t); t.rev++; touch(b); render(); showRev();
+    from.tasks.splice(from.tasks.indexOf(t), 1); to.tasks.push(t); t.rev++; log(t, 'moved', { from: from.name, to: to.name }); touch(b); render(); showRev();
   };
   $('#drawer-close').onclick = closeDrawer;
+  $('#drawer-full').onclick = () => openDetail(t.id);
   d.oncancel = e => { e.preventDefault(); closeDrawer(); };
   d.onclick = e => { if (e.target === d) closeDrawer(); };
   $('#d-delete').onclick = () => {
@@ -1334,7 +2050,7 @@ function bindEpicTasks(host, b, e) {
     ev.preventDefault();
     const v = ev.target.value.trim(); ev.target.value = '';
     if (!v) return;
-    findTask(e.id).col.tasks.push({ id: uid(), title: v.slice(0, 200), desc: '', label: '', due: '', assignee: '', rev: 0, epic: e.id });
+    findTask(e.id).col.tasks.push({ id: uid(), title: v.slice(0, 200), desc: '', label: '', due: '', assignee: '', rev: 0, log: [entry('created')], epic: e.id });
     touch(b); paint(true); render();
   };
 }
@@ -1372,7 +2088,7 @@ function bindSubs(host, list, changed, opts = {}) {
     paint(focus); changed(true);
   };
   paint();
-  host.onchange = e => { const x = sub(e.target); if (x && e.target.type === 'checkbox') { x.done = e.target.checked; meter(); changed(true); } };
+  host.onchange = e => { const x = sub(e.target); if (x && e.target.type === 'checkbox') { x.done = e.target.checked; opts.onCheck?.(x); meter(); changed(true); } };
   host.oninput = e => { const x = sub(e.target); if (x && e.target.type !== 'checkbox') { x.title = e.target.value; changed(false); } };
   host.onclick = e => { const x = e.target.closest('[data-sub-del]') && sub(e.target); if (x) remove(x, host.querySelector('.sub-new')); };
   // A row emptied and left behind is removed rather than saved blank.
@@ -1474,12 +2190,12 @@ function openNewTask(colId, epicId, asEpic, keepTitle) {
     const c = b.columns.find(x => x.id === f.get('col')) || b.columns[0];
     const kept = subs.map(x => x.title.trim()).filter(Boolean);
     const t = { id: uid(), title: name, desc: String(f.get('desc') || '').trim(), label: String(f.get('label') || '').trim(),
-      due: String(f.get('due') || ''), assignee: String(f.get('who') || ''), rev: 0,
+      due: String(f.get('due') || ''), assignee: String(f.get('who') || ''), rev: 0, log: [entry('created')],
       ...(asEpic ? { isEpic: true } : { epic: String(f.get('epic') || epicId || '') || undefined,
         subs: subs.map(x => ({ ...x, title: x.title.trim() })).filter(x => x.title) }) };
     c.tasks.push(t);
     // An epic's first tasks are real tasks, created beside it in the same column.
-    if (asEpic) { ui.openEpics.add(t.id); kept.forEach(title => c.tasks.push({ id: uid(), title, desc: '', label: '', due: '', assignee: '', rev: 0, epic: t.id })); }
+    if (asEpic) { ui.openEpics.add(t.id); kept.forEach(title => c.tasks.push({ id: uid(), title, desc: '', label: '', due: '', assignee: '', rev: 0, log: [entry('created')], epic: t.id })); }
     touch(b);
     close(); render();
     const card = document.querySelector(`[data-task="${t.id}"]`);
@@ -1541,7 +2257,7 @@ const api = {
   analyze: async id => { await wait(1600); return MEETINGS.find(m => m.id === id); },
 };
 
-const meet = { step: null, list: [], m: null, sel: new Set(), col: null };
+const meet = { step: null, list: [], m: null, sel: new Set(), col: null, drafts: [], open: null };
 
 function openMeetings() {
   Object.assign(meet, { step: 'pick', list: [], m: null, sel: new Set(), col: board().columns[0]?.id });
@@ -1594,21 +2310,15 @@ function drawMeet(enter) {
             <h3 class="pane-title">${icon('board')}Suggested tasks</h3>
             <label class="check"><input type="checkbox" id="sel-all"><span id="sel-count"></span></label>
           </div>
-          <div class="sugg">${m.tasks.map((t, i) => {
-            const u = memberByName(t.who);
-            return `<label class="sugg-row" data-src="${t.src}">
-              <input type="checkbox" data-sugg="${i}" ${meet.sel.has(i) ? 'checked' : ''}>
-              <div class="sugg-main">
-                <div class="sugg-title">${esc(t.title)}</div>
-                <div class="sugg-why">${esc(t.why)}</div>
-                <div class="card-chips">
-                  ${b.shared ? (u ? `<span class="chip">${avatar(u)}${esc(u.name.split(' ')[0])}</span>` : `<span class="chip">${icon('user')}Unassigned</span>`) : ''}
-                  <span class="chip num ${dueState(dayOffset(t.due)) ? 'due-' + dueState(dayOffset(t.due)) : ''}">${icon('cal')}${t.due === 0 ? 'Today' : fmtDate(dayOffset(t.due))}</span>
-                  ${t.label ? `<span class="chip label-chip" style="${hue(hashHue(t.label.toLowerCase()))}">${esc(t.label)}</span>` : ''}
-                </div>
-              </div>
-              <button type="button" class="icon-btn src-btn" data-show="${t.src}" aria-label="Show where this came from in the notes" title="Show in notes">${icon('notes')}</button>
-            </label>`; }).join('')}</div>`}
+          <div class="sugg">${m.tasks.map((t, i) => `<div class="sugg-row" data-src="${t.src}" data-row="${i}">
+              <label class="sugg-pick">
+                <input type="checkbox" data-sugg="${i}" ${meet.sel.has(i) ? 'checked' : ''}>
+                <div class="sugg-main">${suggMain(b, i)}</div>
+              </label>
+              <span class="sugg-acts">
+                <button type="button" class="icon-btn" data-edit-btn="${i}" aria-expanded="false" aria-label="Details of “${esc(t.title)}”" title="Details">${icon('notes')}</button>
+              </span>
+            </div>`).join('')}</div>`}
       </section>
     </div>`;
   }
@@ -1641,7 +2351,59 @@ async function analyze(id) {
   meet.m = meet.list.find(x => x.id === id); meet.step = 'loading'; drawMeet();
   const res = await api.analyze(id);
   if (meet.step !== 'loading' || meet.m?.id !== id) return; // user went back or closed
-  meet.m = res; meet.sel = new Set(res.tasks.map((_, i) => i)); meet.step = 'review'; drawMeet();
+  meet.m = res; meet.sel = new Set(res.tasks.map((_, i) => i)); meet.drafts = res.tasks.map(draftOf); meet.step = 'review'; drawMeet();
+}
+
+/* ---------- Suggested task details: an editable draft per suggestion, the AI's version kept for Reset ---------- */
+const draftOf = t => ({ title: t.title, who: memberByName(t.who)?.id || '', due: dayOffset(t.due), label: t.label, desc: '', col: '', epic: '', edited: false });
+
+function suggMain(b, i) {
+  const t = meet.m.tasks[i], d = meet.drafts[i], u = d.who && user(d.who), ds = dueState(d.due);
+  const col = d.col && b.columns.find(c => c.id === d.col), ep = d.epic && findEpic(d.epic);
+  return `<div class="sugg-title">${esc(d.title)}${d.edited ? '<span class="sugg-edited">Edited</span>' : ''}</div>
+    <div class="sugg-why">${esc(t.why)}</div>
+    <div class="card-chips">
+      ${b.shared ? (u ? `<span class="chip">${avatar(u)}${esc(u.name.split(' ')[0])}</span>` : `<span class="chip">${icon('user')}Unassigned</span>`) : ''}
+      ${d.due ? `<span class="chip num ${ds ? 'due-' + ds : ''}">${icon('cal')}${d.due === today() ? 'Today' : fmtDate(d.due)}</span>` : ''}
+      ${d.label ? `<span class="chip label-chip" style="${hue(hashHue(d.label.toLowerCase()))}">${esc(d.label)}</span>` : ''}
+      ${ep ? `<span class="chip epic-chip" style="${epicHue(ep)}">${icon('layers')}<span>${esc(ep.title)}</span></span>` : ''}
+      ${col ? `<span class="chip" style="${hue(b.columns.indexOf(col) + 1)}">${icon('status')}${esc(col.name)}</span>` : ''}
+      ${d.desc.trim() ? `<span class="chip">${icon('notes')}Notes</span>` : ''}
+    </div>`;
+}
+
+function suggEditor(b, i) {
+  const t = meet.m.tasks[i], d = meet.drafts[i], line = meet.m.notes[t.src], epics = allEpics(b);
+  const id = k => `se-${k}-${i}`, missing = t.who && !memberByName(t.who);
+  const labels = [...new Set(b.columns.flatMap(c => c.tasks.map(x => x.label)).concat(meet.m.tasks.map(x => x.label)).filter(Boolean))];
+  return `<div class="sugg-edit" data-edit="${i}" role="group" aria-label="Details of this suggested task">
+    ${line?.text ? `<blockquote class="sugg-quote" style="${personHue(line.who)}"><time class="num">${esc(line.t)}</time><span><b>${esc(line.who.split(' ')[0])}</b> ${esc(line.text)}</span></blockquote>` : ''}
+    <div class="field"><label class="label" for="${id('title')}">${icon('pen')}Title</label>
+      <input class="input" id="${id('title')}" data-k="title" value="${esc(d.title)}" maxlength="200" autocomplete="off"></div>
+    <div class="grid-2">
+      ${b.shared ? `<div class="field"><label class="label" for="${id('who')}">${icon('user')}Assignee</label>
+        <select class="input" id="${id('who')}" data-k="who"><option value="">Unassigned</option>
+          ${b.members.map(user).filter(Boolean).map(u => `<option value="${u.id}" ${u.id === d.who ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select>
+        ${missing ? `<span class="field-hint">Suggested ${esc(t.who)}, who isn’t on this board.</span>` : ''}</div>` : ''}
+      <div class="field"><label class="label" for="${id('due')}">${icon('cal')}Due date</label>
+        <input class="input num" id="${id('due')}" data-k="due" type="date" value="${esc(d.due)}"></div>
+      <div class="field"><label class="label" for="${id('label')}">${icon('tag')}Label</label>
+        <input class="input" id="${id('label')}" data-k="label" value="${esc(d.label)}" placeholder="e.g. Design" maxlength="24" list="${id('labels')}" autocomplete="off">
+        <datalist id="${id('labels')}">${labels.map(l => `<option value="${esc(l)}">`).join('')}</datalist></div>
+      <div class="field"><label class="label" for="${id('col')}">${icon('status')}Column</label>
+        <select class="input" id="${id('col')}" data-k="col"><option value="">Same as “Add to” below</option>
+          ${b.columns.map(c => `<option value="${c.id}" ${c.id === d.col ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
+      ${epics.length ? `<div class="field"><label class="label" for="${id('epic')}">${icon('layers')}Epic</label>
+        <select class="input" id="${id('epic')}" data-k="epic"><option value="">No epic</option>
+          ${epics.map(e => `<option value="${e.id}" ${e.id === d.epic ? 'selected' : ''}>${esc(e.title)}</option>`).join('')}</select></div>` : ''}
+    </div>
+    <div class="field"><label class="label" for="${id('desc')}">${icon('notes')}Notes <span class="opt">optional</span></label>
+      <textarea class="input" id="${id('desc')}" data-k="desc" placeholder="Add context, links or acceptance criteria">${esc(d.desc)}</textarea></div>
+    <div class="sugg-edit-foot">
+      <button type="button" class="btn btn-quiet" data-reset ${d.edited ? '' : 'disabled'}>${icon('move')}Reset to suggestion</button>
+      <button type="button" class="btn" data-done>${icon('check')}Done</button>
+    </div>
+  </div>`;
 }
 
 function bindReview(d) {
@@ -1672,22 +2434,70 @@ function bindReview(d) {
     row.onmouseenter = row.onfocusin = () => highlight(row.dataset.src, true);
     row.onmouseleave = () => highlight(null);
   });
-  d.querySelectorAll('[data-show]').forEach(btn => btn.onclick = e => { e.preventDefault(); highlight(btn.dataset.show, true); });
   $('#meet-col').onchange = e => meet.col = e.target.value;
+
+  // One details editor open at a time, inside the suggestion's row. Edits save as you type.
+  const b = board(), list = d.querySelector('.sugg');
+  const rowOf = i => d.querySelector(`[data-row="${i}"]`);
+  const paintRow = i => { rowOf(i).querySelector('.sugg-main').innerHTML = suggMain(b, i); };
+  const closeEdit = () => {
+    const i = meet.open; if (i == null) return;
+    const row = rowOf(i); meet.open = null;
+    row.querySelector('.sugg-edit')?.remove(); row.classList.remove('editing');
+    row.querySelector('[data-edit-btn]').setAttribute('aria-expanded', 'false');
+  };
+  const openEdit = (i, focus = '[data-k="title"]') => {
+    closeEdit();
+    const row = rowOf(i); meet.open = i;
+    row.insertAdjacentHTML('beforeend', suggEditor(b, i)); row.classList.add('editing');
+    row.querySelector('[data-edit-btn]').setAttribute('aria-expanded', 'true');
+    row.querySelector(focus)?.focus();
+    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
+  meet.open = null;
+  d.querySelectorAll('[data-edit-btn]').forEach(btn => btn.onclick = () => {
+    const i = +btn.dataset.editBtn;
+    meet.open === i ? (closeEdit(), btn.focus()) : openEdit(i);
+  });
+  list.oninput = list.onchange = e => {
+    const f = e.target.closest('[data-k]'); if (!f) return;
+    const i = +f.closest('[data-edit]').dataset.edit, dr = meet.drafts[i], k = f.dataset.k;
+    if (k === 'title') { f.toggleAttribute('aria-invalid', !f.value.trim()); if (!f.value.trim()) return; }
+    dr[k] = k === 'title' || k === 'label' ? f.value.trim() : f.value;
+    if (!dr.edited) { dr.edited = true; rowOf(i).querySelector('[data-reset]').disabled = false; }
+    // Working on a suggestion means you want it.
+    if (!meet.sel.has(i)) { meet.sel.add(i); rowOf(i).querySelector('[data-sugg]').checked = true; sync(); }
+    paintRow(i);
+  };
+  list.addEventListener('focusout', e => { if (e.target.dataset.k === 'title' && !e.target.value.trim()) { e.target.value = meet.drafts[+e.target.closest('[data-edit]').dataset.edit].title; e.target.removeAttribute('aria-invalid'); } });
+  list.onclick = e => {
+    if (e.target.closest('[data-done]')) { const i = meet.open; closeEdit(); rowOf(i).querySelector('[data-edit-btn]').focus(); }
+    if (e.target.closest('[data-reset]')) { const i = meet.open; meet.drafts[i] = draftOf(m.tasks[i]); paintRow(i); openEdit(i, '[data-done]'); }
+  };
+  // Escape closes the editor first, not the whole dialog.
+  list.onkeydown = e => {
+    if (e.key === 'Escape' && e.target.closest('.sugg-edit')) { e.preventDefault(); e.stopPropagation(); const i = meet.open; closeEdit(); rowOf(i).querySelector('[data-edit-btn]').focus(); }
+    if (e.key === 'Enter' && e.target.dataset.k === 'title') { e.preventDefault(); list.querySelector('[data-done]').click(); }
+  };
+
   create.onclick = () => {
-    const b = board(), c = b.columns.find(x => x.id === meet.col) || b.columns[0];
+    const fallback = b.columns.find(x => x.id === meet.col) || b.columns[0];
     const made = [...meet.sel].sort((x, y) => x - y).map(i => {
-      const t = m.tasks[i], u = memberByName(t.who);
-      const line = m.notes[t.src];
-      return { id: uid(), title: t.title, desc: '', label: t.label, due: dayOffset(t.due), assignee: b.shared && u ? u.id : '', rev: 0,
+      const dr = meet.drafts[i], line = m.notes[m.tasks[i].src];
+      const c = b.columns.find(x => x.id === dr.col) || fallback;
+      const t = { id: uid(), title: dr.title, desc: dr.desc.trim(), label: dr.label, due: dr.due, assignee: b.shared ? dr.who : '', rev: 0, log: [entry('created', { from: m.title })],
+        ...(dr.epic ? { epic: dr.epic } : {}),
         source: { type: 'meeting', id: m.id, title: m.title, date: m.date, time: m.time, platform: m.source, url: m.url,
           quote: line?.text || '', who: line?.who || '', at: line?.t || '' } };
+      c.tasks.push(t);
+      return { t, c };
     });
-    c.tasks.push(...made); touch(b);
+    touch(b);
     closeMeet(); render();
-    made.forEach(t => document.querySelector(`[data-task="${t.id}"]`)?.classList.add('landed'));
-    document.querySelector(`[data-task="${made[0].id}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-    toast(`${made.length} task${made.length > 1 ? 's' : ''} added to ${c.name}`);
+    made.forEach(x => document.querySelector(`[data-task="${x.t.id}"]`)?.classList.add('landed'));
+    document.querySelector(`[data-task="${made[0].t.id}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    const cols = new Set(made.map(x => x.c));
+    toast(`${made.length} task${made.length > 1 ? 's' : ''} added ${cols.size > 1 ? `across ${cols.size} columns` : `to ${[...cols][0].name}`}`);
   };
   sync();
 }
@@ -1696,6 +2506,7 @@ const memberByName = name => { const b = board(); return db.users.find(u => u.na
 const personHue = name => { const u = db.users.find(x => x.name === name); return u ? userHue(u.id) : hue(hashHue(name)); };
 const personAvatar = name => `<span class="avatar" style="${personHue(name)}" title="${esc(name)}">${initials(name)}</span>`;
 
+ui.detailId = me() ? readRoute() : null;
 render();
 </script>
 </body>

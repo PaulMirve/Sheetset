@@ -333,6 +333,8 @@ A wide native `<dialog>` (`min(1120px, 100vw - 32px)` × `min(780px, 100vh - 40p
 - **Analyzing:** the notes load on the left while the right pane shows a violet "Reading the notes…" line with a spinning spark icon and shimmer skeletons.
 - **Review:** two panes split by a hairline. The notes pane lists timestamp, speaker (in that person's hue) and text, under uppercase section headings. The results pane shows a violet-to-blue tinted AI summary card with green-check decisions, then suggested-task rows. Each row is a label with a native checkbox (`accent-color` blue): selected rows are washed blue with a 1.5px blue ring, and deselected rows fade to 55%. Hovering or focusing a row highlights its source note with an amber wash and ring, and scrolls only the notes pane.
 
+Each suggestion row has one action, a "Details" icon button (the notes icon), which opens a details editor inside that row, one at a time: a hairline, the quoted source line on an amber wash, then Title, Assignee (with a hint when the suggested person isn't on the board), Due date, Label, Column ("Same as “Add to” below" by default), Epic and Notes. Edits save as you type into a draft. The AI's version is kept, so "Reset to suggestion" restores it. The row gets a blue ring and the Lift shadow while open, an "Edited" mark next to the title, and chips for any column, epic or notes override. Editing a deselected suggestion selects it again. Escape or Enter in the title closes the editor, not the dialog.
+
 The footer holds the target column select and a primary "Create N tasks" button that is disabled at zero. A select-all checkbox shows an indeterminate state. Below 980px the panes stack; below 760px the footer wraps.
 
 ### New Task Dialog
@@ -369,6 +371,27 @@ An epic is an ordinary task carrying `isEpic`; its children are ordinary tasks c
 
 ### Drag and Land (signature)
 While a card is dragged, the target lane gets an inset 2px outline at 45% of its hue, and a dashed slot in the lane's hue (10% fill, card radius) marks the drop point. The origin collapses as a fading ghost. On drop, the landed card flashes a green ring over 600ms and the progress bar animates to its new width over 300ms.
+
+### Task Page (signature)
+The complete view of one task or epic, at `#/task/<id>`, so it can be linked and the browser's Back works. It replaces the board area; the rail stays. The task dialog is now the quick view, and its head carries an expand icon button that opens this page. The focus bar's "Open epic" opens it too.
+- **Bar:** a quiet back button with the board's tile and name, the parent epic chip (tasks in an epic), and the task title in muted ink as the current crumb. On the right, a quiet "Copy link" and a ⋯ menu (Open quick view, Delete).
+- **Head:** the title as a 32px/800 editable textarea (24px on phones). An epic adds a 52px hue tile. Under it, a chip row: Epic · n tasks, a green Done chip in the last column, assignee (with a mini avatar), due, label, source meeting.
+- **Stage track (task):** the board's columns as a row of 40px pills joined by 2px connectors. Earlier stages are tinted 12% with a check; the current one is 44px, tinted 16% with a 2px ring in its hue and says how long it has been there ("· 6 days"). Later stages are outlined with a hollow dot. Clicking a stage moves the task. It scrolls sideways on phones.
+- **Spread (epic):** "1 of 5 done · 20%", then a 12px bar split into one pill segment per column (column hue, sized by count), then a pip per column (a check on the last one; empty columns at 50%).
+- **Sheet:** a white 20px surface with the Rest shadow, split by a hairline into the main column and a 320px properties column whose contents stay in view while scrolling. Main headings use 16px/700 ink with a muted icon. Main holds the source panel, Notes ("About this epic"), Subtasks or "Tasks in this epic" grouped by column (the column's dot, name and count, then rows with subtask tally, due chip, avatar and unlink), then Activity. The properties column holds Column, Assignee/Owner, Due date, Label and Epic, a facts list (Created, Time in column, Moved, People), and one secondary action ("Show on the board" or "Show only this epic"). Below 980px it stacks above the main column as a grid.
+- **Activity:** history and comments on one timeline, filtered All / Comments / History. Events are a 28px round mark (tinted by the column moved into, green for checked subtasks, the person's hue for assignments) with a muted sentence, bold names and inline column dots. Comments use the author's avatar and a ground bubble (4px top-left corner, 68ch max), tinted blue for your own, which you can delete. An epic's timeline also carries moves and comments on its tasks, each naming the task as a link. A comment box sits at the bottom (⌘/Ctrl + Enter sends).
+- **Data:** every task keeps a `log` of `{ at, who, kind }` entries: created (optionally from a meeting), moved, assigned, due, sub, comment. Changes from the board, the quick view and the page are all recorded.
+
+### Files (task page and quick view)
+A "Files" section below Subtasks (or an epic's tasks), with a paperclip label, a count and a quiet "Add files" button.
+- **Photos:** a grid of 4:3 thumbnails (140px minimum, 12px radius, hairline inset) with the file name below. Hover lifts a thumbnail and shows a remove button in its corner. Clicking opens the viewer.
+- **Other files:** 52px ground rows like subtask rows: a soft tile with a file icon in a hue from the extension's text hash, the name (opens in a new tab), "size · who · when", a download button, and a remove button that shows on hover.
+- **Empty:** a dashed slot with an upload icon, "Drop photos or files here, or browse", and "Up to 10 MB each. You can also paste a screenshot."
+- **Adding:** browse, drop anywhere on the page or dialog, or paste. While files are dragged over, the section shows a blue dashed "Drop to attach" overlay; dragging cards never triggers it. Files over 10 MB are refused by name in a toast.
+- **Removing:** immediate, with Undo in the toast.
+- **Viewer:** a full-screen native dialog over a 90% ink backdrop. The bar shows name, "2 of 3 · size · person · when", download, remove and close. The photo is centered with a 12px radius. Round arrow buttons and ←/→ step through the task's photos; on phones the arrows sit at the bottom. Escape or a click on the backdrop closes it.
+- **Elsewhere:** cards show a paperclip count in the foot, and the activity timeline records "attached" and "removed" entries.
+- **Storage:** file details live on the task (`files`), contents in IndexedDB (`sheetset-files`), so they survive a reload.
 
 ### Toast
 Inverted colors (ink background, ground text), rounded.xl, a green check and an undo button with a translucent fill. It is centered 24px from the bottom and rises in over 220ms.

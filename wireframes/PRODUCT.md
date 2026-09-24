@@ -25,8 +25,10 @@ A kanban board app: multiple boards, each board with its own columns and tasks. 
 - Per-board columns; tasks within columns; move tasks between columns.
 - Shared boards show task assignees.
 - Epics: a task can be marked as an epic and other tasks can point at it, one level deep. Children stay ordinary cards in their own columns and carry the epic's chip; the epic card rolls up their progress and expands to list them. Focusing an epic filters the whole board to it. Deleting an epic keeps its tasks.
+- Every task and epic has a full page (linkable at `#/task/<id>`) alongside the quick-view dialog: properties, notes, subtasks or the epic's tasks by column, and an activity timeline of moves, edits and comments. An epic's timeline includes its tasks' moves and comments.
+- Tasks and epics can have photos and files attached (browse, drag-and-drop or paste, up to 10 MB each), viewed in a full-screen photo viewer or opened/downloaded. Cards show the attachment count. In the prototype, file contents live in the browser's IndexedDB.
 - Tasks can have subtasks: a checklist added, checked off, renamed and removed from the task dialog (and while creating a task); cards show done/total.
-- Create tasks from a meeting: fetch meeting notes from a backend, have an AI produce a summary, decisions and suggested tasks, then review them (all selected by default, deselectable) and add the chosen ones to a column. Suggested assignees are matched to board members by name. Each created task stores its source (meeting id, title, date, platform, link and the quoted note line). Cards show a meeting chip, and the task modal shows the source with an "Open meeting" link.
+- Create tasks from a meeting: fetch meeting notes from a backend, have an AI produce a summary, decisions and suggested tasks, then review them (all selected by default, deselectable; each one's details — title, assignee, due date, label, column, epic, notes — can be opened and edited before creating, and reset to the AI's version) and add the chosen ones to a column. Suggested assignees are matched to board members by name. Each created task stores its source (meeting id, title, date, platform, link and the quoted note line). Cards show a meeting chip, and the task modal shows the source with an "Open meeting" link.
 
 ## Backend (planned, mocked in the prototype)
 
