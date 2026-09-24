@@ -1,0 +1,34 @@
+meta {
+  name: Meeting ingest (bad key)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/meetings
+  body: json
+  auth: none
+}
+
+headers {
+  X-API-Key: wrong-key
+}
+
+body:json {
+  {
+    "external_id": "meet-bad-key",
+    "title": "Should not be saved",
+    "date": "2026-09-24",
+    "summary": "x"
+  }
+}
+
+tests {
+  test("rejects a wrong api key", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+}
+
+docs {
+  Checks that ingest is locked: a wrong `X-API-Key` gets `401` and nothing is saved.
+}

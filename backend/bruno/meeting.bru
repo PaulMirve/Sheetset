@@ -1,0 +1,31 @@
+meta {
+  name: Meeting
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/meetings/{{meetingId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("returns summary and suggested tasks", function() {
+    expect(res.getStatus()).to.equal(200);
+    const m = res.getBody();
+    expect(m.summary).to.be.a("string");
+    expect(m.decisions).to.be.an("array");
+    expect(m.tasks[0]).to.include.keys("title", "who", "due", "label", "src", "why");
+  });
+}
+
+docs {
+  Full AI result for one meeting: details, `notes`, `summary`, `decisions` and suggested `tasks`. Uses `{{meetingId}}`, set by **Meeting ingest (n8n)**.
+
+  Responses: `200` · `401` missing/invalid token · `404` unknown id.
+}

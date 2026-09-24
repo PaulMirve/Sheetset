@@ -6,8 +6,9 @@
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["app.main:app", "--port", "8000"],
+      "args": ["app.main:app", "--port", "9001"],
       "cwd": "${workspaceFolder}/backend",
+      "env": { "N8N_API_KEY": "REDACTED_LOCAL_CREDENTIAL" },
       "python": "${workspaceFolder}/backend/.venv/bin/python"
     }
   ]

@@ -1,0 +1,64 @@
+meta {
+  name: Meeting ingest (n8n)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/meetings
+  body: json
+  auth: none
+}
+
+headers {
+  X-API-Key: {{n8nKey}}
+}
+
+body:json {
+  {
+    "external_id": "meet-xqt-launch-sync",
+    "title": "Spring launch sync",
+    "date": "2026-09-24",
+    "time": "10:00",
+    "duration": 42,
+    "platform": "Google Meet",
+    "url": "https://meet.google.com/xqt-launch-sync",
+    "people": ["Paula Reyes", "Sam Taylor"],
+    "notes": [
+      { "h": "Next steps" },
+      { "t": "00:27", "who": "Sam Taylor", "text": "Someone should draft the FAQ for the pricing change. I will take it." }
+    ],
+    "summary": "The team reviewed launch readiness.",
+    "decisions": ["Launch email pushed by one week"],
+    "tasks": [
+      { "title": "Draft FAQ for the pricing change", "who": "Sam Taylor", "due": "2026-09-29", "label": "Content", "src": 1, "why": "Sam volunteered." }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.body.id) bru.setEnvVar("meetingId", res.body.id);
+}
+
+tests {
+  test("saves the meeting", function() {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().id).to.be.a("number");
+  });
+}
+
+docs {
+  Called by **n8n** after it has summarised a meeting. Auth is the `X-API-Key` header, which must match the server's `N8N_API_KEY` env var (start the server with `N8N_API_KEY=REDACTED_LOCAL_CREDENTIAL` to match the local environment).
+
+  Re-sending the same `external_id` replaces the stored meeting, so running this twice keeps the same `id`.
+
+  | Field | Notes |
+  |---|---|
+  | `external_id` | required; meeting id from n8n or the meeting platform |
+  | `title`, `date`, `summary` | required; `date` is `YYYY-MM-DD` |
+  | `notes[]` | `{ t, who, text }` lines or `{ h }` section headings |
+  | `tasks[].src` | index into `notes` the suggestion came from |
+  | `tasks[].due` | absolute date `YYYY-MM-DD`, not days-from-today |
+
+  Responses: `201 { id }` · `401` bad or missing key · `422` invalid body.
+}
