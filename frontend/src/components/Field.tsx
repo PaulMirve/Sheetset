@@ -7,9 +7,13 @@ export const inputClass =
   "w-full h-11 px-3 rounded-[10px] bg-ground text-ink border border-transparent outline-none placeholder:text-muted/85 transition-[background-color,border-color,box-shadow] duration-150 hover:border-line-strong focus:bg-surface focus:border-primary focus:shadow-[0_0_0_4px_var(--color-primary-wash)] aria-invalid:border-alert aria-invalid:shadow-[0_0_0_4px_var(--color-alert-wash)] disabled:opacity-45 disabled:cursor-not-allowed";
 
 export type FieldProps = {
+  /** Visible label above the control, in sentence case. */
   label: string;
+  /** Line icon shown before the label. */
   icon?: IconName;
+  /** Message shown under the control; also marks it invalid for assistive tech. */
   error?: string;
+  /** Adds a muted "optional" hint after the label. */
   optional?: boolean;
 };
 

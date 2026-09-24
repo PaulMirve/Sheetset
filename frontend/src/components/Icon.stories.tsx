@@ -26,9 +26,24 @@ export const Single: Story = {
 
 export const AllIcons: Story = {
   render: (args) => (
-    <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center" }}>
+    <div
+      style={{
+        display: "flex",
+        gap: 24,
+        flexWrap: "wrap",
+        alignItems: "center",
+      }}
+    >
       {ICON_NAMES.map((name) => (
-        <div key={name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+        <div
+          key={name}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
           <Icon {...args} name={name} />
           <span style={{ fontSize: 11, color: "#888" }}>{name}</span>
         </div>

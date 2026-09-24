@@ -2,9 +2,11 @@ import classnames from "classnames";
 import { ComponentProps } from "react";
 
 type Props = {
+  /** On or off. The toggle doesn't flip itself; handle `onClick`. */
   active: boolean;
 } & ComponentProps<"button">;
 
+/** On/off switch for settings that apply immediately, like dark mode. Give it an `aria-label`. */
 const Toggle = ({ active, className, ...props }: Props) => (
   <button
     role="switch"

@@ -4,6 +4,7 @@ import classNames from "classnames";
 import Button from "./Button";
 import Icon from "./Icon";
 import { hue } from "../hue";
+import Typography from "./Typography";
 
 type Props = {
   column: Column;
@@ -33,7 +34,9 @@ const DroppableColumn = ({
     >
       <div className="sticky top-0 z-[2] flex items-center gap-[13px] pt-[18px] pr-1.5 pb-4 pl-2 bg-inherit">
         <span className="dot" aria-hidden />
-        <h2 className="font-bold text-[16px] truncate">{column.name}</h2>
+        <Typography as="h2" variant="title" className="truncate">
+          {column.name}
+        </Typography>
         <span className="count-pill">{count}</span>
         <Button
           variant="icon"
@@ -47,14 +50,17 @@ const DroppableColumn = ({
         {count ? (
           children
         ) : (
-          <div className="lane-empty grid justify-items-center gap-1 px-3 py-[18px] rounded-[14px] text-muted text-[14px] text-center">
+          <Typography
+            color="muted"
+            className="lane-empty grid justify-items-center gap-1 px-3 py-[18px] rounded-[14px] text-center"
+          >
             <Icon name="inbox" size={20} style={{ color: "var(--h)" }} />
             <span>
               No tasks yet.
               <br />
               Drag one here or add a new one.
             </span>
-          </div>
+          </Typography>
         )}
       </div>
     </section>

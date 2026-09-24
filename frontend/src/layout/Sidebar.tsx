@@ -21,9 +21,9 @@ const Sidebar = () => {
         <span className="tile w-[30px] h-[30px] rounded-[9px]" style={hue(1)}>
           <Icon name="board" />
         </span>
-        <span className="font-extrabold text-[18px] tracking-[-0.02em]">
+        <Typography as="span" variant="brand">
           Sheetset
-        </span>
+        </Typography>
       </div>
       <div className="flex-1 overflow-auto px-3 pt-1 pb-4">
         <BoardGroup
@@ -60,13 +60,23 @@ type BoardGroupProps = { title: string; icon: IconName; boards: Board[] };
 const BoardGroup = ({ title, icon, boards }: BoardGroupProps) => (
   <div className="mt-[18px] max-md:mt-2">
     <div className="flex items-center justify-between px-2 pb-1.5">
-      <span className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-muted">
+      <Typography
+        as="span"
+        variant="label"
+        color="muted"
+        className="inline-flex items-center gap-1.5"
+      >
         <Icon name={icon} size={15} />
         {title}
-      </span>
-      <span className="text-[12px] font-bold text-muted bg-ground rounded-full px-2 py-px tabular-nums">
+      </Typography>
+      <Typography
+        as="span"
+        variant="chip"
+        color="muted"
+        className="bg-ground rounded-full px-2 py-1"
+      >
         {boards.length}
-      </span>
+      </Typography>
     </div>
     {boards.map((board) => (
       <button
@@ -78,9 +88,13 @@ const BoardGroup = ({ title, icon, boards }: BoardGroupProps) => (
         <span className="tile w-[30px] h-[30px] rounded-lg text-[13.5px]">
           {board.name[0].toUpperCase()}
         </span>
-        <span className="flex-1 min-w-0 truncate font-[550] group-aria-[current=page]:font-bold">
+        {/* Rail rows are Body at 550; the current board is 700 (DESIGN.md). */}
+        <Typography
+          as="span"
+          className="flex-1 min-w-0 truncate font-[550] group-aria-[current=page]:font-bold"
+        >
           {board.name}
-        </span>
+        </Typography>
       </button>
     ))}
   </div>

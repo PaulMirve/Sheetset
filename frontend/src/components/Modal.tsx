@@ -11,6 +11,7 @@ type Props = {
   // Tags row above the title.
   crumbs?: ReactNode;
   footer?: ReactNode;
+  bodyClassName?: string;
 } & Omit<ComponentProps<"dialog">, "open" | "title">;
 
 // Native <dialog>: focus trap, Esc and backdrop come free.
@@ -21,6 +22,7 @@ const Modal = ({
   title,
   crumbs,
   footer,
+  bodyClassName,
   children,
   className,
   ...props
@@ -63,7 +65,12 @@ const Modal = ({
           <Icon name="cross" />
         </Button>
       </div>
-      <div className="min-h-0 overflow-auto grid content-start gap-[18px] px-6 pt-4 pb-[22px]">
+      <div
+        className={classNames(
+          "min-h-0 overflow-auto grid content-start gap-[18px] px-6 pt-4 pb-[22px]",
+          bodyClassName,
+        )}
+      >
         {children}
       </div>
       {footer && (

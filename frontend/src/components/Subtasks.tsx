@@ -23,6 +23,9 @@ import { KeyboardEvent, ReactNode, useRef, useState } from "react";
 import { base } from "../mocks/data";
 import Button from "./Button";
 import Icon from "./Icon";
+import Typography from "./Typography";
+import InlineInput from "./InlineInput";
+import Checkbox from "./Checkbox";
 
 type Props = {
   value: Subtask[];
@@ -35,8 +38,6 @@ let nextId = -1;
 
 const rowClass =
   "group flex items-center gap-2.5 h-11 pl-3 pr-1.5 rounded-[10px] bg-ground border border-transparent transition-[background-color,border-color,box-shadow] duration-150 hover:border-line-strong focus-within:bg-surface focus-within:border-primary focus-within:shadow-[0_0_0_4px_var(--color-primary-wash)]";
-const textClass =
-  "flex-1 min-w-0 h-full bg-transparent outline-none placeholder:text-muted/85";
 
 const lockX: Modifier = ({ transform }) => ({ ...transform, x: 0 });
 
@@ -132,7 +133,12 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
 
   return (
     <fieldset ref={setLive} className="grid gap-1.5">
-      <legend className="flex items-center gap-1.5 w-full mb-1.5 font-semibold text-[14px] text-muted">
+      <Typography
+        as="legend"
+        variant="label"
+        color="muted"
+        className="flex items-center gap-1.5 w-full mb-1.5"
+      >
         <Icon name="check-circle" size={15} />
         Subtasks
         {optional && <span className="font-medium opacity-75">optional</span>}
@@ -145,7 +151,7 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
             {done} of {value.length}
           </span>
         )}
-      </legend>
+      </Typography>
       {value.length > 0 && (
         <div
           role="progressbar"
@@ -187,17 +193,16 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
             <SortableRow key={st.id} id={st.id} title={st.title}>
               {(grip) => (
                 <>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     aria-label={`Done: ${st.title}`}
                     checked={st.completed}
                     onChange={(e) =>
                       update(st.id, { completed: e.target.checked })
                     }
-                    className="peer size-[18px] flex-none accent-primary cursor-pointer"
+                    className="peer"
                   />
                   {grip}
-                  <input
+                  <InlineInput
                     aria-label="Subtask title"
                     value={st.title}
                     maxLength={200}
@@ -214,10 +219,7 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
                         remove(st.id);
                       }
                     }}
-                    className={classNames(
-                      textClass,
-                      "peer-checked:text-muted peer-checked:line-through",
-                    )}
+                    className="peer-checked:text-muted peer-checked:line-through"
                   />
                   <Button
                     type="button"
@@ -236,14 +238,12 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
       </DndContext>
       <label className={classNames(rowClass, "text-muted cursor-text")}>
         <Icon name="plus" size={18} />
-        <input
+        <InlineInput
           ref={addRef}
           aria-label="New subtask"
           placeholder="Add a subtask, press Enter"
           maxLength={200}
-          autoComplete="off"
           onKeyDown={add}
-          className={classNames(textClass, "text-ink")}
         />
       </label>
     </fieldset>

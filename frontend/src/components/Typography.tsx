@@ -1,9 +1,11 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import { HTMLProps } from "react";
+import { ComponentPropsWithoutRef, ElementType } from "react";
 import { ColorName } from "../types/colors";
 import classNames from "classnames";
 
-const typography = cva("", {
+// The type scale from DESIGN.md "Typography". Exported for form controls
+// (e.g. an editable title textarea) that need a level but can't be Typography.
+export const typography = cva("", {
   variants: {
     variant: {
       headline: "font-extrabold text-[30px] leading-[1.15] tracking-[-0.025em]",
@@ -14,26 +16,39 @@ const typography = cva("", {
       "body-lg": "text-[18px] leading-[1.45]",
       label: "font-semibold text-[14px] leading-[1.45]",
       chip: "font-semibold text-[13.5px] leading-none tabular-nums",
+      brand: "font-extrabold text-[18px] tracking-[-0.02em]",
     },
   },
 });
 
-type Props = { color?: ColorName } & VariantProps<typeof typography> &
-  HTMLProps<HTMLDivElement>;
+type Props<T extends ElementType> = {
+  // The element to render, for semantics: as="h2", as="p", as="time"…
+  as?: T;
+  // "inherit" sets no color, for text tinted by its context (e.g. a hue).
+  color?: ColorName | "inherit";
+} & VariantProps<typeof typography> &
+  Omit<ComponentPropsWithoutRef<T>, "as" | "color">;
 
-const Typography = ({
+const Typography = <T extends ElementType = "div">({
+  as,
   variant = "body",
   className,
   color = "ink",
   ...props
-}: Props) => (
-  <div
-    className={typography({
-      variant,
-      className: classNames(`text-${color}`, className),
-    })}
-    {...props}
-  />
-);
+}: Props<T>) => {
+  const Tag: ElementType = as ?? "div";
+  return (
+    <Tag
+      className={typography({
+        variant,
+        className: classNames(
+          color !== "inherit" && `text-${color}`,
+          className,
+        ),
+      })}
+      {...props}
+    />
+  );
+};
 
 export default Typography;

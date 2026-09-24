@@ -4,6 +4,7 @@ import Icon from "./Icon";
 
 const meta: Meta<typeof Button> = {
   component: Button,
+  tags: ["autodocs"],
   decorators: [
     (Story) => (
       <div className="p-8 bg-ground">

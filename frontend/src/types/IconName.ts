@@ -1,4 +1,6 @@
 export const ICON_NAMES = [
+  "arrow",
+  "arrow-left",
   "board",
   "cal",
   "check",
@@ -11,15 +13,19 @@ export const ICON_NAMES = [
   "grip",
   "inbox",
   "lock",
+  "mail",
   "more",
   "notes",
   "pen",
   "plus",
+  "spark",
   "status",
   "tag",
   "theme",
   "trash",
+  "user",
   "users",
+  "video",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

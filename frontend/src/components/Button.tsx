@@ -22,6 +22,7 @@ const button = cva(
 
 type Props = VariantProps<typeof button> & ComponentProps<"button">;
 
+/** The one button, in five variants: primary (the main action), secondary, quiet, danger and icon. */
 const Button = ({ variant = "primary", className, ...props }: Props) => (
   <button className={button({ variant, className })} {...props} />
 );

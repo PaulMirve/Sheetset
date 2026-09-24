@@ -5,6 +5,7 @@ import classNames from "classnames";
 import Icon from "./Icon";
 import Tag from "./Tag";
 import { hashHue, hue } from "../hue";
+import Typography from "./Typography";
 
 const day = (offset = 0) => {
   const d = new Date();
@@ -13,7 +14,7 @@ const day = (offset = 0) => {
 };
 
 // Overdue → alert red, due within 2 days → amber, else neutral.
-const DueTag = ({ due }: { due: string }) => {
+export const DueTag = ({ due }: { due: string }) => {
   const late = due < day();
   const soon = !late && due <= day(2);
   const date = new Date(`${due}T00:00`).toLocaleDateString("en-US", {
@@ -53,13 +54,13 @@ export const Card = ({ todo, className, ...props }: CardProps) => {
       )}
       {...props}
     >
-      <div className="font-[650] text-[15.5px] leading-[1.35] wrap-anywhere">
+      <Typography variant="title" className="wrap-anywhere">
         {title}
-      </div>
+      </Typography>
       {description && (
-        <div className="-mt-1 text-muted text-[14px] line-clamp-2">
+        <Typography color="muted" className="-mt-1 line-clamp-2">
           {description}
-        </div>
+        </Typography>
       )}
       {(label || due) && (
         <div className="flex flex-wrap gap-1.5 min-w-0">
@@ -72,7 +73,11 @@ export const Card = ({ todo, className, ...props }: CardProps) => {
         </div>
       )}
       {(description || subtasks.length > 0) && (
-        <div className="flex items-center gap-2.5 min-h-6 pt-[9px] border-t border-line text-muted text-[13.5px] font-semibold">
+        <Typography
+          variant="chip"
+          color="muted"
+          className="flex items-center gap-2.5 min-h-6 pt-[9px] border-t border-line"
+        >
           {description && (
             <span title="Has notes" className="inline-flex">
               <Icon name="notes" size={15} />
@@ -93,7 +98,7 @@ export const Card = ({ todo, className, ...props }: CardProps) => {
               {done}/{subtasks.length}
             </span>
           )}
-        </div>
+        </Typography>
       )}
     </article>
   );

@@ -3,9 +3,11 @@ import { ComponentProps, useId } from "react";
 import Field, { a11yProps, FieldProps, inputClass } from "./Field";
 
 type Props = FieldProps & {
+  /** Numbers and dates get tabular figures. */
   type?: "text" | "number" | "date" | "email" | "password";
 } & Omit<ComponentProps<"input">, "type">;
 
+/** Labelled single-line text field (DESIGN.md "Inputs / Fields"). */
 const Input = ({
   label,
   icon,

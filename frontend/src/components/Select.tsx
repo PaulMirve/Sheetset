@@ -5,7 +5,10 @@ import Icon from "./Icon";
 
 type Option = { value: string; label: string };
 
-type Props = FieldProps & { options: Option[] } & ComponentProps<"select">;
+type Props = FieldProps & {
+  /** Choices, in display order. */
+  options: Option[];
+} & ComponentProps<"select">;
 
 // Native select with the design's chevron.
 const Select = ({

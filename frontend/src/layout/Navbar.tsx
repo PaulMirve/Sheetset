@@ -10,9 +10,17 @@ type Props = {
   done: number;
   total: number;
   onNewTask: () => void;
+  onFromMeeting: () => void;
 };
 
-const Navbar = ({ board, columns, done, total, onNewTask }: Props) => (
+const Navbar = ({
+  board,
+  columns,
+  done,
+  total,
+  onNewTask,
+  onFromMeeting,
+}: Props) => (
   <header className="flex items-center justify-between gap-6 px-7 pt-6 pb-5 max-md:flex-col max-md:items-start max-md:gap-3.5 max-md:px-4 max-md:pt-[18px] max-md:pb-3.5">
     <div className="flex items-center gap-3.5 min-w-0">
       <span
@@ -23,10 +31,13 @@ const Navbar = ({ board, columns, done, total, onNewTask }: Props) => (
         {board.name[0].toUpperCase()}
       </span>
       <div className="min-w-0">
-        <Typography variant="headline">
-          <h1>{board.name}</h1>
+        <Typography as="h1" variant="headline">
+          {board.name}
         </Typography>
-        <div className="flex items-center flex-wrap gap-x-3.5 gap-y-2 mt-1.5 text-muted text-[14.5px] [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5">
+        <Typography
+          color="muted"
+          className="flex items-center flex-wrap gap-x-3.5 gap-y-2 mt-1.5 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5"
+        >
           <span>
             <Icon name={board.shared ? "users" : "lock"} />
             {board.shared ? "Shared" : "Only you"}
@@ -46,10 +57,13 @@ const Navbar = ({ board, columns, done, total, onNewTask }: Props) => (
             </span>
             {done} of {total} done
           </span>
-        </div>
+        </Typography>
       </div>
     </div>
     <div className="flex items-center gap-2 flex-none max-md:flex-wrap">
+      <Button variant="secondary" onClick={onFromMeeting}>
+        <Icon name="spark" /> From meeting
+      </Button>
       <Button onClick={onNewTask}>
         <Icon name="plus" /> New task
       </Button>

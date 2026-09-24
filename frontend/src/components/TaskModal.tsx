@@ -11,6 +11,8 @@ import Select from "./Select";
 import Subtasks from "./Subtasks";
 import Tag from "./Tag";
 import TextArea from "./TextArea";
+import Typography from "./Typography";
+import EditableTitle from "./EditableTitle";
 
 export type TaskFields = Pick<
   ToDo,
@@ -94,9 +96,9 @@ export const NewTaskModal = ({
       aria-label="New task"
       crumbs={<Crumbs {...shared} column={column} />}
       title={
-        <h2 className="font-[750] text-[24px] leading-[1.25] tracking-[-0.015em]">
+        <Typography as="h2" variant="headline-sm">
           New task
-        </h2>
+        </Typography>
       }
       footer={
         <>
@@ -186,11 +188,6 @@ export const TaskDetailModal = ({
 }) => {
   const { columns, labels, onClose } = shared;
   const listId = useId();
-  const grow = (el: HTMLTextAreaElement | null) => {
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  };
 
   return (
     <Modal
@@ -199,27 +196,10 @@ export const TaskDetailModal = ({
       aria-label="Task details"
       crumbs={<Crumbs {...shared} column={todo.column} />}
       title={
-        <textarea
-          ref={grow}
+        <EditableTitle
           aria-label="Title"
-          rows={1}
-          maxLength={200}
           defaultValue={todo.title}
-          onInput={(e) => {
-            grow(e.currentTarget);
-            const title = e.currentTarget.value.trim();
-            if (title) onChange({ title });
-          }}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter") return;
-            e.preventDefault();
-            e.currentTarget.blur();
-          }}
-          onBlur={(e) => {
-            if (!e.currentTarget.value.trim())
-              e.currentTarget.value = todo.title;
-          }}
-          className="block w-[calc(100%+12px)] -ml-3 px-3 py-2 rounded-[10px] bg-transparent resize-none overflow-hidden outline-none font-[750] text-[24px] leading-[1.25] tracking-[-0.015em] hover:bg-ground focus:bg-ground focus:shadow-[0_0_0_2px_var(--color-primary)]"
+          onChange={(title) => onChange({ title })}
         />
       }
       footer={

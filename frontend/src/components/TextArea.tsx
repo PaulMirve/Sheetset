@@ -4,6 +4,7 @@ import Field, { a11yProps, FieldProps, inputClass } from "./Field";
 
 type Props = FieldProps & ComponentProps<"textarea">;
 
+/** Labelled multi-line field for notes; the user can resize it vertically. */
 const TextArea = ({
   label,
   icon,

@@ -10,6 +10,7 @@ const VARIANTS = [
   "body-lg",
   "label",
   "chip",
+  "brand",
 ] as const;
 
 const meta: Meta<typeof Typography> = {
@@ -38,3 +39,9 @@ export const Label: Story = {
   args: { variant: "label", color: "muted", children: "Label" },
 };
 export const Chip: Story = { args: { variant: "chip", children: "3 of 5" } };
+export const Brand: Story = {
+  args: { variant: "brand", children: "Sheetset" },
+};
+export const AsHeading: Story = {
+  args: { as: "h2", variant: "headline-sm", children: "Rendered as an h2" },
+};

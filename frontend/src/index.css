@@ -164,3 +164,10 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Sign-in page wash (wireframe .auth) */
+.auth {
+  background:
+    radial-gradient(600px 400px at 12% 18%, color-mix(in srgb, var(--hue-3) 16%, transparent), transparent 70%),
+    radial-gradient(520px 380px at 40% 88%, color-mix(in srgb, var(--hue-6) 14%, transparent), transparent 70%);
+}
