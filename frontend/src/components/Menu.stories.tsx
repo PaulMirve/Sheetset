@@ -42,3 +42,31 @@ export const Default: Story = {
     ).not.toBeVisible();
   },
 };
+
+/** A custom trigger row with a header, opening upward from the foot of the rail. */
+export const AccountTrigger: Story = {
+  decorators: [
+    (Story) => (
+      <div className="flex items-end p-8 bg-ground min-h-[320px] w-[288px]">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    label: "Account",
+    align: "start",
+    trigger: <span className="flex-1">Paul Miranda</span>,
+    header: <span>paul@example.com</span>,
+    items: [
+      { icon: "theme", label: "Switch to dark theme", onSelect: fn() },
+      "-",
+      { icon: "out", label: "Sign out", onSelect: remove },
+    ],
+  },
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole("button", { name: "Paul Miranda" }));
+    await expect(canvas.getByText("paul@example.com")).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Sign out" }));
+    await expect(remove).toHaveBeenCalled();
+  },
+};

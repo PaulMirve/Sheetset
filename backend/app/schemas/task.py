@@ -14,6 +14,17 @@ class Subtask(SubtaskIn):
     id: int
 
 
+class TaskFile(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    type: str
+    size: int
+    created_by_id: int
+    created_at: dt.datetime
+
+
 class TaskIn(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     column_id: int
@@ -57,10 +68,12 @@ class Task(BaseModel):
     assignee_id: int | None
     is_epic: bool
     epic_id: int | None
+    source: dict | None
     created_by_id: int
     created_at: dt.datetime
     updated_at: dt.datetime
     subtasks: list[Subtask]
+    files: list[TaskFile]
 
 
 class Accept(TaskPatch):

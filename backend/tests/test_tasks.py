@@ -79,8 +79,44 @@ def test_tasks_flow():
     t = r.json()
     assert (t["title"], t["due"], t["label"]) == ("Draft FAQ", "2026-09-29", "Docs")
     assert t["description"] == "FAQ for the pricing change"
+    assert (t["source"]["meeting_id"], t["source"]["title"], t["source"]["date"]) == (mid, "Sync", "2026-09-24")
     assert c.get(f"/meetings/{mid}", headers=me).json()["tasks"][0]["task_id"] == t["id"]
     assert c.post(acc, json={"board_id": bid, "column_id": todo}, headers=me).status_code == 409
+    # Deleting the task frees the suggestion to be added again.
+    assert c.delete(f"/tasks/{t['id']}", headers=me).status_code == 204
+    assert c.get(f"/meetings/{mid}", headers=me).json()["tasks"][0]["task_id"] is None
+    t = c.post(acc, json={"board_id": bid, "column_id": todo}, headers=me).json()
+    assert c.get(f"/meetings/{mid}", headers=me).json()["tasks"][0]["task_id"] == t["id"]
+
+    # Another account sees it as not added yet, and can add it to its own board.
+    assert c.get(f"/meetings/{mid}", headers=other).json()["tasks"][0]["task_id"] is None
+    with SessionLocal() as s:
+        u2 = s.query(User).filter_by(email="other@b.co").one()
+        b2 = Board(key="OTH", name="Other", owner_id=u2.id, members=[u2])
+        b2.columns = [Column(name="To do", position=0)]
+        s.add(b2)
+        s.commit()
+        bid2, todo2 = b2.id, b2.columns[0].id
+    t2 = c.post(acc, json={"board_id": bid2, "column_id": todo2}, headers=other).json()
+    assert c.get(f"/meetings/{mid}", headers=other).json()["tasks"][0]["task_id"] == t2["id"]
+    assert c.get(f"/meetings/{mid}", headers=me).json()["tasks"][0]["task_id"] == t["id"]
+    # Editing the suggestion keeps both links.
+    assert c.put(f"{sug}/0", json={"title": "Draft FAQ v2"}, headers=me).json()[0]["task_id"] == t["id"]
+    assert c.get(f"/meetings/{mid}", headers=other).json()["tasks"][0]["task_id"] == t2["id"]
+
+    # Files: raw body upload, members only, 10 MB cap, gone with the task.
+    files = f"/tasks/{t['id']}/files"
+    png = {**me, "Content-Type": "image/png"}
+    assert c.post(f"{files}?name=a.png", content=b"img", headers={**other, "Content-Type": "image/png"}).status_code == 404
+    assert c.post(f"{files}?name=big.bin", content=b"x" * (10 * 1024 * 1024 + 1), headers=me).status_code == 413
+    f = c.post(f"{files}?name=shot one.png", content=b"img", headers=png).json()
+    assert (f["name"], f["type"], f["size"]) == ("shot one.png", "image/png", 3)
+    assert [x["id"] for x in c.get(f"/tasks/{t['id']}", headers=me).json()["files"]] == [f["id"]]
+    r = c.get(f"/files/{f['id']}", headers=me)
+    assert (r.content, r.headers["content-type"]) == (b"img", "image/png")
+    assert c.get(f"/files/{f['id']}", headers=other).status_code == 404
+    assert c.delete(f"/files/{f['id']}", headers=me).status_code == 204
+    assert c.get(f"/tasks/{t['id']}", headers=me).json()["files"] == []
 
 
 if __name__ == "__main__":

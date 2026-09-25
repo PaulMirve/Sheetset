@@ -53,3 +53,8 @@ export const CantBeEmpty: Story = {
     await expect(title).toHaveValue("Plan Lisbon trip");
   },
 };
+
+/** The task page's title, at Headline size. */
+export const Headline: Story = {
+  args: { variant: "headline" },
+};

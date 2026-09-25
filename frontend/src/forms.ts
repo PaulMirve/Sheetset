@@ -1,6 +1,7 @@
 // Form schemas. Limits mirror the backend's; the server re-validates everything.
 import { ColumnId } from "@system-types/column";
 import { Subtask } from "@system-types/Subtask";
+import { ToDoId } from "@system-types/ToDo";
 import { z } from "zod";
 
 const name = z
@@ -54,6 +55,8 @@ export const taskSchema = z.object({
     .trim()
     .max(24, "Keep the label under 24 characters.")
     .optional(),
+  isEpic: z.boolean().optional(),
+  epic: z.custom<ToDoId>((v) => typeof v === "number").optional(),
   subtasks: z.array(
     z.custom<Subtask>(
       (s) => (s as Subtask).title.length <= 200,

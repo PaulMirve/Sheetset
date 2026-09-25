@@ -1,8 +1,8 @@
 from datetime import date, datetime
 
 from sqlalchemy import Column as SAColumn
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Table, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import JSON, DateTime, ForeignKey, LargeBinary, String, Table, UniqueConstraint, func
+from sqlalchemy.orm import Mapped, deferred, mapped_column, relationship
 
 from .session import Base
 
@@ -76,12 +76,17 @@ class Task(Base):
     is_epic: Mapped[bool] = mapped_column(default=False)
     # One level deep; deleting an epic keeps its tasks.
     epic_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id", ondelete="SET NULL"), index=True)
+    # The meeting a task was accepted from: {meeting_id, title, date, time, platform, url, who, at, quote}.
+    source: Mapped[dict | None] = mapped_column(JSON)
     created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
     subtasks: Mapped[list["Subtask"]] = relationship(
         cascade="all, delete-orphan", passive_deletes=True, order_by="Subtask.position"
+    )
+    files: Mapped[list["Attachment"]] = relationship(
+        cascade="all, delete-orphan", passive_deletes=True, order_by="Attachment.id"
     )
 
 
@@ -93,6 +98,22 @@ class Subtask(Base):
     position: Mapped[int] = mapped_column(default=0)
     title: Mapped[str]
     done: Mapped[bool] = mapped_column(default=False)
+
+
+class Attachment(Base):
+    """A photo or file on a task. Contents are only loaded when downloaded."""
+
+    __tablename__ = "attachments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str]
+    type: Mapped[str]  # MIME type
+    size: Mapped[int]
+    # ponytail: bytes in SQLite, capped at 10 MB each; move to disk/object storage if volume grows.
+    data: Mapped[bytes] = deferred(mapped_column(LargeBinary))
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class Meeting(Base):

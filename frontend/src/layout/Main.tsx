@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import DroppableColumn from "@components/DroppableColumn";
-import ToDoCard, { Card } from "@components/ToDoCard";
+import ToDoCard, { Card, EpicKid } from "@components/ToDoCard";
 import Navbar from "./Navbar";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -50,6 +50,8 @@ import ConfirmDialog from "@components/ConfirmDialog";
 import EmptyState from "@components/EmptyState";
 import Button from "@components/Button";
 import Icon from "@components/Icon";
+import TaskPage from "@components/TaskPage";
+import { openTaskPage, useTaskRoute } from "@hooks/useTaskRoute";
 
 type Dialog =
   | { kind: "rename-board" | "delete-board" | "add-column" }
@@ -66,8 +68,8 @@ const Main = ({ board }: { board: Board }) => {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const closeDialog = () => setDialog(null);
   const queryClient = useQueryClient();
-  const tasks = useTasks(board.id);
-  const create = useCreateTask(board.id);
+  const tasks = useTasks(board);
+  const create = useCreateTask(board);
   const updateTask = useUpdateTask(board.id);
   const deleteTask = useDeleteTask(board.id);
   // While dragging, cards move in this local copy; the server hears about it on drop.
@@ -78,7 +80,28 @@ const Main = ({ board }: { board: Board }) => {
   const [openTask, setOpenTask] = useState<ToDoId | "new" | "meeting" | null>(
     null,
   );
+  // New task dialog options: open as an epic, or preselect an epic.
+  const [newOpts, setNewOpts] = useState<{ asEpic?: boolean; epic?: ToDoId }>(
+    {},
+  );
+  const openNew = (opts: typeof newOpts = {}) => {
+    setNewOpts(opts);
+    setOpenTask("new");
+  };
+  // The meeting dialog opens on the list, or on one meeting (a task's source).
+  const [meetingId, setMeetingId] = useState<number>();
+  const openMeeting = (id?: number) => {
+    setMeetingId(id);
+    setOpenTask("meeting");
+  };
   const detail = todos.find((t) => t.id === openTask);
+  const route = useTaskRoute();
+  const page =
+    route?.board === board.key
+      ? todos.find((t) => t.key === route.key)
+      : undefined;
+  const openPage = (id: ToDoId | null) =>
+    openTaskPage(todos.find((t) => t.id === id)?.key ?? null);
   const labels = [...new Set(todos.flatMap((t) => t.label ?? []))];
   const sensors = useSensors(
     // Small distance so a click opens the card instead of starting a drag.
@@ -89,14 +112,36 @@ const Main = ({ board }: { board: Board }) => {
     }),
   );
 
-  const createTask = async (fields: TaskFields) => {
-    const todo = await create.mutateAsync(fields);
+  // An epic's "first tasks" become real tasks beside it, in the same column.
+  const createTask = async ({ subtasks, ...fields }: TaskFields) => {
+    const todo = await create.mutateAsync({
+      ...fields,
+      subtasks: fields.isEpic ? [] : subtasks,
+    });
     setLandedId(todo.id);
+    if (fields.isEpic)
+      for (const st of subtasks)
+        await create.mutateAsync({
+          title: st.title,
+          description: "",
+          column: todo.column,
+          epic: todo.id,
+          subtasks: [],
+        });
   };
 
+  // Epics are containers, not work: they don't count towards the board's totals.
+  const work = todos.filter((t) => !t.isEpic);
+  const kidsOf = (epic: ToDo): EpicKid[] =>
+    columns.flatMap((c, i) =>
+      todos
+        .filter((t) => t.epic === epic.id && t.column === c.id)
+        .map((t) => ({ todo: t, column: i, done: c.id === lastColumn })),
+    );
+
   // ponytail: no undo toast yet, the design's "Deleted · Undo" comes later.
-  const removeTask = () => {
-    deleteTask.mutate(openTask as ToDoId);
+  const removeTask = (id: ToDoId) => {
+    deleteTask.mutate(id);
     setOpenTask(null);
   };
   const activeTodo =
@@ -198,6 +243,15 @@ const Main = ({ board }: { board: Board }) => {
       label: "Add column",
       onSelect: () => setDialog({ kind: "add-column" }),
     },
+    ...(columns.length
+      ? [
+          {
+            icon: "layers" as const,
+            label: "New epic",
+            onSelect: () => openNew({ asEpic: true }),
+          },
+        ]
+      : []),
     ...(me?.id === board.owner_id
       ? [
           "-" as const,
@@ -254,16 +308,47 @@ const Main = ({ board }: { board: Board }) => {
       : 0;
 
   return (
-    <main className="min-w-0 min-h-0 grid grid-rows-[auto_minmax(0,1fr)]">
-      <Navbar
-        board={board}
-        columns={columns.length}
-        menu={boardMenu}
-        done={todos.filter((t) => t.column === lastColumn).length}
-        total={todos.length}
-        onNewTask={() => setOpenTask("new")}
-        onFromMeeting={() => setOpenTask("meeting")}
-      />
+    <main
+      className={
+        page
+          ? "min-w-0 min-h-0 grid"
+          : "min-w-0 min-h-0 grid grid-rows-[auto_minmax(0,1fr)]"
+      }
+    >
+      {page ? (
+        <TaskPage
+          key={page.id}
+          todo={page}
+          board={board}
+          columns={columns}
+          todos={todos}
+          labels={labels}
+          onChange={(patch) => updateTask.mutate({ id: page.id, patch })}
+          onChangeTask={(id, patch) => updateTask.mutate({ id, patch })}
+          onCreate={createTask}
+          onOpenTask={openPage}
+          onOpenMeeting={openMeeting}
+          onDelete={() => {
+            removeTask(page.id);
+            openPage(null);
+          }}
+          onBack={() => openPage(null)}
+          onShowOnBoard={() => {
+            setLandedId(page.id);
+            openPage(null);
+          }}
+        />
+      ) : (
+        <Navbar
+          board={board}
+          columns={columns.length}
+          menu={boardMenu}
+          done={work.filter((t) => t.column === lastColumn).length}
+          total={work.length}
+          onNewTask={() => openNew()}
+          onFromMeeting={() => openMeeting()}
+        />
+      )}
       {dialog?.kind === "rename-board" && (
         <NameDialog
           title="Rename board"
@@ -323,13 +408,16 @@ const Main = ({ board }: { board: Board }) => {
         <NewTaskModal
           board={board}
           columns={columns}
+          todos={todos}
           labels={labels}
+          {...newOpts}
           onCreate={createTask}
           onClose={() => setOpenTask(null)}
         />
       )}
       {openTask === "meeting" && (
         <MeetingModal
+          meetingId={meetingId}
           board={board}
           columns={columns}
           labels={labels}
@@ -343,13 +431,22 @@ const Main = ({ board }: { board: Board }) => {
           todo={detail}
           board={board}
           columns={columns}
+          todos={todos}
           labels={labels}
           onChange={(patch) => updateTask.mutate({ id: detail.id, patch })}
-          onDelete={removeTask}
+          onChangeTask={(id, patch) => updateTask.mutate({ id, patch })}
+          onOpenTask={setOpenTask}
+          onCreate={createTask}
+          onOpenMeeting={openMeeting}
+          onDelete={() => removeTask(detail.id)}
+          onOpenPage={() => {
+            setOpenTask(null);
+            openPage(detail.id);
+          }}
           onClose={() => setOpenTask(null)}
         />
       )}
-      {columns.length === 0 ? (
+      {page ? null : columns.length === 0 ? (
         <EmptyState
           icon="cols"
           title="No columns yet"
@@ -396,6 +493,12 @@ const Main = ({ board }: { board: Board }) => {
                       <ToDoCard
                         key={todo.id}
                         todo={todo}
+                        kids={todo.isEpic ? kidsOf(todo) : undefined}
+                        parent={todos.find(
+                          (t) => t.isEpic && t.id === todo.epic,
+                        )}
+                        onOpenTask={setOpenTask}
+                        onAddToEpic={() => openNew({ epic: todo.id })}
                         landed={(todo.id as unknown as number) === landedId}
                         onLanded={() => setLandedId(null)}
                         onOpen={() => setOpenTask(todo.id)}

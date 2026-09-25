@@ -2,6 +2,7 @@ import Button from "@components/Button";
 import EmptyState from "@components/EmptyState";
 import Icon from "@components/Icon";
 import { useBoards } from "@hooks/useBoards";
+import { openTaskPage, useTaskRoute } from "@hooks/useTaskRoute";
 import { BoardId } from "@system-types/Board";
 import { useState, useSyncExternalStore } from "react";
 import { getToken, subscribeToken } from "./api";
@@ -17,13 +18,22 @@ const Workspace = () => {
   const boards = useBoards();
   const [picked, setPicked] = useState(savedBoard);
   const [adding, setAdding] = useState(false);
+  const route = useTaskRoute();
   const list = boards.data ?? [];
   // Falls back to the first board when the saved one is gone (deleted, other account).
   const board = list.find((b) => b.id === picked) ?? list[0];
 
-  const pick = (id: BoardId) => {
+  const remember = (id: BoardId) => {
     setPicked(id);
     localStorage.setItem("board", String(id));
+  };
+  // A task link switches to its board.
+  const linked = route && list.find((b) => b.key === route.board);
+  if (linked && linked.id !== picked) remember(linked.id);
+
+  const pick = (id: BoardId) => {
+    if (route) openTaskPage(null);
+    remember(id);
   };
 
   return (

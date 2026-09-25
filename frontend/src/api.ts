@@ -25,20 +25,21 @@ export const subscribeToken = (l: () => void) => {
   return () => listeners.delete(l);
 };
 
-/** GET `path`, or POST `body` as JSON when one is given. `method` overrides either. */
-export const api = async <T>(
-  path: string,
-  body?: unknown,
-  method = body === undefined ? "GET" : "POST",
-): Promise<T> => {
+const request = async (path: string, body?: unknown, method?: string) => {
   const token = getToken();
+  // A File/Blob goes up as the raw body with its own type; anything else as JSON.
+  const raw = body instanceof Blob;
   const res = await fetch(`${BASE}${path}`, {
-    method,
+    method: method ?? (body === undefined ? "GET" : "POST"),
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
-      ...(body !== undefined && { "Content-Type": "application/json" }),
+      ...(body !== undefined && {
+        "Content-Type": raw
+          ? body.type || "application/octet-stream"
+          : "application/json",
+      }),
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined || raw ? body : JSON.stringify(body),
   });
   if (!res.ok) {
     // An expired or revoked session: drop it so the app shows sign-in.
@@ -46,5 +47,18 @@ export const api = async <T>(
     const err = await res.json().catch(() => null);
     throw new ApiError(res.status, err?.detail ?? res.statusText);
   }
+  return res;
+};
+
+/** GET `path`, or POST `body` (JSON, or a File/Blob sent raw) when one is given. `method` overrides either. */
+export const api = async <T>(
+  path: string,
+  body?: unknown,
+  method?: string,
+): Promise<T> => {
+  const res = await request(path, body, method);
   return res.status === 204 ? (undefined as T) : res.json();
 };
+
+/** GET `path` as a Blob, for files an <img> or link can't fetch with the session header. */
+export const apiBlob = async (path: string) => (await request(path)).blob();

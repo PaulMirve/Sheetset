@@ -1,16 +1,20 @@
-import Toggle from "@components/Toggle";
+import classNames from "classnames";
 import { useTheme } from "@context/ThemeContext";
 import Typography from "@components/Typography";
 import Icon from "@components/Icon";
 import Button from "@components/Button";
 import Avatar from "@components/Avatar";
 import Checkbox from "@components/Checkbox";
+import Menu from "@components/Menu";
 import Input from "@components/Input";
 import { Board, BoardId } from "@system-types/Board";
 import type { IconName } from "@system-types/IconName";
 import { useCreateBoard } from "@hooks/useBoards";
 import { useMe } from "@hooks/useMe";
+import { useQueryClient } from "@tanstack/react-query";
+import type { User } from "@system-types/user";
 import { FormEvent, useState } from "react";
+import { setToken } from "../api";
 import { boardSchema, errorsOf } from "../forms";
 import { hashHue, hue } from "../hue";
 
@@ -24,7 +28,6 @@ type Props = {
 };
 
 const Sidebar = ({ boards, activeId, onPick, adding, onAdding }: Props) => {
-  const { theme, toggleTheme } = useTheme();
   const { data: me } = useMe();
   const group = { activeId, onPick };
   return (
@@ -72,30 +75,73 @@ const Sidebar = ({ boards, activeId, onPick, adding, onAdding }: Props) => {
         )}
       </div>
       {me && (
-        <div className="flex items-center gap-2.5 px-5 py-3 border-t border-line">
-          <Avatar user={me} size="lg" />
-          <div className="min-w-0">
-            <Typography variant="label" className="truncate">
-              {me.first_name} {me.last_name}
-            </Typography>
-            <Typography variant="chip" color="muted" className="truncate">
-              {me.email}
-            </Typography>
-          </div>
+        <div className="p-3 border-t border-line max-md:py-1">
+          <AccountMenu me={me} />
         </div>
       )}
-      <div className="flex items-center gap-2.5 p-3 px-5 border-t border-line text-muted">
-        <Icon name="theme" />
-        <Typography variant="label" color="muted" className="flex-1">
-          Dark mode
-        </Typography>
-        <Toggle
-          active={theme === "dark"}
-          onClick={toggleTheme}
-          aria-label="Dark mode"
-        />
-      </div>
     </nav>
+  );
+};
+
+// On phones the rail is short, so the trigger drops the email.
+const Who = ({ me, short }: { me: User; short?: boolean }) => (
+  <div className="min-w-0">
+    <Typography variant="label" className="truncate">
+      {me.first_name} {me.last_name}
+    </Typography>
+    <Typography
+      variant="chip"
+      color="muted"
+      className={classNames("truncate", { "max-md:hidden": short })}
+    >
+      {me.email}
+    </Typography>
+  </div>
+);
+
+// The signed-in person at the foot of the rail; their menu holds theme and sign out.
+const AccountMenu = ({ me }: { me: User }) => {
+  const { theme, toggleTheme } = useTheme();
+  const queryClient = useQueryClient();
+  return (
+    <Menu
+      label="Account"
+      align="start"
+      trigger={
+        <>
+          <Avatar user={me} size="lg" />
+          <span className="flex-1 min-w-0">
+            <Who me={me} short />
+          </span>
+          <Icon name="chev" className="flex-none text-muted" />
+        </>
+      }
+      header={
+        <>
+          <Avatar user={me} />
+          <Who me={me} />
+        </>
+      }
+      items={[
+        {
+          icon: "theme",
+          label:
+            theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
+          onSelect: toggleTheme,
+        },
+        "-",
+        {
+          icon: "out",
+          label: "Sign out",
+          onSelect: () => {
+            location.hash = "";
+            setToken(null);
+            // The next account mustn't see this one's boards.
+            queryClient.clear();
+          },
+        },
+      ]}
+    />
   );
 };
 

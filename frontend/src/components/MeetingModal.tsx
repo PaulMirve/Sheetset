@@ -32,6 +32,8 @@ type Props = {
   // Ids of the created tasks, in suggestion order.
   onCreated: (ids: ToDoId[]) => void;
   onClose: () => void;
+  // Open straight on this meeting instead of the list.
+  meetingId?: number;
 };
 
 // A suggestion as the user is shaping it. `column: ""` means "same as Add to".
@@ -256,8 +258,9 @@ const MeetingModal = ({
   labels,
   onCreated,
   onClose,
+  meetingId,
 }: Props) => {
-  const [pickedId, setPickedId] = useState<number>();
+  const [pickedId, setPickedId] = useState(meetingId);
   // Everything starts selected, so track what the user unticked.
   const [unsel, setUnsel] = useState(new Set<number>());
   // Only edited suggestions have a draft; the AI's version stays for Reset.
@@ -341,20 +344,12 @@ const MeetingModal = ({
     setInvalid("");
     accept.mutate(
       picked.map((i) => {
-        const t = meeting.tasks[i];
         const d = draft(i);
-        const line = t.src != null ? meeting.notes[t.src] : undefined;
-        // ponytail: no source field on ToDo yet, so the meeting link lives in the notes.
-        const quote = line?.text
-          ? `\n\n${first(line.who)}: “${line.text}”`
-          : "";
-        const source = `From “${meeting.title}”: ${t.why}${quote}`;
+        // The server stores the meeting and quoted note line as the task's source.
         return {
           i,
           title: d.title,
-          description: [d.description.trim(), source]
-            .filter(Boolean)
-            .join("\n\n"),
+          description: d.description.trim(),
           column_id: Number(d.column ? toColumn(d.column) : column),
           // null, not undefined: a cleared field must not fall back to the suggestion's.
           due: d.due || null,

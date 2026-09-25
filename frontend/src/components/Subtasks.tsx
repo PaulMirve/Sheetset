@@ -30,6 +30,8 @@ type Props = {
   value: Subtask[];
   onChange: (subtasks: Subtask[]) => void;
   optional?: boolean;
+  // "First tasks" of a new epic: dot rows instead of checkboxes, no progress.
+  epic?: boolean;
 };
 
 // ponytail: negative ids mark unsaved rows; the backend assigns real ones.
@@ -85,7 +87,8 @@ const SortableRow = ({
 };
 
 // Editable checklist: check, rename inline, remove, Enter to add.
-const Subtasks = ({ value, onChange, optional }: Props) => {
+const Subtasks = ({ value, onChange, optional, epic }: Props) => {
+  const word = epic ? "task" : "subtask";
   const addRef = useRef<HTMLInputElement>(null);
   const done = value.filter((st) => st.completed).length;
   const allDone = value.length > 0 && done === value.length;
@@ -106,7 +109,7 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
   // Live region inside the dialog, or screen readers behind aria-modal miss it.
   const [live, setLive] = useState<HTMLElement | null>(null);
   const titleOf = (id: UniqueIdentifier) =>
-    value.find((st) => st.id === id)?.title || "subtask";
+    value.find((st) => st.id === id)?.title || word;
   const position = (id?: UniqueIdentifier) =>
     `position ${value.findIndex((st) => st.id === id) + 1} of ${value.length}`;
 
@@ -138,10 +141,10 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
         color="muted"
         className="flex items-center gap-1.5 w-full mb-1.5"
       >
-        <Icon name="check-circle" size={15} />
-        Subtasks
+        <Icon name={epic ? "layers" : "check-circle"} size={15} />
+        {epic ? "First tasks" : "Subtasks"}
         {optional && <span className="font-medium opacity-75">optional</span>}
-        {value.length > 0 && (
+        {!epic && value.length > 0 && (
           <span
             className={classNames("ml-auto tabular-nums", {
               "text-(--hue-4)": allDone,
@@ -151,7 +154,7 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
           </span>
         )}
       </Typography>
-      {value.length > 0 && (
+      {!epic && value.length > 0 && (
         <div
           role="progressbar"
           aria-label="Subtasks done"
@@ -192,17 +195,21 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
             <SortableRow key={st.id} id={st.id} title={st.title}>
               {(grip) => (
                 <>
-                  <Checkbox
-                    aria-label={`Done: ${st.title}`}
-                    checked={st.completed}
-                    onChange={(e) =>
-                      update(st.id, { completed: e.target.checked })
-                    }
-                    className="peer"
-                  />
+                  {epic ? (
+                    <span className="size-2 rounded-full flex-none bg-(--h,var(--color-muted))" />
+                  ) : (
+                    <Checkbox
+                      aria-label={`Done: ${st.title}`}
+                      checked={st.completed}
+                      onChange={(e) =>
+                        update(st.id, { completed: e.target.checked })
+                      }
+                      className="peer"
+                    />
+                  )}
                   {grip}
                   <InlineInput
-                    aria-label="Subtask title"
+                    aria-label={epic ? "Task title" : "Subtask title"}
                     value={st.title}
                     maxLength={200}
                     onChange={(e) => update(st.id, { title: e.target.value })}
@@ -223,7 +230,7 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
                   <Button
                     type="button"
                     variant="icon"
-                    aria-label={`Remove ${st.title || "subtask"}`}
+                    aria-label={`Remove ${st.title || word}`}
                     onClick={() => remove(st.id)}
                     className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 hover:text-alert! hover:bg-alert-wash!"
                   >
@@ -239,8 +246,8 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
         <Icon name="plus" size={18} />
         <InlineInput
           ref={addRef}
-          aria-label="New subtask"
-          placeholder="Add a subtask, press Enter"
+          aria-label={`New ${word}`}
+          placeholder={`Add a ${word}, press Enter`}
           maxLength={200}
           onKeyDown={add}
         />

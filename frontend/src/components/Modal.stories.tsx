@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import Button from "./Button";
+import Icon from "./Icon";
 import Input from "./Input";
 import Modal from "./Modal";
 import Select from "./Select";
@@ -51,5 +52,20 @@ export const NewTask: Story = {
         </Modal>
       </div>
     );
+  },
+};
+
+/** Extra icon buttons sit beside Close, like the task dialog's "Open full page". */
+export const WithActions: Story = {
+  args: {
+    open: true,
+    onClose: () => {},
+    title: "Task details",
+    actions: (
+      <Button variant="icon" aria-label="Open full page">
+        <Icon name="expand" />
+      </Button>
+    ),
+    children: "Body",
   },
 };

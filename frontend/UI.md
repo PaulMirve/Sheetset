@@ -54,13 +54,14 @@ Screens never set font size, weight, letter-spacing or line-height themselves. P
 | Labelled multi-line field | `TextArea` |
 | Checkbox, with optional label and "some selected" state | `Checkbox` |
 | On/off switch for an immediate setting | `Toggle` |
+| One of a few choices shown as a pill row (Task / Epic) | `Segmented` |
 | Text edited in place inside a row that draws the field | `InlineInput` |
 | Dialog title you can edit in place | `EditableTitle` |
 | Chip / pill (label, due date, metadata) | `Tag` |
 | A person (assignee, signed-in user) | `Avatar` |
 | Line icon | `Icon` (add new SVGs to `src/assets/icons/` and `IconName.ts`) |
 | Dialog | `Modal` |
-| ⋯ button with a list of actions (board, column options) | `Menu` |
+| ⋯ button with a list of actions (board, column options), or a custom trigger row (account menu) | `Menu` |
 | Dialog with one name field (rename, add column) | `NameDialog` |
 | "Are you sure?" before a destructive action | `ConfirmDialog` |
 | Placeholder for an area with nothing in it yet (no boards, no columns) | `EmptyState` |
@@ -108,7 +109,7 @@ export const Default: Story = {
 };
 ```
 
-`Field` is exempt: it's the internal wrapper behind `Input`, `Select` and `TextArea`, and their stories cover it. **Feature components** (`DroppableColumn`, `ToDoCard`, `Subtasks`, `TaskModal`, `MeetingModal`) are screen parts with app data. They don't have stories yet, but a story with mock data is welcome, and it becomes required once one is reused elsewhere.
+`Field` is exempt: it's the internal wrapper behind `Input`, `Select` and `TextArea`, and their stories cover it. **Feature components** (`DroppableColumn`, `ToDoCard`, `Subtasks`, `Files`, `TaskModal`, `TaskPage`, `MeetingModal`) are screen parts with app data. They don't have stories yet, but a story with mock data is welcome, and it becomes required once one is reused elsewhere.
 
 Run them with:
 

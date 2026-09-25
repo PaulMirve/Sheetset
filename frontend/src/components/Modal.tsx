@@ -11,6 +11,8 @@ type Props = {
   // Tags row above the title.
   crumbs?: ReactNode;
   footer?: ReactNode;
+  // Icon buttons beside Close (e.g. "Open full page").
+  actions?: ReactNode;
   bodyClassName?: string;
 } & Omit<ComponentProps<"dialog">, "open" | "title">;
 
@@ -22,6 +24,7 @@ const Modal = ({
   title,
   crumbs,
   footer,
+  actions,
   bodyClassName,
   children,
   className,
@@ -61,9 +64,12 @@ const Modal = ({
           <div className="col-span-full flex flex-wrap gap-1.5">{crumbs}</div>
         )}
         <div className="self-center min-w-0">{title}</div>
-        <Button variant="icon" aria-label="Close" onClick={onClose}>
-          <Icon name="cross" />
-        </Button>
+        <span className="flex gap-0.5">
+          {actions}
+          <Button variant="icon" aria-label="Close" onClick={onClose}>
+            <Icon name="cross" />
+          </Button>
+        </span>
       </div>
       <div
         className={classNames(

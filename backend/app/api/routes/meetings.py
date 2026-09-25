@@ -3,7 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ...db.models import Meeting as MeetingModel
-from ...db.models import User
+from ...db.models import Task as TaskModel
+from ...db.models import User, board_members
 from ...db.session import get_db
 from ...schemas.meeting import Meeting, MeetingId, MeetingIn, MeetingSummary, SuggestedTask
 from ...schemas.task import Accept, Task
@@ -34,12 +35,10 @@ def list_meetings(db: Session = Depends(get_db)):
     return db.scalars(select(MeetingModel).order_by(MeetingModel.date.desc(), MeetingModel.id.desc())).all()
 
 
-@router.get("/{meeting_id}", response_model=Meeting, dependencies=[Depends(current_user)])
-def get_meeting(meeting_id: int, db: Session = Depends(get_db)):
-    m = db.get(MeetingModel, meeting_id)
-    if m is None:
-        raise HTTPException(404, "meeting not found")
-    return m
+@router.get("/{meeting_id}", response_model=Meeting)
+def get_meeting(meeting_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    m = _meeting(db, meeting_id)
+    return Meeting.model_validate(m).model_copy(update={"tasks": _view(db, m, user)})
 
 
 def _meeting(db: Session, meeting_id: int) -> MeetingModel:
@@ -47,6 +46,29 @@ def _meeting(db: Session, meeting_id: int) -> MeetingModel:
     if m is None:
         raise HTTPException(404, "meeting not found")
     return m
+
+
+def _links(t: dict) -> list[int]:
+    """Tasks made from this suggestion, on anyone's boards. Rows saved before `task_ids` kept one `task_id`."""
+    return t.get("task_ids") or ([t["task_id"]] if t.get("task_id") is not None else [])
+
+
+def _view(db: Session, m: MeetingModel, user: User) -> list[SuggestedTask]:
+    """Suggestions as `user` sees them: `task_id` is a live task made from it on one of their boards.
+    Tasks on other people's boards, and deleted ones, don't count, so each account can add a suggestion once."""
+    ids = {i for t in m.tasks for i in _links(t)}
+    mine = (
+        set(
+            db.scalars(
+                select(TaskModel.id)
+                .join(board_members, board_members.c.board_id == TaskModel.board_id)
+                .where(TaskModel.id.in_(ids), board_members.c.user_id == user.id)
+            )
+        )
+        if ids
+        else set()
+    )
+    return [SuggestedTask.model_validate({**t, "task_id": next((i for i in _links(t) if i in mine), None)}) for t in m.tasks]
 
 
 def _suggestion(m: MeetingModel, i: int) -> SuggestedTask:
@@ -60,50 +82,68 @@ def _suggestion(m: MeetingModel, i: int) -> SuggestedTask:
 # Lists are reassigned, not mutated in place, so SQLAlchemy sees the change.
 
 
-@router.post("/{meeting_id}/tasks", status_code=201, response_model=list[SuggestedTask], dependencies=[Depends(current_user)])
-def add_suggestion(meeting_id: int, body: SuggestedTask, db: Session = Depends(get_db)):
+@router.post("/{meeting_id}/tasks", status_code=201, response_model=list[SuggestedTask])
+def add_suggestion(meeting_id: int, body: SuggestedTask, db: Session = Depends(get_db), user: User = Depends(current_user)):
     m = _meeting(db, meeting_id)
     m.tasks = [*m.tasks, body.model_dump(mode="json", exclude={"task_id"})]
     db.commit()
-    return m.tasks
+    return _view(db, m, user)
 
 
-@router.put("/{meeting_id}/tasks/{i}", response_model=list[SuggestedTask], dependencies=[Depends(current_user)])
-def update_suggestion(meeting_id: int, i: int, body: SuggestedTask, db: Session = Depends(get_db)):
+@router.put("/{meeting_id}/tasks/{i}", response_model=list[SuggestedTask])
+def update_suggestion(
+    meeting_id: int, i: int, body: SuggestedTask, db: Session = Depends(get_db), user: User = Depends(current_user)
+):
     m = _meeting(db, meeting_id)
-    old = _suggestion(m, i)
-    m.tasks = [*m.tasks[:i], {**body.model_dump(mode="json"), "task_id": old.task_id}, *m.tasks[i + 1 :]]
+    _suggestion(m, i)
+    edited = {**body.model_dump(mode="json", exclude={"task_id"}), "task_ids": _links(m.tasks[i])}
+    m.tasks = [*m.tasks[:i], edited, *m.tasks[i + 1 :]]
     db.commit()
-    return m.tasks
+    return _view(db, m, user)
 
 
-@router.delete("/{meeting_id}/tasks/{i}", response_model=list[SuggestedTask], dependencies=[Depends(current_user)])
-def delete_suggestion(meeting_id: int, i: int, db: Session = Depends(get_db)):
+@router.delete("/{meeting_id}/tasks/{i}", response_model=list[SuggestedTask])
+def delete_suggestion(meeting_id: int, i: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     m = _meeting(db, meeting_id)
     _suggestion(m, i)
     m.tasks = [*m.tasks[:i], *m.tasks[i + 1 :]]
     db.commit()
-    return m.tasks
+    return _view(db, m, user)
 
 
 @router.post("/{meeting_id}/tasks/{i}/accept", status_code=201, response_model=Task)
 def accept_suggestion(
     meeting_id: int, i: int, body: Accept, db: Session = Depends(get_db), user: User = Depends(current_user)
 ):
-    """Create a board task from suggestion `i`; the suggestion keeps a link to it."""
+    """Create a board task from suggestion `i`; the suggestion keeps a link to it.
+    Each account can accept it once; someone else having accepted it doesn't block you."""
     m = _meeting(db, meeting_id)
     s = _suggestion(m, i)
-    if s.task_id is not None:
+    if _view(db, m, user)[i].task_id is not None:
         raise HTTPException(409, "suggestion already accepted")
     board = member_board(db, body.board_id, user)
+    note = m.notes[s.src] if s.src is not None and 0 <= s.src < len(m.notes) else {}
+    source = {
+        "meeting_id": m.id,
+        "title": m.title,
+        "date": m.date.isoformat(),
+        "time": m.time,
+        "platform": m.platform,
+        "url": m.url,
+        "who": note.get("who"),
+        "at": note.get("t"),
+        "quote": note.get("text"),
+    }
     data = {
         "title": s.title,
         "description": s.description,
         "due": s.due,
         "label": s.label,
         **body.model_dump(exclude_unset=True, exclude={"board_id", "position"}),
+        "source": source,
     }
     task = add_task(db, board, user, data)
-    m.tasks = [*m.tasks[:i], {**m.tasks[i], "task_id": task.id}, *m.tasks[i + 1 :]]
+    linked = {**{k: v for k, v in m.tasks[i].items() if k != "task_id"}, "task_ids": [*_links(m.tasks[i]), task.id]}
+    m.tasks = [*m.tasks[:i], linked, *m.tasks[i + 1 :]]
     db.commit()
     return task

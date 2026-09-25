@@ -1,14 +1,16 @@
 import sys
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from urllib.parse import quote
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ...crud import task as task_crud
-from ...db.models import Board, Subtask, User
+from ...db.models import Attachment, Board, Subtask, User
 from ...db.models import Task as TaskModel
 from ...db.session import get_db
-from ...schemas.task import Task, TaskIn, TaskPatch
+from ...schemas.task import Task, TaskFile, TaskIn, TaskPatch
 from ..deps import current_user, member_board
 
 router = APIRouter(tags=["tasks"])
@@ -86,5 +88,57 @@ def update_task(
 @router.delete("/tasks/{task_id}", status_code=204)
 def delete_task(task_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     db.delete(_task(db, task_id, user))
+    db.commit()
+    return Response(status_code=204)
+
+
+MAX_FILE = 10 * 1024 * 1024
+
+
+# The body is the raw file, so no multipart dependency: fetch(url, { body: file }).
+@router.post("/tasks/{task_id}/files", status_code=201, response_model=TaskFile)
+async def upload_file(
+    task_id: int,
+    name: str,
+    request: Request,
+    content_type: str = Header("application/octet-stream"),
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    _task(db, task_id, user)
+    if int(request.headers.get("content-length") or 0) > MAX_FILE:
+        raise HTTPException(413, "file is over 10 MB")
+    data = await request.body()
+    if len(data) > MAX_FILE:
+        raise HTTPException(413, "file is over 10 MB")
+    f = Attachment(
+        task_id=task_id, name=name[:200] or "file", type=content_type, size=len(data), data=data, created_by_id=user.id
+    )
+    db.add(f)
+    db.commit()
+    return f
+
+
+def _file(db: Session, file_id: int, user: User) -> Attachment:
+    f = db.get(Attachment, file_id)
+    if f is None:
+        raise HTTPException(404, "file not found")
+    _task(db, f.task_id, user)
+    return f
+
+
+@router.get("/files/{file_id}")
+def download_file(file_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    f = _file(db, file_id, user)
+    return Response(
+        f.data,
+        media_type=f.type,
+        headers={"Content-Disposition": f"inline; filename*=UTF-8''{quote(f.name)}"},
+    )
+
+
+@router.delete("/files/{file_id}", status_code=204)
+def delete_file(file_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    db.delete(_file(db, file_id, user))
     db.commit()
     return Response(status_code=204)

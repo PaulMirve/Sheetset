@@ -8,3 +8,6 @@ export const hue = (n: number) =>
 
 export const hashHue = (s: string) =>
   hue([...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7));
+
+// An epic's hue comes from its own id, and identifies it everywhere.
+export const epicHue = (id: number) => hashHue(`epic${id}`);
