@@ -3,15 +3,30 @@ import { useTheme } from "@context/ThemeContext";
 import Typography from "@components/Typography";
 import Icon from "@components/Icon";
 import Button from "@components/Button";
-import { Board } from "@system-types/Board";
+import Avatar from "@components/Avatar";
+import Checkbox from "@components/Checkbox";
+import Input from "@components/Input";
+import { Board, BoardId } from "@system-types/Board";
 import type { IconName } from "@system-types/IconName";
-import { BOARDS } from "../mocks/data";
+import { useCreateBoard } from "@hooks/useBoards";
+import { useMe } from "@hooks/useMe";
+import { FormEvent, useState } from "react";
+import { boardSchema, errorsOf } from "../forms";
 import { hashHue, hue } from "../hue";
 
-const ACTIVE_BOARD = BOARDS[0].id;
+type Props = {
+  boards: Board[];
+  activeId?: BoardId;
+  onPick: (id: BoardId) => void;
+  /** The New board form is open. Lifted so the empty board area can open it too. */
+  adding: boolean;
+  onAdding: (open: boolean) => void;
+};
 
-const Sidebar = () => {
+const Sidebar = ({ boards, activeId, onPick, adding, onAdding }: Props) => {
   const { theme, toggleTheme } = useTheme();
+  const { data: me } = useMe();
+  const group = { activeId, onPick };
   return (
     <nav
       aria-label="Boards"
@@ -29,17 +44,46 @@ const Sidebar = () => {
         <BoardGroup
           title="Personal"
           icon="lock"
-          boards={BOARDS.filter((b) => !b.shared)}
+          boards={boards.filter((b) => !b.shared)}
+          {...group}
         />
         <BoardGroup
           title="Shared with team"
           icon="users"
-          boards={BOARDS.filter((b) => b.shared)}
+          boards={boards.filter((b) => b.shared)}
+          {...group}
         />
-        <Button variant="quiet" disabled className="mt-2 w-full justify-start">
-          <Icon name="plus" /> New board
-        </Button>
+        {adding ? (
+          <NewBoard
+            onClose={() => onAdding(false)}
+            onCreated={(b) => {
+              onAdding(false);
+              onPick(b.id);
+            }}
+          />
+        ) : (
+          <Button
+            variant="quiet"
+            className="mt-2 w-full justify-start"
+            onClick={() => onAdding(true)}
+          >
+            <Icon name="plus" /> New board
+          </Button>
+        )}
       </div>
+      {me && (
+        <div className="flex items-center gap-2.5 px-5 py-3 border-t border-line">
+          <Avatar user={me} size="lg" />
+          <div className="min-w-0">
+            <Typography variant="label" className="truncate">
+              {me.first_name} {me.last_name}
+            </Typography>
+            <Typography variant="chip" color="muted" className="truncate">
+              {me.email}
+            </Typography>
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-2.5 p-3 px-5 border-t border-line text-muted">
         <Icon name="theme" />
         <Typography variant="label" color="muted" className="flex-1">
@@ -55,9 +99,77 @@ const Sidebar = () => {
   );
 };
 
-type BoardGroupProps = { title: string; icon: IconName; boards: Board[] };
+// Inline form under the board list, as in the wireframe.
+const NewBoard = ({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: (board: Board) => void;
+}) => {
+  const create = useCreateBoard();
+  const [error, setError] = useState<string>();
 
-const BoardGroup = ({ title, icon, boards }: BoardGroupProps) => (
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const r = boardSchema.safeParse({
+      name: f.get("name"),
+      shared: f.get("shared") === "on",
+    });
+    if (!r.success) return setError(errorsOf(r.error).name);
+    create.mutate(r.data, {
+      onSuccess: onCreated,
+      onError: (err) => setError(`Couldn’t create the board: ${err.message}`),
+    });
+  };
+
+  return (
+    <form
+      noValidate
+      onSubmit={submit}
+      onKeyDown={(e) => e.key === "Escape" && onClose()}
+      className="grid gap-2.5 mt-2.5 p-3 rounded-[14px] bg-ground"
+    >
+      <Input
+        name="name"
+        label="Board name"
+        placeholder="e.g. Spring launch"
+        maxLength={60}
+        autoComplete="off"
+        autoFocus
+        className="bg-surface!"
+        error={error}
+        onChange={() => setError(undefined)}
+      />
+      <Checkbox name="shared" label="Share with team" />
+      <div className="flex justify-end gap-1.5">
+        <Button variant="quiet" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={create.isPending}>
+          Create board
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+type BoardGroupProps = {
+  title: string;
+  icon: IconName;
+  boards: Board[];
+  activeId?: BoardId;
+  onPick: (id: BoardId) => void;
+};
+
+const BoardGroup = ({
+  title,
+  icon,
+  boards,
+  activeId,
+  onPick,
+}: BoardGroupProps) => (
   <div className="mt-[18px] max-md:mt-2">
     <div className="flex items-center justify-between px-2 pb-1.5">
       <Typography
@@ -83,7 +195,8 @@ const BoardGroup = ({ title, icon, boards }: BoardGroupProps) => (
         key={board.id}
         className="rail-row group flex items-center gap-2.5 w-full px-2 py-1.5 mb-0.5 rounded-[10px] text-left hover:bg-ground transition-colors duration-150"
         style={hashHue(String(board.id))}
-        aria-current={board.id === ACTIVE_BOARD ? "page" : undefined}
+        aria-current={board.id === activeId ? "page" : undefined}
+        onClick={() => onPick(board.id)}
       >
         <span className="tile w-[30px] h-[30px] rounded-lg text-[13.5px]">
           {board.name[0].toUpperCase()}

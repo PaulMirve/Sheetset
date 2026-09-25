@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ToDo } from "@system-types/ToDo";
 import classNames from "classnames";
+import Avatar from "./Avatar";
 import Icon from "./Icon";
 import Tag from "./Tag";
 import { hashHue, hue } from "../hue";
@@ -43,7 +44,7 @@ type CardProps = {
 } & Omit<React.ComponentProps<"article">, "className">;
 
 export const Card = ({ todo, className, ...props }: CardProps) => {
-  const { title, description, subtasks, label, due } = todo;
+  const { title, description, subtasks, label, due, assignee } = todo;
   const done = subtasks.filter((st) => st.completed).length;
   return (
     <article
@@ -72,7 +73,7 @@ export const Card = ({ todo, className, ...props }: CardProps) => {
           {due && <DueTag due={due} />}
         </div>
       )}
-      {(description || subtasks.length > 0) && (
+      {(description || subtasks.length > 0 || assignee) && (
         <Typography
           variant="chip"
           color="muted"
@@ -98,6 +99,7 @@ export const Card = ({ todo, className, ...props }: CardProps) => {
               {done}/{subtasks.length}
             </span>
           )}
+          {assignee && <Avatar user={assignee} size="sm" className="ml-auto" />}
         </Typography>
       )}
     </article>

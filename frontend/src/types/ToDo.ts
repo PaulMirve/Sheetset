@@ -1,8 +1,8 @@
-import { BaseType } from "./base";
 import { Brand } from "./Brand";
 import { ColumnId } from "./column";
 import { Subtask } from "./Subtask";
 import { ToDoStatus } from "./ToDoStatus";
+import { User } from "./user";
 
 export type ToDoId = Brand<number, "ToDoId">;
 
@@ -14,5 +14,8 @@ export type ToDo = {
   column: ColumnId;
   due?: string; // YYYY-MM-DD
   label?: string;
+  assignee?: User;
   subtasks: Subtask[];
-} & BaseType;
+  created_at: string;
+  updated_at: string;
+};

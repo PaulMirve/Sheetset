@@ -1,7 +1,8 @@
 import { cva, VariantProps } from "class-variance-authority";
 import { ComponentProps } from "react";
 
-const button = cva(
+// Exported for controls that must look like a Button but render their own element.
+export const button = cva(
   "inline-flex items-center justify-center gap-[7px] h-10 rounded-[10px] font-semibold whitespace-nowrap transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:enabled:translate-y-px disabled:opacity-45 disabled:cursor-not-allowed",
   {
     variants: {

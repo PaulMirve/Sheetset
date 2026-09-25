@@ -25,11 +25,15 @@ export const subscribeToken = (l: () => void) => {
   return () => listeners.delete(l);
 };
 
-/** GET `path`, or POST `body` as JSON when one is given. */
-export const api = async <T>(path: string, body?: unknown): Promise<T> => {
+/** GET `path`, or POST `body` as JSON when one is given. `method` overrides either. */
+export const api = async <T>(
+  path: string,
+  body?: unknown,
+  method = body === undefined ? "GET" : "POST",
+): Promise<T> => {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
-    method: body === undefined ? "GET" : "POST",
+    method,
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
       ...(body !== undefined && { "Content-Type": "application/json" }),
@@ -42,5 +46,5 @@ export const api = async <T>(path: string, body?: unknown): Promise<T> => {
     const err = await res.json().catch(() => null);
     throw new ApiError(res.status, err?.detail ?? res.statusText);
   }
-  return res.json();
+  return res.status === 204 ? (undefined as T) : res.json();
 };

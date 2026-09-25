@@ -5,6 +5,7 @@ import Typography from "@components/Typography";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useState } from "react";
 import { api, ApiError, setToken } from "../api";
+import { errorsOf, signInSchema, signUpSchema } from "../forms";
 import { hue } from "../hue";
 
 type FieldName = "first_name" | "last_name" | "email" | "password";
@@ -17,29 +18,6 @@ const SERVER_ERRORS: Record<number, Failure> = {
     field: "email",
     msg: "That email already has an account. Sign in instead.",
   },
-};
-
-// Mirrors the wireframe's checks; the server re-validates everything.
-const validate = (
-  up: boolean,
-  f: Record<FieldName, string>,
-): Failure | null => {
-  if (up && !f.first_name)
-    return {
-      field: "first_name",
-      msg: "Add your first name so teammates recognise you.",
-    };
-  if (up && !f.last_name)
-    return { field: "last_name", msg: "Add your last name." };
-  if (!/^\S+@\S+\.\S+$/.test(f.email))
-    return { field: "email", msg: "Enter a valid email address." };
-  if (up && f.password.length < 8)
-    return {
-      field: "password",
-      msg: "Use at least 8 characters for your password.",
-    };
-  if (!f.password) return { field: "password", msg: "Enter your password." };
-  return null;
 };
 
 const Auth = () => {
@@ -71,20 +49,21 @@ const Auth = () => {
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form)) as Record<
-      FieldName,
-      string
-    >;
-    const f = {
-      ...data,
-      first_name: data.first_name?.trim() ?? "",
-      last_name: data.last_name?.trim() ?? "",
-      email: data.email.trim().toLowerCase(),
-    };
-    const fail = validate(up, f);
-    setError(fail);
-    if (fail) (form.elements.namedItem(fail.field) as HTMLInputElement).focus();
-    else submit.mutate(f);
+    const r = (up ? signUpSchema : signInSchema).safeParse(
+      Object.fromEntries(new FormData(form)),
+    );
+    if (r.success) {
+      setError(null);
+      submit.mutate(r.data as Record<FieldName, string>);
+      return;
+    }
+    // One message at a time, on the first invalid field in form order.
+    const errors = errorsOf(r.error);
+    const field = (
+      ["first_name", "last_name", "email", "password"] as const
+    ).filter((f) => errors[f])[0];
+    setError({ field, msg: errors[field] });
+    (form.elements.namedItem(field) as HTMLInputElement).focus();
   };
 
   const toggle = () => {

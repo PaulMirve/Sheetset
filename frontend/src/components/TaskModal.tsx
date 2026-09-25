@@ -2,8 +2,10 @@ import { Board } from "@system-types/Board";
 import { Column, ColumnId } from "@system-types/column";
 import { ToDo } from "@system-types/ToDo";
 import { FormEvent, useId, useState } from "react";
+import { errorsOf, taskSchema } from "../forms";
 import { hashHue, hue } from "../hue";
 import Button from "./Button";
+import DatePicker from "./DatePicker";
 import Icon from "./Icon";
 import Input from "./Input";
 import Modal from "./Modal";
@@ -57,27 +59,25 @@ const columnOptions = (columns: Column[]) =>
 export const NewTaskModal = ({
   onCreate,
   ...shared
-}: Shared & { onCreate: (fields: TaskFields) => void }) => {
+}: Shared & { onCreate: (fields: TaskFields) => Promise<void> }) => {
   const { columns, labels, onClose } = shared;
   const formId = useId();
   const listId = useId();
   const [column, setColumn] = useState(columns[0].id);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [subtasks, setSubtasks] = useState<ToDo["subtasks"]>([]);
   const isMac = navigator.platform.includes("Mac");
 
-  const submit = (e: FormEvent<HTMLFormElement>) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
+    if (saving) return;
+    const form = e.currentTarget;
+    const data = new FormData(form);
     const get = (k: string) => String(data.get(k) ?? "").trim();
-    const title = get("title");
-    if (!title) {
-      setError("Give the task a title.");
-      e.currentTarget.querySelector<HTMLInputElement>("[name=title]")?.focus();
-      return;
-    }
-    onCreate({
-      title,
+    const r = taskSchema.safeParse({
+      title: get("title"),
       description: get("description"),
       column,
       due: get("due") || undefined,
@@ -86,7 +86,31 @@ export const NewTaskModal = ({
         .map((st) => ({ ...st, title: st.title.trim() }))
         .filter((st) => st.title),
     });
-    onClose();
+    if (!r.success) {
+      const errs = errorsOf(r.error);
+      setErrors(errs);
+      // Subtasks have no single field; their message goes to the footer.
+      if (errs.subtasks) setSaveError(errs.subtasks);
+      form
+        .querySelector<HTMLElement>(
+          Object.keys(errs)
+            .map((k) => `[name=${k}]`)
+            .join(","),
+        )
+        ?.focus();
+      return;
+    }
+    setErrors({});
+    setSaving(true);
+    setSaveError("");
+    try {
+      await onCreate(r.data);
+      onClose();
+    } catch (err) {
+      // Keep the dialog open so nothing typed is lost.
+      setSaveError(`Couldn’t create the task: ${(err as Error).message}`);
+      setSaving(false);
+    }
   };
 
   return (
@@ -102,15 +126,21 @@ export const NewTaskModal = ({
       }
       footer={
         <>
-          <span className="inline-flex items-center gap-1 max-md:hidden">
-            <kbd className="kbd">{isMac ? "⌘" : "Ctrl"}</kbd>
-            <kbd className="kbd">Enter</kbd> to create
-          </span>
+          {saveError ? (
+            <Typography as="p" role="alert" color="alert">
+              {saveError}
+            </Typography>
+          ) : (
+            <span className="inline-flex items-center gap-1 max-md:hidden">
+              <kbd className="kbd">{isMac ? "⌘" : "Ctrl"}</kbd>
+              <kbd className="kbd">Enter</kbd> to create
+            </span>
+          )}
           <span className="flex gap-1.5 ml-auto">
             <Button variant="quiet" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" form={formId}>
+            <Button type="submit" form={formId} disabled={saving}>
               <Icon name="plus" /> Create task
             </Button>
           </span>
@@ -136,8 +166,8 @@ export const NewTaskModal = ({
           placeholder="What needs doing?"
           maxLength={200}
           autoComplete="off"
-          error={error}
-          onChange={() => setError("")}
+          error={errors.title}
+          onChange={() => setErrors((e) => ({ ...e, title: "" }))}
           data-autofocus
         />
         <div className="grid grid-cols-2 items-start gap-4 max-md:grid-cols-1">
@@ -149,7 +179,13 @@ export const NewTaskModal = ({
             onChange={(e) => setColumn(toColumn(e.target.value))}
             options={columnOptions(columns)}
           />
-          <Input name="due" type="date" label="Due date" icon="cal" optional />
+          <DatePicker
+            name="due"
+            label="Due date"
+            icon="cal"
+            optional
+            error={errors.due}
+          />
           <Input
             name="label"
             label="Label"
@@ -159,6 +195,7 @@ export const NewTaskModal = ({
             maxLength={24}
             autoComplete="off"
             list={listId}
+            error={errors.label}
           />
           <Labels id={listId} labels={labels} />
         </div>
@@ -188,6 +225,19 @@ export const TaskDetailModal = ({
 }) => {
   const { columns, labels, onClose } = shared;
   const listId = useId();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Invalid edits aren't saved; the field shows why until it's fixed.
+  const save = (patch: Partial<TaskFields>) => {
+    const r = taskSchema.partial().safeParse(patch);
+    const keys = Object.keys(patch);
+    setErrors((prev) => {
+      const next = { ...prev };
+      keys.forEach((k) => delete next[k]);
+      return r.success ? next : { ...next, ...errorsOf(r.error) };
+    });
+    if (r.success) onChange(r.data);
+  };
 
   return (
     <Modal
@@ -199,7 +249,7 @@ export const TaskDetailModal = ({
         <EditableTitle
           aria-label="Title"
           defaultValue={todo.title}
-          onChange={(title) => onChange({ title })}
+          onChange={(title) => save({ title })}
         />
       }
       footer={
@@ -219,15 +269,16 @@ export const TaskDetailModal = ({
           label="Column"
           icon="status"
           value={String(todo.column)}
-          onChange={(e) => onChange({ column: toColumn(e.target.value) })}
+          onChange={(e) => save({ column: toColumn(e.target.value) })}
           options={columnOptions(columns)}
         />
-        <Input
-          type="date"
+        <DatePicker
           label="Due date"
           icon="cal"
-          defaultValue={todo.due}
-          onChange={(e) => onChange({ due: e.target.value || undefined })}
+          optional
+          value={todo.due ?? ""}
+          error={errors.due}
+          onChange={(due) => save({ due: due || undefined })}
         />
         <Input
           label="Label"
@@ -237,9 +288,8 @@ export const TaskDetailModal = ({
           autoComplete="off"
           list={listId}
           defaultValue={todo.label}
-          onChange={(e) =>
-            onChange({ label: e.target.value.trim() || undefined })
-          }
+          error={errors.label}
+          onChange={(e) => save({ label: e.target.value.trim() || undefined })}
         />
         <Labels id={listId} labels={labels} />
       </div>
@@ -248,12 +298,17 @@ export const TaskDetailModal = ({
         icon="notes"
         placeholder="Add context, links or acceptance criteria"
         defaultValue={todo.description}
-        onChange={(e) => onChange({ description: e.target.value })}
+        onChange={(e) => save({ description: e.target.value })}
       />
       <Subtasks
         value={todo.subtasks}
-        onChange={(subtasks) => onChange({ subtasks })}
+        onChange={(subtasks) => save({ subtasks })}
       />
+      {errors.subtasks && (
+        <Typography as="p" role="alert" color="alert">
+          {errors.subtasks}
+        </Typography>
+      )}
     </Modal>
   );
 };

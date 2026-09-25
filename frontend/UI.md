@@ -48,7 +48,8 @@ Screens never set font size, weight, letter-spacing or line-height themselves. P
 | Need | Component |
 | --- | --- |
 | Any button (primary, secondary, quiet, danger, icon-only) | `Button` |
-| Labelled text, email, password, number or date field | `Input` |
+| Labelled text, email, password or number field | `Input` |
+| Labelled date field with a calendar (never `type="date"`) | `DatePicker` |
 | Labelled dropdown | `Select` |
 | Labelled multi-line field | `TextArea` |
 | Checkbox, with optional label and "some selected" state | `Checkbox` |
@@ -56,13 +57,20 @@ Screens never set font size, weight, letter-spacing or line-height themselves. P
 | Text edited in place inside a row that draws the field | `InlineInput` |
 | Dialog title you can edit in place | `EditableTitle` |
 | Chip / pill (label, due date, metadata) | `Tag` |
+| A person (assignee, signed-in user) | `Avatar` |
 | Line icon | `Icon` (add new SVGs to `src/assets/icons/` and `IconName.ts`) |
 | Dialog | `Modal` |
+| ⋯ button with a list of actions (board, column options) | `Menu` |
+| Dialog with one name field (rename, add column) | `NameDialog` |
+| "Are you sure?" before a destructive action | `ConfirmDialog` |
+| Placeholder for an area with nothing in it yet (no boards, no columns) | `EmptyState` |
 
 - **No raw form elements in screens.** `Input`, `Select` and `TextArea` already bring the label, icon, "optional" hint, error message and the ARIA wiring (`aria-invalid`, `aria-describedby`) through `Field`.
 - **Every control has an accessible name:** a `label`, or an `aria-label` when there's no visible one (icon buttons, `InlineInput`, a bare `Checkbox`).
 - **Colors come from tokens** (`bg-surface`, `text-muted`, `border-line`, `bg-primary-wash`…) or a hue through `--h` (`hue(n)`, `hashHue(s)` in `src/hue.ts`). Never hex values in screens.
 - **Known gap:** whole-row navigation buttons (sidebar board rows, the meeting picker list) are still raw `<button>`s. If you touch one, consider a list-row component.
+
+**Forms validate with zod.** Schemas live in `src/forms.ts` and mirror the backend's limits. Parse the form values with `safeParse`, show `errorsOf(result.error)` on the fields, and send only `result.data`.
 
 ## 3. Creating a new component
 

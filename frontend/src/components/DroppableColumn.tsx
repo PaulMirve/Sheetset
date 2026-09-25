@@ -1,8 +1,8 @@
 import { useDroppable } from "@dnd-kit/core";
 import { Column } from "@system-types/column";
 import classNames from "classnames";
-import Button from "./Button";
 import Icon from "./Icon";
+import Menu, { MenuItem } from "./Menu";
 import { hue } from "../hue";
 import Typography from "./Typography";
 
@@ -11,6 +11,7 @@ type Props = {
   index: number;
   count: number;
   dragOver: boolean;
+  menu: MenuItem[];
   children: React.ReactNode;
 };
 
@@ -19,6 +20,7 @@ const DroppableColumn = ({
   index,
   count,
   dragOver,
+  menu,
   children,
 }: Props) => {
   const { setNodeRef, isOver } = useDroppable({ id: `column-${column.id}` });
@@ -38,13 +40,11 @@ const DroppableColumn = ({
           {column.name}
         </Typography>
         <span className="count-pill">{count}</span>
-        <Button
-          variant="icon"
+        <Menu
+          label={`Options for ${column.name}`}
+          items={menu}
           className="ml-auto"
-          aria-label={`Options for ${column.name}`}
-        >
-          <Icon name="more" />
-        </Button>
+        />
       </div>
       <div ref={setNodeRef} className="flex flex-col gap-2 min-h-16">
         {count ? (

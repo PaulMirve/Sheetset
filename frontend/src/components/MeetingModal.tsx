@@ -1,12 +1,19 @@
 import { Board } from "@system-types/Board";
 import { Column, ColumnId } from "@system-types/column";
+import { ToDoId } from "@system-types/ToDo";
 import { Note, SuggestedTask } from "@system-types/meeting";
 import classNames from "classnames";
-import { useMeeting, useMeetings } from "@hooks/useMeetings";
+import {
+  useAcceptSuggestions,
+  useMeeting,
+  useMeetings,
+} from "@hooks/useMeetings";
 import { useId, useRef, useState } from "react";
 import { ApiError } from "../api";
+import { errorsOf, taskSchema } from "../forms";
 import { hashHue, hue } from "../hue";
 import Button from "./Button";
+import DatePicker from "./DatePicker";
 import Icon from "./Icon";
 import Input from "./Input";
 import Modal from "./Modal";
@@ -14,7 +21,6 @@ import Select from "./Select";
 import Tag from "./Tag";
 import TextArea from "./TextArea";
 import Typography from "./Typography";
-import { TaskFields } from "./TaskModal";
 import { DueTag } from "./ToDoCard";
 import Checkbox from "./Checkbox";
 
@@ -23,7 +29,8 @@ type Props = {
   columns: Column[];
   // Existing labels, suggested in the Label field.
   labels: string[];
-  onCreate: (tasks: TaskFields[]) => void;
+  // Ids of the created tasks, in suggestion order.
+  onCreated: (ids: ToDoId[]) => void;
   onClose: () => void;
 };
 
@@ -43,6 +50,8 @@ const draftOf = (t: SuggestedTask): Draft => ({
   description: "",
   column: "",
 });
+
+const draftSchema = taskSchema.pick({ title: true, due: true, label: true });
 
 const fmtDate = (d: string) =>
   new Date(`${d}T00:00`).toLocaleDateString("en-US", {
@@ -173,12 +182,12 @@ const SuggestionEditor = ({
           }}
         />
         <div className="grid grid-cols-2 gap-x-3.5 gap-y-3 max-sm:grid-cols-1">
-          <Input
-            type="date"
+          <DatePicker
             label="Due date"
             icon="cal"
-            defaultValue={draft.due}
-            onChange={(e) => onChange({ due: e.target.value })}
+            optional
+            value={draft.due}
+            onChange={(due) => onChange({ due })}
           />
           <Input
             label="Label"
@@ -241,7 +250,13 @@ const SuggestionEditor = ({
 };
 
 // Pick a meeting → read its notes, AI summary and suggested tasks → create the chosen ones.
-const MeetingModal = ({ board, columns, labels, onCreate, onClose }: Props) => {
+const MeetingModal = ({
+  board,
+  columns,
+  labels,
+  onCreated,
+  onClose,
+}: Props) => {
   const [pickedId, setPickedId] = useState<number>();
   // Everything starts selected, so track what the user unticked.
   const [unsel, setUnsel] = useState(new Set<number>());
@@ -250,13 +265,18 @@ const MeetingModal = ({ board, columns, labels, onCreate, onClose }: Props) => {
   const [open, setOpen] = useState<number>();
   const [column, setColumn] = useState(columns[0].id);
   const [hl, setHl] = useState<number>();
+  // Why a selected suggestion can't be created yet.
+  const [invalid, setInvalid] = useState("");
   const notesRef = useRef<HTMLDivElement>(null);
 
   const meetings = useMeetings();
   const detail = useMeeting(pickedId);
   const list = meetings.data;
   const meeting = detail.data;
-  const all = meeting?.tasks.map((_, i) => i) ?? [];
+  const accept = useAcceptSuggestions(pickedId!, board.id);
+  // Suggestions already turned into tasks can't be picked again.
+  const all =
+    meeting?.tasks.flatMap((t, i) => (t.task_id == null ? [i] : [])) ?? [];
   const sel = new Set(all.filter((i) => !unsel.has(i)));
 
   const show = (src?: number | null) => {
@@ -280,6 +300,7 @@ const MeetingModal = ({ board, columns, labels, onCreate, onClose }: Props) => {
       ...prev,
       [i]: { ...(prev[i] ?? draftOf(meeting!.tasks[i])), ...patch },
     }));
+    setInvalid("");
     // Working on a suggestion means you want it.
     setUnsel((prev) => {
       const next = new Set(prev);
@@ -302,31 +323,51 @@ const MeetingModal = ({ board, columns, labels, onCreate, onClose }: Props) => {
 
   const create = () => {
     if (!meeting) return;
-    onCreate(
-      [...sel]
-        .sort((a, b) => a - b)
-        .map((i) => {
-          const t = meeting.tasks[i];
-          const d = draft(i);
-          const line = t.src != null ? meeting.notes[t.src] : undefined;
-          // ponytail: no source field on ToDo yet, so the meeting link lives in the notes.
-          const quote = line?.text
-            ? `\n\n${first(line.who)}: “${line.text}”`
-            : "";
-          const source = `From “${meeting.title}”: ${t.why}${quote}`;
-          return {
-            title: d.title,
-            description: [d.description.trim(), source]
-              .filter(Boolean)
-              .join("\n\n"),
-            column: d.column ? toColumn(d.column) : column,
-            due: d.due || undefined,
-            label: d.label || undefined,
-            subtasks: [],
-          };
-        }),
+    const picked = [...sel].sort((a, b) => a - b);
+    for (const i of picked) {
+      const d = draft(i);
+      const r = draftSchema.safeParse({
+        title: d.title,
+        due: d.due || undefined,
+        label: d.label || undefined,
+      });
+      if (!r.success) {
+        // Open the suggestion so it can be fixed.
+        setOpen(i);
+        setInvalid(`“${d.title}”: ${Object.values(errorsOf(r.error))[0]}`);
+        return;
+      }
+    }
+    setInvalid("");
+    accept.mutate(
+      picked.map((i) => {
+        const t = meeting.tasks[i];
+        const d = draft(i);
+        const line = t.src != null ? meeting.notes[t.src] : undefined;
+        // ponytail: no source field on ToDo yet, so the meeting link lives in the notes.
+        const quote = line?.text
+          ? `\n\n${first(line.who)}: “${line.text}”`
+          : "";
+        const source = `From “${meeting.title}”: ${t.why}${quote}`;
+        return {
+          i,
+          title: d.title,
+          description: [d.description.trim(), source]
+            .filter(Boolean)
+            .join("\n\n"),
+          column_id: Number(d.column ? toColumn(d.column) : column),
+          // null, not undefined: a cleared field must not fall back to the suggestion's.
+          due: d.due || null,
+          label: d.label || null,
+        };
+      }),
+      {
+        onSuccess: (tasks) => {
+          onCreated(tasks.map((t) => t.id as unknown as ToDoId));
+          onClose();
+        },
+      },
     );
-    onClose();
   };
 
   const picked = pickedId != null;
@@ -338,6 +379,8 @@ const MeetingModal = ({ board, columns, labels, onCreate, onClose }: Props) => {
     setEdits({});
     setOpen(undefined);
     setHl(undefined);
+    accept.reset();
+    setInvalid("");
   };
 
   const title = meeting ? (
@@ -597,6 +640,7 @@ const MeetingModal = ({ board, columns, labels, onCreate, onClose }: Props) => {
             <div className="grid gap-2">
               {meeting.tasks.map((t, i) => {
                 const d = draft(i);
+                const added = t.task_id != null;
                 const col = columns.findIndex((c) => String(c.id) === d.column);
                 const editing = open === i;
                 return (
@@ -619,6 +663,7 @@ const MeetingModal = ({ board, columns, labels, onCreate, onClose }: Props) => {
                         size="md"
                         aria-label={`Create “${d.title}”`}
                         checked={sel.has(i)}
+                        disabled={added}
                         onChange={() => toggle(i)}
                         className="mt-px"
                       />
@@ -630,6 +675,16 @@ const MeetingModal = ({ board, columns, labels, onCreate, onClose }: Props) => {
                       >
                         <Typography variant="title">
                           {d.title}
+                          {added && (
+                            <Typography
+                              as="span"
+                              variant="chip"
+                              color="muted"
+                              className="ml-1.5 align-[1px]"
+                            >
+                              Added
+                            </Typography>
+                          )}
                           {edits[i] && (
                             <Typography
                               as="span"
@@ -739,11 +794,21 @@ const MeetingModal = ({ board, columns, labels, onCreate, onClose }: Props) => {
                 }))}
               />
             </div>
+            {invalid && (
+              <Typography as="p" role="alert" color="alert">
+                {invalid}
+              </Typography>
+            )}
+            {accept.error && (
+              <Typography as="p" role="alert" color="alert">
+                Couldn’t create tasks: {accept.error.message}
+              </Typography>
+            )}
             <span className="flex gap-1.5 ml-auto">
               <Button variant="quiet" onClick={back}>
                 <Icon name="arrow-left" /> Other meeting
               </Button>
-              <Button disabled={!n} onClick={create}>
+              <Button disabled={!n || accept.isPending} onClick={create}>
                 <Icon name="plus" />
                 {n
                   ? `Create ${n} task${n > 1 ? "s" : ""}`

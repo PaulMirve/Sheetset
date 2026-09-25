@@ -20,7 +20,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { Subtask, SubtaskId } from "@system-types/Subtask";
 import classNames from "classnames";
 import { KeyboardEvent, ReactNode, useRef, useState } from "react";
-import { base } from "../mocks/data";
 import Button from "./Button";
 import Icon from "./Icon";
 import Typography from "./Typography";
@@ -127,7 +126,7 @@ const Subtasks = ({ value, onChange, optional }: Props) => {
     if (!title) return;
     onChange([
       ...value,
-      { ...base, id: nextId-- as SubtaskId, title, completed: false },
+      { id: nextId-- as SubtaskId, title, completed: false },
     ]);
   };
 

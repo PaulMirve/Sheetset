@@ -1,5 +1,6 @@
 import Button from "@components/Button";
 import Icon from "@components/Icon";
+import Menu, { MenuItem } from "@components/Menu";
 import Typography from "@components/Typography";
 import { Board } from "@system-types/Board";
 import { hashHue } from "../hue";
@@ -9,6 +10,7 @@ type Props = {
   columns: number;
   done: number;
   total: number;
+  menu: MenuItem[];
   onNewTask: () => void;
   onFromMeeting: () => void;
 };
@@ -18,6 +20,7 @@ const Navbar = ({
   columns,
   done,
   total,
+  menu,
   onNewTask,
   onFromMeeting,
 }: Props) => (
@@ -61,15 +64,18 @@ const Navbar = ({
       </div>
     </div>
     <div className="flex items-center gap-2 flex-none max-md:flex-wrap">
-      <Button variant="secondary" onClick={onFromMeeting}>
+      {/* Tasks need a column to land in. */}
+      <Button
+        variant="secondary"
+        onClick={onFromMeeting}
+        disabled={columns === 0}
+      >
         <Icon name="spark" /> From meeting
       </Button>
-      <Button onClick={onNewTask}>
+      <Button onClick={onNewTask} disabled={columns === 0}>
         <Icon name="plus" /> New task
       </Button>
-      <Button variant="icon" aria-label="Board options">
-        <Icon name="more" />
-      </Button>
+      <Menu label="Board options" items={menu} />
     </div>
   </header>
 );

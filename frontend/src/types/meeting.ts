@@ -15,6 +15,7 @@ export type SuggestedTask = {
   label?: string | null;
   src?: number | null; // index into notes
   why: string;
+  task_id?: number | null; // set once accepted
 };
 
 export type Meeting = {
