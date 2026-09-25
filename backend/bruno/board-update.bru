@@ -1,0 +1,34 @@
+meta {
+  name: Board update
+  type: http
+  seq: 20
+}
+
+patch {
+  url: {{baseUrl}}/boards/{{boardId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Platform Launch v2"
+  }
+}
+
+tests {
+  test("renames the board", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().name).to.equal("Platform Launch v2");
+  });
+}
+
+docs {
+  Changes only the fields sent: `name` (1–60 characters) and `shared`. Any member can do this.
+
+  Responses: `200` the board · `401` · `404` · `422` invalid body.
+}

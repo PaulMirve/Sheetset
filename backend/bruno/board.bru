@@ -1,0 +1,28 @@
+meta {
+  name: Board
+  type: http
+  seq: 19
+}
+
+get {
+  url: {{baseUrl}}/boards/{{boardId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("returns the board", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.include.keys("id", "key", "name", "shared", "owner_id", "columns");
+  });
+}
+
+docs {
+  One board with its columns.
+
+  Responses: `200` · `401` · `404` unknown board or not a member.
+}

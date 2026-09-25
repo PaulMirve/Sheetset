@@ -50,7 +50,7 @@ tests {
 docs {
   Called by **n8n** after it has summarised a meeting. Auth is the `X-API-Key` header, which must match the server's `N8N_API_KEY` env var (start the server with `N8N_API_KEY=REDACTED_LOCAL_CREDENTIAL` to match the local environment).
 
-  Re-sending the same `external_id` replaces the stored meeting, so running this twice keeps the same `id`.
+  Re-sending the same `external_id` replaces the stored meeting, so running this twice keeps the same `id`. It also replaces the suggestions, including edits and links to accepted tasks.
 
   | Field | Notes |
   |---|---|
@@ -59,6 +59,7 @@ docs {
   | `notes[]` | `{ t, who, text }` lines or `{ h }` section headings |
   | `tasks[].src` | index into `notes` the suggestion came from |
   | `tasks[].due` | absolute date `YYYY-MM-DD`, not days-from-today |
+  | `tasks[].task_id` | leave out; set when a user accepts the suggestion |
 
   Responses: `201 { id }` · `401` bad or missing key · `422` invalid body.
 }

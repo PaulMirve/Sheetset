@@ -1,0 +1,47 @@
+meta {
+  name: Board create
+  type: http
+  seq: 18
+}
+
+post {
+  url: {{baseUrl}}/boards
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Platform Launch",
+    "shared": false
+  }
+}
+
+script:post-response {
+  if (res.body.id) bru.setEnvVar("boardId", res.body.id);
+  if (res.body.columns?.length) bru.setEnvVar("columnId", res.body.columns[0].id);
+}
+
+tests {
+  test("creates the board with default columns", function() {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().columns).to.have.length(3);
+  });
+}
+
+docs {
+  Creates a board owned by you, with columns To do, Doing and Done. Sets `{{boardId}}` and `{{columnId}}` (the first column), which the task requests use.
+
+  `key` (the "PLAT" in PLAT-12) comes from the name: its first 4 letters or digits, plus a number if taken. It never changes.
+
+  | Field | Notes |
+  |---|---|
+  | `name` | required, 1–60 characters after trimming |
+  | `shared` | default `false` |
+
+  Responses: `201` the board · `401` · `422` invalid body.
+}

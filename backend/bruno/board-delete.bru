@@ -1,0 +1,27 @@
+meta {
+  name: Board delete
+  type: http
+  seq: 24
+}
+
+delete {
+  url: {{baseUrl}}/boards/{{boardId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("deletes the board", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Deletes the board with its columns and tasks. Only the owner can do this.
+
+  Responses: `204` · `401` · `403` not the owner · `404`.
+}

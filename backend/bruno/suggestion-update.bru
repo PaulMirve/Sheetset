@@ -1,0 +1,39 @@
+meta {
+  name: Suggestion update
+  type: http
+  seq: 9
+}
+
+put {
+  url: {{baseUrl}}/meetings/{{meetingId}}/tasks/0
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Draft FAQ for the pricing change",
+    "who": "Sam Taylor",
+    "due": "2026-09-30",
+    "label": "Content",
+    "src": 1,
+    "why": "Sam volunteered."
+  }
+}
+
+tests {
+  test("replaces the suggestion", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()[0].due).to.equal("2026-09-30");
+  });
+}
+
+docs {
+  Replaces suggestion `0` (the index in `tasks`) with the body. Send every field you want to keep. `task_id` can't be changed here; it's kept from the stored suggestion.
+
+  Responses: `200` the meeting's full `tasks` list · `401` · `404` unknown meeting or index · `422` invalid body.
+}

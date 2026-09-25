@@ -1,0 +1,42 @@
+meta {
+  name: Suggestion accept
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/meetings/{{meetingId}}/tasks/0/accept
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "board_id": {{boardId}},
+    "column_id": {{columnId}},
+    "description": "From “Spring launch sync”: Sam volunteered."
+  }
+}
+
+script:post-response {
+  if (res.body.id) bru.setEnvVar("taskId", res.body.id);
+}
+
+tests {
+  test("creates a task from the suggestion", function() {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().title).to.equal("Draft FAQ for the pricing change");
+  });
+}
+
+docs {
+  Turns suggestion `0` into a real task on `{{boardId}}`. The suggestion then keeps the new task's id in `task_id`, so running this twice gets `409`.
+
+  Body: `board_id` and `column_id` (required), plus any **Task update** field. `title`, `due` and `label` default to the suggestion's.
+
+  Responses: `201` the task · `401` · `404` unknown meeting/index, or a board you're not a member of · `409` already accepted · `422` column, assignee or epic not on the board.
+}

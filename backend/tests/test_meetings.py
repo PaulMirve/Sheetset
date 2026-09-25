@@ -58,7 +58,7 @@ def test_meetings_flow():
     m = c.get(f"/meetings/{mid}", headers=auth).json()
     assert m["summary"] == "Updated."
     assert m["decisions"] == MEETING["decisions"]
-    assert m["tasks"] == MEETING["tasks"]
+    assert m["tasks"] == [{**t, "task_id": None} for t in MEETING["tasks"]]
     assert m["notes"][0] == {"t": None, "who": None, "text": None, "h": "Next steps"}
     assert c.get("/meetings/999", headers=auth).status_code == 404
 

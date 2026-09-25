@@ -1,0 +1,44 @@
+meta {
+  name: Task update
+  type: http
+  seq: 15
+}
+
+patch {
+  url: {{baseUrl}}/tasks/{{taskId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "position": 0,
+    "title": "Map the missing legacy tiers",
+    "subtasks": [
+      { "title": "List legacy tiers", "done": true },
+      { "title": "Dry run" }
+    ]
+  }
+}
+
+tests {
+  test("updates the task", function() {
+    expect(res.getStatus()).to.equal(200);
+    const t = res.getBody();
+    expect(t.position).to.equal(0);
+    expect(t.subtasks[0].done).to.equal(true);
+  });
+}
+
+docs {
+  Changes only the fields sent. Send `null` to clear `label`, `due`, `assignee_id` or `epic_id`; the other fields can't be null.
+
+  - `column_id` / `position`: moves the task and renumbers the column. A new `column_id` without `position` puts it at the bottom.
+  - `subtasks`: replaces the whole list, so subtask ids change.
+
+  Responses: `200` the task · `401` · `404` · `422` invalid body, or column/assignee/epic not on the board.
+}

@@ -1,0 +1,41 @@
+meta {
+  name: Suggestion add
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/meetings/{{meetingId}}/tasks
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Book the launch retro",
+    "who": "Paula Reyes",
+    "due": "2026-10-06",
+    "label": "Ops",
+    "why": "Added by hand."
+  }
+}
+
+tests {
+  test("appends the suggestion", function() {
+    expect(res.getStatus()).to.equal(201);
+    const list = res.getBody();
+    expect(list[list.length - 1].title).to.equal("Book the launch retro");
+  });
+}
+
+docs {
+  Adds a suggestion to a meeting by hand. Same fields as `tasks[]` in **Meeting ingest (n8n)**; only `title` is required. `task_id` is ignored.
+
+  Suggestions are addressed by their index in `tasks`. Deleting one shifts the indexes after it.
+
+  Responses: `201` the meeting's full `tasks` list · `401` · `404` unknown meeting · `422` invalid body.
+}

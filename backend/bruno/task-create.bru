@@ -1,0 +1,56 @@
+meta {
+  name: Task create
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/boards/{{boardId}}/tasks
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Map the two missing legacy tiers",
+    "column_id": {{columnId}},
+    "description": "Needed before the billing migration.",
+    "label": "Engineering",
+    "due": "2026-09-27",
+    "subtasks": [
+      { "title": "List legacy tiers" },
+      { "title": "Dry run", "done": false }
+    ]
+  }
+}
+
+script:post-response {
+  if (res.body.id) bru.setEnvVar("taskId", res.body.id);
+}
+
+tests {
+  test("creates the task", function() {
+    expect(res.getStatus()).to.equal(201);
+    const t = res.getBody();
+    expect(t.number).to.be.a("number");
+    expect(t.subtasks).to.have.length(2);
+  });
+}
+
+docs {
+  Adds a task to the bottom of `column_id` and gives it the board's next `number` (the 12 in APP-12). Numbers of deleted tasks are never reused. Sets `{{taskId}}`.
+
+  | Field | Notes |
+  |---|---|
+  | `title`, `column_id` | required |
+  | `assignee_id` | must be a board member |
+  | `epic_id` | must be a task on this board with `is_epic: true` |
+  | `due` | `YYYY-MM-DD` |
+  | `subtasks[]` | `{ title, done }` |
+
+  Responses: `201` the task · `401` · `404` unknown board or not a member · `422` invalid body, or column/assignee/epic not on the board.
+}

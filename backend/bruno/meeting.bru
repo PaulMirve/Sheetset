@@ -20,7 +20,7 @@ tests {
     const m = res.getBody();
     expect(m.summary).to.be.a("string");
     expect(m.decisions).to.be.an("array");
-    expect(m.tasks[0]).to.include.keys("title", "who", "due", "label", "src", "why");
+    expect(m.tasks[0]).to.include.keys("title", "who", "due", "label", "src", "why", "task_id");
   });
 }
 

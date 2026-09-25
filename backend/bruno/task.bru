@@ -1,0 +1,28 @@
+meta {
+  name: Task
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/tasks/{{taskId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("returns the task", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.include.keys("id", "number", "column_id", "position", "subtasks");
+  });
+}
+
+docs {
+  One task with its subtasks. Uses `{{taskId}}`, set by **Task create** or **Suggestion accept**.
+
+  Responses: `200` · `401` · `404` unknown task, or a board you're not a member of.
+}

@@ -1,0 +1,35 @@
+meta {
+  name: Column update
+  type: http
+  seq: 22
+}
+
+patch {
+  url: {{baseUrl}}/columns/{{columnId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Backlog",
+    "position": 0
+  }
+}
+
+tests {
+  test("renames and moves the column", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().columns[0].name).to.equal("Backlog");
+  });
+}
+
+docs {
+  Changes only the fields sent. `position` moves the column and renumbers the others (0 is first).
+
+  Responses: `200` the whole board · `401` · `404` unknown column or not a member · `422` invalid body.
+}

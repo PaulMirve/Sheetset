@@ -1,0 +1,28 @@
+meta {
+  name: Suggestion delete
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{baseUrl}}/meetings/{{meetingId}}/tasks/1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("removes the suggestion", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.be.an("array");
+  });
+}
+
+docs {
+  Removes suggestion `1` (the one **Suggestion add** appended to the sample meeting). Later suggestions move up one index.
+
+  Responses: `200` the meeting's remaining `tasks` list · `401` · `404` unknown meeting or index.
+}

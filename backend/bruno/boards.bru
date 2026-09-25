@@ -1,0 +1,28 @@
+meta {
+  name: Boards
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{baseUrl}}/boards
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("lists my boards", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.be.an("array");
+  });
+}
+
+docs {
+  Boards the signed-in user is a member of, oldest first, each with its `columns` in order.
+
+  Responses: `200 [...]` · `401`.
+}

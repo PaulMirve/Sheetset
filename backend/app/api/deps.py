@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..core import config
 from ..core.security import read_token
 from ..crud import user as user_crud
-from ..db.models import User
+from ..db.models import Board, User
 from ..db.session import get_db
 
 bearer = HTTPBearer(auto_error=False)
@@ -31,3 +31,11 @@ def n8n_key(x_api_key: str = Header("")) -> None:
     """Auth dependency for machine-to-machine routes called by n8n."""
     if not config.N8N_API_KEY or not hmac.compare_digest(x_api_key, config.N8N_API_KEY):
         raise HTTPException(401, "invalid api key")
+
+
+def member_board(db: Session, board_id: int, user: User) -> Board:
+    """The board, if `user` is a member. Non-members get the same 404 as a missing board."""
+    board = db.get(Board, board_id)
+    if board is None or user.id not in {m.id for m in board.members}:
+        raise HTTPException(404, "board not found")
+    return board

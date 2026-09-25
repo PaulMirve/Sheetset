@@ -1,0 +1,27 @@
+meta {
+  name: Task delete
+  type: http
+  seq: 16
+}
+
+delete {
+  url: {{baseUrl}}/tasks/{{taskId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("deletes the task", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Deletes `{{taskId}}` and its subtasks. Tasks under a deleted epic are kept and lose their `epic_id`.
+
+  Responses: `204` · `401` · `404`.
+}
