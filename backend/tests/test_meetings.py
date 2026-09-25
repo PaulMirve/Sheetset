@@ -29,8 +29,8 @@ MEETING = {
     "summary": "The team reviewed launch readiness.",
     "decisions": ["Launch email pushed by one week"],
     "tasks": [
-        {"title": "Draft FAQ for the pricing change", "who": "Sam Taylor", "due": "2026-09-29", "label": "Content", "src": 1, "why": "Sam volunteered."},
-        {"title": "Map the two missing legacy tiers", "who": "Paula Reyes", "due": "2026-09-27", "label": "Engineering", "src": 2, "why": "Paula committed."},
+        {"title": "Draft FAQ for the pricing change", "who": "Sam Taylor", "due": "2026-09-29", "label": "Content", "src": 1, "why": "Sam volunteered.", "description": "Customers will ask how pricing changes their plan."},
+        {"title": "Map the two missing legacy tiers", "who": "Paula Reyes", "due": "2026-09-27", "label": "Engineering", "src": 2, "why": "Paula committed.", "description": ""},
     ],
 }
 

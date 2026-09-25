@@ -15,6 +15,7 @@ export type SuggestedTask = {
   label?: string | null;
   src?: number | null; // index into notes
   why: string;
+  description?: string; // objective and context
   task_id?: number | null; // set once accepted
 };
 

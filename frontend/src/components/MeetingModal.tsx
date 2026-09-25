@@ -47,7 +47,7 @@ const draftOf = (t: SuggestedTask): Draft => ({
   title: t.title,
   due: t.due ?? "",
   label: t.label ?? "",
-  description: "",
+  description: t.description ?? "",
   column: "",
 });
 

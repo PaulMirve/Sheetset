@@ -62,7 +62,8 @@ def test_tasks_flow():
 
     # Suggested tasks: create, edit, delete, accept.
     meeting = {"external_id": "m1", "title": "Sync", "date": "2026-09-24", "summary": "s",
-               "tasks": [{"title": "Draft FAQ", "due": "2026-09-29", "label": "Content", "why": "volunteered"}]}
+               "tasks": [{"title": "Draft FAQ", "due": "2026-09-29", "label": "Content", "why": "volunteered",
+                          "description": "FAQ for the pricing change"}]}
     mid = c.post("/meetings", json=meeting, headers={"X-API-Key": "n8n-test-key"}).json()["id"]
     sug = f"/meetings/{mid}/tasks"
     assert c.post(sug, json={"title": "Extra"}).status_code == 401
@@ -77,6 +78,7 @@ def test_tasks_flow():
     assert r.status_code == 201
     t = r.json()
     assert (t["title"], t["due"], t["label"]) == ("Draft FAQ", "2026-09-29", "Docs")
+    assert t["description"] == "FAQ for the pricing change"
     assert c.get(f"/meetings/{mid}", headers=me).json()["tasks"][0]["task_id"] == t["id"]
     assert c.post(acc, json={"board_id": bid, "column_id": todo}, headers=me).status_code == 409
 

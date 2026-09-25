@@ -19,6 +19,7 @@ class SuggestedTask(BaseModel):
     label: str | None = None
     src: int | None = None  # index into notes
     why: str = ""
+    description: str = ""  # objective and context; becomes the task description
     task_id: int | None = None  # set once accepted
 
 

@@ -98,6 +98,7 @@ def accept_suggestion(
     board = member_board(db, body.board_id, user)
     data = {
         "title": s.title,
+        "description": s.description,
         "due": s.due,
         "label": s.label,
         **body.model_dump(exclude_unset=True, exclude={"board_id", "position"}),

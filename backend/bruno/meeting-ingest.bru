@@ -31,7 +31,7 @@ body:json {
     "summary": "The team reviewed launch readiness.",
     "decisions": ["Launch email pushed by one week"],
     "tasks": [
-      { "title": "Draft FAQ for the pricing change", "who": "Sam Taylor", "due": "2026-09-29", "label": "Content", "src": 1, "why": "Sam volunteered." }
+      { "title": "Draft FAQ for the pricing change", "who": "Sam Taylor", "due": "2026-09-29", "label": "Content", "src": 1, "why": "Sam volunteered.", "description": "Customers will ask how the new pricing affects their current plan. Write an FAQ covering the tier changes and the migration date so support and the launch email can link to it." }
     ]
   }
 }
@@ -58,6 +58,7 @@ docs {
   | `title`, `date`, `summary` | required; `date` is `YYYY-MM-DD` |
   | `notes[]` | `{ t, who, text }` lines or `{ h }` section headings |
   | `tasks[].src` | index into `notes` the suggestion came from |
+  | `tasks[].description` | objective of the task plus the context from the meeting needed to understand it; becomes the task description when accepted |
   | `tasks[].due` | absolute date `YYYY-MM-DD`, not days-from-today |
   | `tasks[].task_id` | leave out; set when a user accepts the suggestion |
 

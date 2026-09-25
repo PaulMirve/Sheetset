@@ -64,7 +64,7 @@ class Task(BaseModel):
 
 
 class Accept(TaskPatch):
-    """Turn a suggestion into a task. Omitted title/due/label come from the suggestion."""
+    """Turn a suggestion into a task. Omitted title/description/due/label come from the suggestion."""
 
     board_id: int
     column_id: int
