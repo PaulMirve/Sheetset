@@ -18,7 +18,7 @@ import Segmented from "./Segmented";
 import Select from "./Select";
 import Subtasks from "./Subtasks";
 import Tag from "./Tag";
-import TextArea from "./TextArea";
+import RichTextArea from "./RichTextArea";
 import Typography from "./Typography";
 
 export type TaskFields = Pick<
@@ -512,7 +512,7 @@ export const NewTaskModal = ({
             />
           )}
         </div>
-        <TextArea
+        <RichTextArea
           name="description"
           label="Notes"
           icon="notes"
@@ -676,7 +676,7 @@ export const TaskDetailModal = ({
           />
         )}
       </div>
-      <TextArea
+      <RichTextArea
         label={todo.isEpic ? "About this epic" : "Notes"}
         icon="notes"
         placeholder={
@@ -685,7 +685,7 @@ export const TaskDetailModal = ({
             : "Add context, links or acceptance criteria"
         }
         defaultValue={todo.description}
-        onChange={(e) => save({ description: e.target.value })}
+        onChange={(description) => save({ description })}
       />
       {todo.isEpic ? (
         <EpicTasks

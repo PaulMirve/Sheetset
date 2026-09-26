@@ -17,6 +17,16 @@ const day = (offset = 0) => {
 };
 
 // Overdue → alert red, due within 2 days → amber, else neutral.
+// Card preview of markdown notes: drop the syntax, keep the words.
+// ponytail: regex strip covers what the editor writes; swap for a markdown parser if previews look off.
+export const plain = (md: string) =>
+  md
+    .replace(/```[^\n]*\n?/g, "")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^[ \t]*(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
+    .replace(/(?<!\\)(\*\*|__|~~|[*_`])/g, "")
+    .replace(/\\([\\`*_{}[\]()#+\-.!>~|])/g, "$1");
+
 export const DueTag = ({ due }: { due: string }) => {
   const late = due < day();
   const soon = !late && due <= day(2);
@@ -219,7 +229,7 @@ export const Card = ({
       </div>
       {description && (
         <Typography color="muted" className="-mt-1 line-clamp-2">
-          {description}
+          {plain(description)}
         </Typography>
       )}
       {(label || due || source || parent) && (

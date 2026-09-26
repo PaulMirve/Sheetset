@@ -25,7 +25,7 @@ import {
   toEpic,
   useTaskSave,
 } from "./TaskModal";
-import TextArea from "./TextArea";
+import RichTextArea from "./RichTextArea";
 import { DueTag } from "./ToDoCard";
 import Typography from "./Typography";
 
@@ -372,7 +372,7 @@ const TaskPage = ({
                 onOpenMeeting={() => onOpenMeeting(todo.source!.meeting_id)}
               />
             )}
-            <TextArea
+            <RichTextArea
               label={todo.isEpic ? "About this epic" : "Notes"}
               icon="notes"
               placeholder={
@@ -381,7 +381,7 @@ const TaskPage = ({
                   : "Add context, links or acceptance criteria"
               }
               defaultValue={todo.description}
-              onChange={(e) => save({ description: e.target.value })}
+              onChange={(description) => save({ description })}
               className="min-h-[132px]"
             />
             {todo.isEpic ? (
