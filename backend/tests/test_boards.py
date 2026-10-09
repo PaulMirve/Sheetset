@@ -22,7 +22,7 @@ def test_boards_flow():
 
     b = c.post("/boards", json={"name": "Platform Launch", "shared": True}, headers=me).json()
     assert (b["key"], b["shared"]) == ("PLAT", True)
-    assert [col["name"] for col in b["columns"]] == ["To do", "Doing", "Done"]
+    assert [col["name"] for col in b["columns"]] == ["To do", "Doing", "Code review", "Done"]
     assert c.post("/boards", json={"name": "Platform"}, headers=me).json()["key"] == "PLAT2"
     assert c.post("/boards", json={"name": "✨"}, headers=me).json()["key"] == "B"
 
@@ -37,10 +37,10 @@ def test_boards_flow():
     ids = {col["name"]: col["id"] for col in b["columns"]}
     task = c.post(f"/boards/{b['id']}/tasks", json={"title": "t", "column_id": ids["Doing"]}, headers=me).json()
     b = c.patch(f"/columns/{ids['Review']}", json={"name": "QA", "position": 0}, headers=me).json()
-    assert [(col["name"], col["position"]) for col in b["columns"]] == [("QA", 0), ("To do", 1), ("Doing", 2), ("Done", 3)]
+    assert [(col["name"], col["position"]) for col in b["columns"]] == [("QA", 0), ("To do", 1), ("Doing", 2), ("Code review", 3), ("Done", 4)]
     assert c.patch(f"/columns/{ids['Review']}", json={}, headers=other).status_code == 404
     b = c.delete(f"/columns/{ids['Doing']}", headers=me).json()
-    assert [(col["name"], col["position"]) for col in b["columns"]] == [("QA", 0), ("To do", 1), ("Done", 2)]
+    assert [(col["name"], col["position"]) for col in b["columns"]] == [("QA", 0), ("To do", 1), ("Code review", 2), ("Done", 3)]
     assert c.get(f"/tasks/{task['id']}", headers=me).status_code == 404
     for col in b["columns"]:
         b = c.delete(f"/columns/{col['id']}", headers=me).json()

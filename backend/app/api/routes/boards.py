@@ -13,7 +13,7 @@ from ..deps import current_user, member_board
 
 router = APIRouter(tags=["boards"])
 
-DEFAULT_COLUMNS = ["To do", "Doing", "Done"]
+DEFAULT_COLUMNS = ["To do", "Doing", "Code review", "Done"]
 
 
 def _key(db: Session, name: str) -> str:
