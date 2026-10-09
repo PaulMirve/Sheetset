@@ -18,6 +18,7 @@ import {
   columnOptions,
   EpicSelect,
   EpicTasks,
+  Blockers,
   Labels,
   Source,
   TaskFields,
@@ -412,6 +413,13 @@ const TaskPage = ({
                 {errors.subtasks}
               </Typography>
             )}
+            <Blockers
+              todo={todo}
+              todos={todos}
+              columns={columns}
+              onOpen={onOpenTask}
+              onChange={(blockedBy) => save({ blockedBy })}
+            />
             <Files boardId={board.id} todo={todo} />
           </div>
 
@@ -424,8 +432,8 @@ const TaskPage = ({
                 label="Column"
                 icon="status"
                 value={String(todo.column)}
-                onChange={(e) => save({ column: toColumn(e.target.value) })}
-                options={columnOptions(columns)}
+                onChange={(v) => save({ column: toColumn(v) })}
+                options={columnOptions(columns, todo, todos)}
               />
               <DatePicker
                 label="Due date"
@@ -453,7 +461,7 @@ const TaskPage = ({
                 <EpicSelect
                   epics={epics}
                   value={todo.epic ? String(todo.epic) : ""}
-                  onChange={(e) => save({ epic: toEpic(e.target.value) })}
+                  onChange={(v) => save({ epic: toEpic(v) })}
                 />
               )}
               <Typography

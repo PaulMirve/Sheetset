@@ -24,6 +24,7 @@ export const toToDo = (t: Task, boardKey: string): ToDo => ({
   })),
   isEpic: t.is_epic,
   epic: (t.epic_id ?? undefined) as ToDoId | undefined,
+  blockedBy: t.blocked_by as ToDoId[],
   source: t.source ?? undefined,
   files: t.files,
   created_at: t.created_at,
@@ -37,6 +38,7 @@ const toBody = (fields: Partial<TaskFields>) => {
     if (k === "column") body.column_id = v;
     else if (k === "isEpic") body.is_epic = v;
     else if (k === "epic") body.epic_id = v ?? null;
+    else if (k === "blockedBy") body.blocked_by = v ?? [];
     else if (k === "subtasks")
       body.subtasks = fields
         .subtasks!.filter((s) => s.title.trim())
@@ -49,12 +51,18 @@ const toBody = (fields: Partial<TaskFields>) => {
 // Every task write runs in order, so fast edits (typing notes) can't land out of order.
 const scope = { id: "tasks" };
 
-export const useTasks = ({ id, key }: Board) =>
-  useQuery({
+// Polls so moves made outside the app (e.g. by Claude via the API) show up.
+// Paused while a write is in flight, so a refetch can't undo an optimistic update.
+// ponytail: 5s polling, switch to SSE/websocket if it needs to be instant.
+export const useTasks = ({ id, key }: Board) => {
+  const qc = useQueryClient();
+  return useQuery({
     queryKey: taskKeys.board(id),
     queryFn: async () =>
       (await api<Task[]>(`/boards/${id}/tasks`)).map((t) => toToDo(t, key)),
+    refetchInterval: () => (qc.isMutating() ? false : 5000),
   });
+};
 
 export const useCreateTask = ({ id: boardId, key }: Board) => {
   const qc = useQueryClient();

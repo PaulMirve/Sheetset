@@ -57,6 +57,7 @@ export const taskSchema = z.object({
     .optional(),
   isEpic: z.boolean().optional(),
   epic: z.custom<ToDoId>((v) => typeof v === "number").optional(),
+  blockedBy: z.array(z.custom<ToDoId>((v) => typeof v === "number")).optional(),
   subtasks: z.array(
     z.custom<Subtask>(
       (s) => (s as Subtask).title.length <= 200,

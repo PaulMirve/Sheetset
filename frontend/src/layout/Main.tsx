@@ -26,9 +26,11 @@ import { Column, ColumnId } from "@system-types/column";
 import { ToDo, ToDoId } from "@system-types/ToDo";
 import MeetingModal from "@components/MeetingModal";
 import {
+  canMove,
   NewTaskModal,
   TaskDetailModal,
   TaskFields,
+  waitingOn,
 } from "@components/TaskModal";
 import {
   useCreateTask,
@@ -166,11 +168,17 @@ const Main = ({ board }: { board: Board }) => {
         (t) => (t.id as unknown as number) === activeNumId,
       );
       const activeTodo = prev[activeIdx];
+      // Checked against where the card started, with the board as saved.
+      const saved = tasks.data ?? prev;
+      const from = saved.find((t) => t.id === activeTodo.id) ?? activeTodo;
+      const allowed = (column: ColumnId) =>
+        canMove(from, column, saved, columns);
 
       if (overIsColumn) {
         const colNum = parseInt((over.id as string).replace("column-", ""), 10);
         const targetColumnId = colNum as unknown as ColumnId;
         if (activeTodo.column === targetColumnId) return prev;
+        if (!allowed(targetColumnId)) return prev;
         const without = prev.filter(
           (t) => (t.id as unknown as number) !== activeNumId,
         );
@@ -184,6 +192,7 @@ const Main = ({ board }: { board: Board }) => {
       const overTodo = prev[overIdx];
 
       if (activeTodo.column === overTodo.column) return prev;
+      if (!allowed(overTodo.column)) return prev;
 
       // Cross-column: remove active, insert at over card's position
       const without = [...prev];
@@ -497,6 +506,7 @@ const Main = ({ board }: { board: Board }) => {
                         parent={todos.find(
                           (t) => t.isEpic && t.id === todo.epic,
                         )}
+                        blockers={waitingOn(todo, todos, columns)}
                         onOpenTask={setOpenTask}
                         onAddToEpic={() => openNew({ epic: todo.id })}
                         landed={(todo.id as unknown as number) === landedId}

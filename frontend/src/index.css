@@ -110,6 +110,7 @@
   .lane {
     background: color-mix(in srgb, var(--h) 7%, var(--color-ground));
     transition: box-shadow 0.16s var(--ease-out);
+    scrollbar-width: none;
   }
   .lane.drag-over {
     box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--h) 45%, transparent);

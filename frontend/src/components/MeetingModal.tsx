@@ -211,7 +211,7 @@ const SuggestionEditor = ({
               label="Column"
               icon="status"
               defaultValue={draft.column}
-              onChange={(e) => onChange({ column: e.target.value })}
+              onChange={(v) => onChange({ column: v })}
               options={[
                 { value: "", label: "Same as “Add to” below" },
                 ...columns.map((c) => ({ value: String(c.id), label: c.name })),
@@ -780,9 +780,7 @@ const MeetingModal = ({
                 label="Add to"
                 icon="status"
                 value={String(column)}
-                onChange={(e) =>
-                  setColumn(Number(e.target.value) as unknown as ColumnId)
-                }
+                onChange={(v) => setColumn(Number(v) as unknown as ColumnId)}
                 options={columns.map((c) => ({
                   value: String(c.id),
                   label: c.name,

@@ -21,6 +21,7 @@ export type ToDo = {
   subtasks: Subtask[];
   isEpic: boolean;
   epic?: ToDoId; // the epic this task belongs to
+  blockedBy: ToDoId[]; // tasks that have to be done first
   source?: TaskSource;
   files: TaskFile[];
   created_at: string;

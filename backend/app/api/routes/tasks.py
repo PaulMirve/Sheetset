@@ -28,6 +28,25 @@ def _check(db: Session, board: Board, data: dict) -> None:
             raise HTTPException(422, "epic is not on this board")
 
 
+def _blockers(db: Session, board: Board, ids: list[int], task_id: int | None = None) -> list[TaskModel]:
+    """Tasks on this board that block `task_id`. A task can't block itself."""
+    tasks = db.scalars(select(TaskModel).where(TaskModel.id.in_(ids), TaskModel.board_id == board.id)).all()
+    if len(tasks) != len(set(ids)) or task_id in ids:
+        raise HTTPException(422, "blocker is not another task on this board")
+    # ponytail: no cycle check (A blocks B blocks A is allowed); add a graph walk if it confuses people.
+    return list(tasks)
+
+
+def _check_unblocked(board: Board, task: TaskModel, column_id: int) -> None:
+    """A task can't move right while a blocker is outside the last column. Moving back is fine."""
+    order = [c.id for c in board.columns]
+    if order.index(column_id) <= order.index(task.column_id):
+        return
+    waiting = [b for b in task.blockers if b.column_id != order[-1]]
+    if waiting:
+        raise HTTPException(409, "blocked by " + ", ".join(f"{board.key}-{b.number}" for b in waiting))
+
+
 def _subtasks(items: list[dict]) -> list[Subtask]:
     return [Subtask(position=i, **s) for i, s in enumerate(items)]
 
@@ -36,6 +55,7 @@ def add_task(db: Session, board: Board, user: User, data: dict) -> TaskModel:
     """Validate and insert a task from TaskIn-shaped `data`. Shared with accepting meeting suggestions."""
     _check(db, board, data)
     data["subtasks"] = _subtasks(data.get("subtasks") or [])
+    data["blockers"] = _blockers(db, board, data.pop("blocked_by", None) or [])
     return task_crud.create(db, board.id, data.pop("column_id"), user.id, data.pop("title"), **data)
 
 
@@ -71,9 +91,14 @@ def update_task(
 ):
     task = _task(db, task_id, user)
     data = body.model_dump(exclude_unset=True)
-    _check(db, db.get(Board, task.board_id), data)
+    board = db.get(Board, task.board_id)
+    _check(db, board, data)
 
+    if "blocked_by" in data:
+        task.blockers = _blockers(db, board, data.pop("blocked_by"), task.id)
     column_id, position = data.pop("column_id", task.column_id), data.pop("position", None)
+    if column_id != task.column_id:
+        _check_unblocked(board, task, column_id)
     if column_id != task.column_id or position is not None:
         # No position when changing column = bottom of the new column.
         task_crud.move(db, task, column_id, sys.maxsize if position is None else position)

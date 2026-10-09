@@ -41,4 +41,5 @@ export type Task = {
   updated_at: string;
   subtasks: { id: number; title: string; done: boolean }[];
   files: TaskFile[];
+  blocked_by: number[]; // ids of tasks on the same board
 };

@@ -58,6 +58,8 @@ type EpicProps = {
   kids?: EpicKid[];
   // The epic this task belongs to.
   parent?: ToDo;
+  // Tasks this one waits on that aren't done yet.
+  blockers?: ToDo[];
   onOpenTask?: (id: ToDo["id"]) => void;
   onAddToEpic?: () => void;
 };
@@ -195,6 +197,7 @@ export const Card = ({
   className,
   kids,
   parent,
+  blockers = [],
   onOpenTask,
   onAddToEpic,
   style,
@@ -232,8 +235,17 @@ export const Card = ({
           {plain(description)}
         </Typography>
       )}
-      {(label || due || source || parent) && (
+      {(label || due || source || parent || blockers.length > 0) && (
         <div className="flex flex-wrap gap-1.5 min-w-0">
+          {blockers.length > 0 && (
+            <Tag
+              icon="lock"
+              style={{ "--h": "var(--alert)" } as React.CSSProperties}
+              title={`Waiting on ${blockers.map((b) => b.key).join(", ")}`}
+            >
+              Blocked
+            </Tag>
+          )}
           {parent && (
             <Tag
               icon="layers"

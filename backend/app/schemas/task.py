@@ -35,6 +35,7 @@ class TaskIn(BaseModel):
     is_epic: bool = False
     epic_id: int | None = None
     subtasks: list[SubtaskIn] = []
+    blocked_by: list[int] = []  # ids of tasks on the same board
 
 
 class TaskPatch(BaseModel):
@@ -51,6 +52,7 @@ class TaskPatch(BaseModel):
     is_epic: bool = None
     epic_id: int | None = None
     subtasks: list[SubtaskIn] = None
+    blocked_by: list[int] = None  # replaces the whole list
 
 
 class Task(BaseModel):
@@ -74,6 +76,7 @@ class Task(BaseModel):
     updated_at: dt.datetime
     subtasks: list[Subtask]
     files: list[TaskFile]
+    blocked_by: list[int]
 
 
 class Accept(TaskPatch):

@@ -24,7 +24,7 @@ import Typography from "./Typography";
 export type TaskFields = Pick<
   ToDo,
   "title" | "description" | "column" | "due" | "label" | "subtasks" | "epic"
-> & { isEpic?: boolean };
+> & { isEpic?: boolean; blockedBy?: ToDoId[] };
 
 type Shared = {
   board: Board;
@@ -99,8 +99,41 @@ export const Labels = ({ id, labels }: { id: string; labels: string[] }) => (
   </datalist>
 );
 
-export const columnOptions = (columns: Column[]) =>
-  columns.map((c) => ({ value: String(c.id), label: c.name }));
+/** Blockers of `todo` that aren't in the last column yet. */
+export const waitingOn = (todo: ToDo, todos: ToDo[], columns: Column[]) =>
+  todos.filter(
+    (t) =>
+      todo.blockedBy.includes(t.id) &&
+      t.column !== columns[columns.length - 1]?.id,
+  );
+
+/** Whether `todo` may move to `column`: never right of where it is while blocked. Mirrors the API. */
+export const canMove = (
+  todo: ToDo,
+  column: ColumnId,
+  todos: ToDo[],
+  columns: Column[],
+) => {
+  const at = (id: ColumnId) => columns.findIndex((c) => c.id === id);
+  return (
+    at(column) <= at(todo.column) || !waitingOn(todo, todos, columns).length
+  );
+};
+
+// With a task, columns it can't move to (it's blocked) are disabled.
+export const columnOptions = (
+  columns: Column[],
+  todo?: ToDo,
+  todos: ToDo[] = [],
+) =>
+  columns.map((c) => {
+    const disabled = todo ? !canMove(todo, c.id, todos, columns) : false;
+    return {
+      value: String(c.id),
+      label: disabled ? `${c.name} (blocked)` : c.name,
+      disabled,
+    };
+  });
 
 export const EpicSelect = ({
   epics,
@@ -330,6 +363,94 @@ export const EpicTasks = ({
   );
 };
 
+/** "Blocked by": the tasks this one waits on. Pick one to add, open or remove each. */
+export const Blockers = ({
+  todo,
+  todos,
+  columns,
+  onOpen,
+  onChange,
+}: {
+  todo: ToDo;
+  todos: ToDo[];
+  columns: Column[];
+  onOpen: (id: ToDoId) => void;
+  onChange: (blockedBy: ToDoId[]) => void;
+}) => {
+  const last = columns.length > 1 ? columns[columns.length - 1].id : null;
+  const blockers = todos.filter((t) => todo.blockedBy.includes(t.id));
+  const choices = todos.filter(
+    (t) => t.id !== todo.id && !todo.blockedBy.includes(t.id),
+  );
+  return (
+    <div className="grid gap-1.5">
+      <Select
+        label="Blocked by"
+        icon="lock"
+        optional
+        value=""
+        disabled={!choices.length}
+        onChange={(v) => onChange([...todo.blockedBy, Number(v) as ToDoId])}
+        options={[
+          {
+            value: "",
+            label: choices.length
+              ? "Add a task this waits on"
+              : "No other tasks on this board",
+          },
+          ...choices.map((t) => ({
+            value: String(t.id),
+            hint: t.key,
+            label: t.title,
+          })),
+        ]}
+      />
+      {blockers.map((b) => {
+        const ci = columns.findIndex((c) => c.id === b.column);
+        const isDone = b.column === last;
+        return (
+          <div
+            key={b.id}
+            style={hue(ci + 1)}
+            className="group flex items-center gap-2.5 h-11 pl-3 pr-1.5 rounded-[10px] bg-ground"
+          >
+            {isDone ? (
+              <Icon name="check" size={16} style={{ color: "var(--hue-4)" }} />
+            ) : (
+              <span className="size-2 rounded-full flex-none bg-(--h)" />
+            )}
+            <button
+              type="button"
+              onClick={() => onOpen(b.id)}
+              className={classNames(
+                "flex-1 min-w-0 py-1 text-left truncate hover:underline underline-offset-3 decoration-line-strong",
+                { "text-muted line-through": isDone },
+              )}
+            >
+              {b.title}
+            </button>
+            <Tag icon="status" className="flex-none max-md:hidden">
+              {columns[ci].name}
+            </Tag>
+            <Button
+              type="button"
+              variant="icon"
+              aria-label={`${b.title} no longer blocks this`}
+              title="Remove blocker"
+              onClick={() =>
+                onChange(todo.blockedBy.filter((id) => id !== b.id))
+              }
+              className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 hover:text-alert! hover:bg-alert-wash!"
+            >
+              <Icon name="unlink" size={15} />
+            </Button>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export const NewTaskModal = ({
   onCreate,
   asEpic = false,
@@ -482,7 +603,7 @@ export const NewTaskModal = ({
             label="Column"
             icon="status"
             value={String(column)}
-            onChange={(e) => setColumn(toColumn(e.target.value))}
+            onChange={(v) => setColumn(toColumn(v))}
             options={columnOptions(columns)}
           />
           <DatePicker
@@ -508,7 +629,7 @@ export const NewTaskModal = ({
             <EpicSelect
               epics={epics}
               value={epic ? String(epic) : ""}
-              onChange={(e) => setEpic(toEpic(e.target.value))}
+              onChange={(v) => setEpic(toEpic(v))}
             />
           )}
         </div>
@@ -645,8 +766,8 @@ export const TaskDetailModal = ({
           label="Column"
           icon="status"
           value={String(todo.column)}
-          onChange={(e) => save({ column: toColumn(e.target.value) })}
-          options={columnOptions(columns)}
+          onChange={(v) => save({ column: toColumn(v) })}
+          options={columnOptions(columns, todo, todos)}
         />
         <DatePicker
           label="Due date"
@@ -672,7 +793,7 @@ export const TaskDetailModal = ({
           <EpicSelect
             epics={epics}
             value={todo.epic ? String(todo.epic) : ""}
-            onChange={(e) => save({ epic: toEpic(e.target.value) })}
+            onChange={(v) => save({ epic: toEpic(v) })}
           />
         )}
       </div>
@@ -715,6 +836,13 @@ export const TaskDetailModal = ({
           {errors.subtasks}
         </Typography>
       )}
+      <Blockers
+        todo={todo}
+        todos={todos}
+        columns={columns}
+        onOpen={onOpenTask}
+        onChange={(blockedBy) => save({ blockedBy })}
+      />
       <Files boardId={board.id} todo={todo} />
     </Modal>
   );

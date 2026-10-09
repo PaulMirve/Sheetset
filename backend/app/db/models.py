@@ -58,6 +58,15 @@ class Column(Base):
     )
 
 
+# A row means task_id can't really start until blocker_id is done.
+task_blockers = Table(
+    "task_blockers",
+    Base.metadata,
+    SAColumn("task_id", ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True),
+    SAColumn("blocker_id", ForeignKey("tasks.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
 class Task(Base):
     __tablename__ = "tasks"
     __table_args__ = (UniqueConstraint("board_id", "number"),)
@@ -88,6 +97,16 @@ class Task(Base):
     files: Mapped[list["Attachment"]] = relationship(
         cascade="all, delete-orphan", passive_deletes=True, order_by="Attachment.id"
     )
+    blockers: Mapped[list["Task"]] = relationship(
+        secondary=task_blockers,
+        primaryjoin=lambda: Task.id == task_blockers.c.task_id,
+        secondaryjoin=lambda: Task.id == task_blockers.c.blocker_id,
+        passive_deletes=True,
+    )
+
+    @property
+    def blocked_by(self) -> list[int]:
+        return [t.id for t in self.blockers]
 
 
 class Subtask(Base):

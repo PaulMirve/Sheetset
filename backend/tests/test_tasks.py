@@ -57,8 +57,24 @@ def test_tasks_flow():
     epic = new("Epic", is_epic=True)
     assert c.patch(f"/tasks/{a['id']}", json={"epic_id": epic["id"]}, headers=me).json()["epic_id"] == epic["id"]
 
+    # Blockers: other tasks on the same board, replaced as a list, dropped when the blocker is deleted.
+    assert c.patch(f"/tasks/{a['id']}", json={"blocked_by": [a["id"]]}, headers=me).status_code == 422
+    assert c.patch(f"/tasks/{a['id']}", json={"blocked_by": [999]}, headers=me).status_code == 422
+    r = c.patch(f"/tasks/{a['id']}", json={"blocked_by": [b_["id"], c_["id"]]}, headers=me).json()
+    assert sorted(r["blocked_by"]) == sorted([b_["id"], c_["id"]])
+    d = new("D", blocked_by=[c_["id"]])
+    assert d["blocked_by"] == [c_["id"]]
+    # Blocked: can't move right until the blocker is in the last column.
+    r = c.patch(f"/tasks/{d['id']}", json={"column_id": done}, headers=me)
+    assert (r.status_code, r.json()["detail"]) == (409, f"blocked by APP-{c_['number']}")
+    assert c.patch(f"/tasks/{d['id']}", json={"position": 0}, headers=me).status_code == 200  # reorder is fine
+    c.patch(f"/tasks/{c_['id']}", json={"column_id": done}, headers=me)
+    assert c.patch(f"/tasks/{d['id']}", json={"column_id": done}, headers=me).status_code == 200
+    assert c.patch(f"/tasks/{c_['id']}", json={"column_id": todo}, headers=me).status_code == 200  # moving back is fine
+
     assert c.delete(f"/tasks/{b_['id']}", headers=me).status_code == 204
     assert c.get(f"/tasks/{b_['id']}", headers=me).status_code == 404
+    assert c.get(f"/tasks/{a['id']}", headers=me).json()["blocked_by"] == [c_["id"]]
 
     # Suggested tasks: create, edit, delete, accept.
     meeting = {"external_id": "m1", "title": "Sync", "date": "2026-09-24", "summary": "s",
