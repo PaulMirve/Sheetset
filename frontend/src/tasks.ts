@@ -1,13 +1,18 @@
 // Task rules shared by the board, the task dialog and the task page. Mirrors the API.
 import { Board } from "@system-types/Board";
-import { Column, ColumnId } from "@system-types/column";
+import { Column, ColumnId, WorkflowCode } from "@system-types/column";
 import { ToDo, ToDoId } from "@system-types/ToDo";
 
 /** What the task forms edit and the API hooks send. */
 export type TaskFields = Pick<
   ToDo,
   "title" | "description" | "column" | "due" | "label" | "subtasks" | "epic"
-> & { isEpic?: boolean; blockedBy?: ToDoId[] };
+> & {
+  isEpic?: boolean;
+  blockedBy?: ToDoId[];
+  isBlocked?: boolean;
+  needsHumanReview?: boolean;
+};
 
 /** One board as the task screens see it: its columns, every task on it, and the labels in use. */
 export type BoardView = {
@@ -30,9 +35,17 @@ export type TaskActions = {
   onDelete: () => void;
 };
 
-/** The last column counts as done, once there's more than one. Mirrors Board.done_column_id. */
+/** Completion is explicit and does not depend on names or array order. */
 export const doneColumn = (columns: Column[]): ColumnId | undefined =>
-  columns.length > 1 ? columns[columns.length - 1].id : undefined;
+  columns.find((c) => c.code === "done")?.id;
+
+const workflowOrder: Record<WorkflowCode, number> = {
+  todo: 0,
+  doing: 1,
+  code_review: 2,
+  ready_for_qa: 3,
+  done: 4,
+};
 
 export const toColumn = (v: string) => Number(v) as ColumnId;
 export const toEpic = (v: string) => (v ? (Number(v) as ToDoId) : undefined);
@@ -52,9 +65,14 @@ export const canMove = (
   todos: ToDo[],
   columns: Column[],
 ) => {
-  const at = (id: ColumnId) => columns.findIndex((c) => c.id === id);
+  const from = columns.find((c) => c.id === todo.column);
+  const to = columns.find((c) => c.id === column);
+  if (!from || !to) return false;
   return (
-    at(column) <= at(todo.column) || !waitingOn(todo, todos, columns).length
+    workflowOrder[to.code] <= workflowOrder[from.code] ||
+    (!todo.isBlocked &&
+      !todo.needsHumanReview &&
+      !waitingOn(todo, todos, columns).length)
   );
 };
 

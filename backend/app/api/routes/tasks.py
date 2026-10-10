@@ -56,7 +56,7 @@ def update_task(
         task.blockers = blockers_on_board(db, board, data.pop("blocked_by"), task.id)
     column_id, position = data.pop("column_id", task.column_id), data.pop("position", None)
     if column_id != task.column_id:
-        check_unblocked(board, task, column_id)
+        check_unblocked(board, task, column_id, data)
     if column_id != task.column_id or position is not None:
         # No position when changing column = bottom of the new column.
         task_crud.move(db, task, column_id, sys.maxsize if position is None else position)

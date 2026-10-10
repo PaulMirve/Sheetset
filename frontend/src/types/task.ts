@@ -34,6 +34,8 @@ export type Task = {
   due: string | null; // YYYY-MM-DD
   assignee_id: number | null;
   is_epic: boolean;
+  is_blocked: boolean;
+  needs_human_review: boolean;
   epic_id: number | null;
   source: TaskSource | null;
   created_by_id: number;

@@ -19,12 +19,16 @@ def test_board_models():
         s.add(u)
         s.flush()
         b = Board(key="APP", name="Spring launch", owner_id=u.id, members=[u])
-        b.columns = [Column(name="Done", position=2), Column(name="To do", position=0), Column(name="Doing", position=1)]
+        b.columns = [Column(code="done", name="Done", position=2), Column(code="todo", name="To do", position=0), Column(code="doing", name="Doing", position=1)]
         s.add(b)
         s.commit()
         s.expire_all()
         assert [c.name for c in b.columns] == ["To do", "Doing", "Done"]
         col = b.columns[0].id
+        done_id = next(c.id for c in b.columns if c.code == "done")
+        b.columns.reverse()
+        assert b.done_column_id == done_id  # independent of relationship order
+        b.columns.reverse()
 
         # Public numbers come from a counter: deleted numbers are never reused.
         new = lambda title, **kw: task_crud.create(s, b.id, col, u.id, title, **kw)  # noqa: E731

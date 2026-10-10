@@ -65,8 +65,8 @@ Screens never set font size, weight, letter-spacing or line-height themselves. P
 | A person (assignee, signed-in user) | `Avatar` |
 | Line icon | `Icon` (add new SVGs to `src/assets/icons/` and `IconName.ts`) |
 | Dialog | `Modal` |
-| ⋯ button with a list of actions (board, column options), or a custom trigger row (account menu) | `Menu` |
-| Dialog with one name field (rename, add column) | `NameDialog` |
+| ⋯ button with a list of actions (board options), or a custom trigger row (account menu) | `Menu` |
+| Dialog with one name field (rename board) | `NameDialog` |
 | "Are you sure?" before a destructive action | `ConfirmDialog` |
 | Placeholder for an area with nothing in it yet (no boards, no columns) | `EmptyState` |
 

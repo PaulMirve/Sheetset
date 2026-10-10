@@ -46,17 +46,19 @@ class Board(Base):
 
     @property
     def done_column_id(self) -> int | None:
-        """The last column counts as done, once there's more than one. Mirrors doneColumn() in the frontend."""
-        return self.columns[-1].id if len(self.columns) > 1 else None
+        """Only the explicit done state satisfies a dependency."""
+        return next((c.id for c in self.columns if c.code == "done"), None)
 
 
 class Column(Base):
     __tablename__ = "columns"
+    __table_args__ = (UniqueConstraint("board_id", "code"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     board_id: Mapped[int] = mapped_column(ForeignKey("boards.id", ondelete="CASCADE"), index=True)
     name: Mapped[str]
-    position: Mapped[int] = mapped_column(default=0)  # last column = "done" (Board.done_column_id)
+    code: Mapped[str] = mapped_column(String(20))
+    position: Mapped[int] = mapped_column(default=0)
 
     tasks: Mapped[list["Task"]] = relationship(
         cascade="all, delete-orphan", passive_deletes=True, order_by="Task.position"
@@ -88,6 +90,8 @@ class Task(Base):
     due: Mapped[date | None]
     assignee_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     is_epic: Mapped[bool] = mapped_column(default=False)
+    is_blocked: Mapped[bool] = mapped_column(default=False, server_default="0")
+    needs_human_review: Mapped[bool] = mapped_column(default=False, server_default="0")
     # One level deep; deleting an epic keeps its tasks.
     epic_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id", ondelete="SET NULL"), index=True)
     # The meeting a task was accepted from: {meeting_id, title, date, time, platform, url, who, at, quote}.

@@ -33,6 +33,8 @@ class TaskIn(BaseModel):
     due: dt.date | None = None
     assignee_id: int | None = None
     is_epic: bool = False
+    is_blocked: bool = False
+    needs_human_review: bool = False
     epic_id: int | None = None
     subtasks: list[SubtaskIn] = []
     blocked_by: list[int] = []  # ids of tasks on the same board
@@ -50,6 +52,8 @@ class TaskPatch(BaseModel):
     due: dt.date | None = None
     assignee_id: int | None = None
     is_epic: bool = None
+    is_blocked: bool = None
+    needs_human_review: bool = None
     epic_id: int | None = None
     subtasks: list[SubtaskIn] = None
     blocked_by: list[int] = None  # replaces the whole list
@@ -69,6 +73,8 @@ class Task(BaseModel):
     due: dt.date | None
     assignee_id: int | None
     is_epic: bool
+    is_blocked: bool
+    needs_human_review: bool
     epic_id: int | None
     source: dict | None
     created_by_id: int

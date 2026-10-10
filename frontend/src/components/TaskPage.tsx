@@ -4,7 +4,7 @@ import classNames from "classnames";
 import { useState } from "react";
 import { fmtDate } from "../dates";
 import { epicHue, hashHue, hue } from "../hue";
-import { BoardView, TaskActions, doneColumn } from "../tasks";
+import { BoardView, TaskActions, canMove, doneColumn } from "../tasks";
 import Button from "./Button";
 import EditableTitle from "./EditableTitle";
 import Icon from "./Icon";
@@ -35,9 +35,13 @@ const Stages = ({
   columns,
   at,
   onMove,
+  todo,
+  todos,
 }: {
   columns: Column[];
   at: number;
+  todo: ToDo;
+  todos: ToDo[];
   onMove: (c: Column) => void;
 }) => (
   <ol
@@ -69,6 +73,7 @@ const Stages = ({
           <Button
             variant="bare"
             aria-current={here ? "step" : undefined}
+            disabled={!canMove(todo, c.id, todos, columns)}
             title={here ? undefined : `Move to ${c.name}`}
             onClick={() => !here && onMove(c)}
             className={classNames(
@@ -330,6 +335,8 @@ const TaskPage = ({
           <Stages
             columns={columns}
             at={columnIndex}
+            todo={todo}
+            todos={todos}
             onMove={(c) => save({ column: c.id })}
           />
         )}

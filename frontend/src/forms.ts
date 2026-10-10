@@ -56,6 +56,8 @@ export const taskSchema = z.object({
     .max(24, "Keep the label under 24 characters.")
     .optional(),
   isEpic: z.boolean().optional(),
+  isBlocked: z.boolean().optional(),
+  needsHumanReview: z.boolean().optional(),
   epic: z.custom<ToDoId>((v) => typeof v === "number").optional(),
   blockedBy: z.array(z.custom<ToDoId>((v) => typeof v === "number")).optional(),
   subtasks: z.array(

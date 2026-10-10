@@ -24,10 +24,10 @@ def test_tasks_flow():
     with SessionLocal() as s:  # no board api yet
         u = s.query(User).filter_by(email="tasks@b.co").one()
         b = Board(key="APP", name="Launch", owner_id=u.id, members=[u])
-        b.columns = [Column(name="To do", position=0), Column(name="Done", position=1)]
+        b.columns = [Column(code="todo", name="To do", position=0), Column(code="ready_for_qa", name="Ready for QA", position=1), Column(code="done", name="Done", position=2)]
         s.add(b)
         s.commit()
-        bid, todo, done, uid = b.id, b.columns[0].id, b.columns[1].id, u.id
+        bid, todo, done, uid = b.id, b.columns[0].id, b.columns[2].id, u.id
 
     url = f"/boards/{bid}/tasks"
     assert c.get(url).status_code == 401
@@ -64,10 +64,14 @@ def test_tasks_flow():
     assert sorted(r["blocked_by"]) == sorted([b_["id"], c_["id"]])
     d = new("D", blocked_by=[c_["id"]])
     assert d["blocked_by"] == [c_["id"]]
-    # Blocked: can't move right until the blocker is in the last column.
+    # QA does not satisfy a dependency; only explicit Done does.
     r = c.patch(f"/tasks/{d['id']}", json={"column_id": done}, headers=me)
     assert (r.status_code, r.json()["detail"]) == (409, f"blocked by APP-{c_['number']}")
     assert c.patch(f"/tasks/{d['id']}", json={"position": 0}, headers=me).status_code == 200  # reorder is fine
+    with SessionLocal() as s:
+        qa = next(col.id for col in s.get(Board, bid).columns if col.code == "ready_for_qa")
+    c.patch(f"/tasks/{c_['id']}", json={"column_id": qa}, headers=me)
+    assert c.patch(f"/tasks/{d['id']}", json={"column_id": done}, headers=me).status_code == 409
     c.patch(f"/tasks/{c_['id']}", json={"column_id": done}, headers=me)
     assert c.patch(f"/tasks/{d['id']}", json={"column_id": done}, headers=me).status_code == 200
     assert c.patch(f"/tasks/{c_['id']}", json={"column_id": todo}, headers=me).status_code == 200  # moving back is fine

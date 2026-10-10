@@ -8,12 +8,11 @@ from ...db.models import Board as BoardModel
 from ...db.models import Column as ColumnModel
 from ...db.models import User
 from ...db.session import get_db
-from ...schemas.board import Board, BoardIn, BoardPatch, ColumnIn, ColumnPatch
+from ...schemas.board import Board, BoardIn, BoardPatch
+from ...workflow import WORKFLOW
 from ..deps import current_user, member_board
 
 router = APIRouter(tags=["boards"])
-
-DEFAULT_COLUMNS = ["To do", "Doing", "Code review", "Done"]
 
 
 def _key(db: Session, name: str) -> str:
@@ -28,16 +27,8 @@ def _key(db: Session, name: str) -> str:
 
 def _saved(db: Session, board: BoardModel) -> BoardModel:
     db.commit()
-    db.refresh(board)  # columns may have been reordered
+    db.refresh(board)
     return board
-
-
-def _column(db: Session, column_id: int, user: User) -> ColumnModel:
-    col = db.get(ColumnModel, column_id)
-    if col is None:
-        raise HTTPException(404, "column not found")
-    member_board(db, col.board_id, user)
-    return col
 
 
 @router.get("/boards", response_model=list[Board])
@@ -55,7 +46,7 @@ def create_board(body: BoardIn, db: Session = Depends(get_db), user: User = Depe
         shared=body.shared,
         owner_id=user.id,
         members=[user],
-        columns=[ColumnModel(name=n, position=i) for i, n in enumerate(DEFAULT_COLUMNS)],
+        columns=[ColumnModel(code=code, name=name, position=i) for i, (code, name) in enumerate(WORKFLOW)],
     )
     db.add(board)
     return _saved(db, board)
@@ -84,41 +75,3 @@ def delete_board(board_id: int, db: Session = Depends(get_db), user: User = Depe
     db.delete(board)
     db.commit()
     return Response(status_code=204)
-
-
-@router.post("/boards/{board_id}/columns", status_code=201, response_model=Board)
-def create_column(
-    board_id: int, body: ColumnIn, db: Session = Depends(get_db), user: User = Depends(current_user)
-):
-    board = member_board(db, board_id, user)
-    board.columns.append(ColumnModel(name=body.name, position=len(board.columns)))
-    return _saved(db, board)
-
-
-@router.patch("/columns/{column_id}", response_model=Board)
-def update_column(
-    column_id: int, body: ColumnPatch, db: Session = Depends(get_db), user: User = Depends(current_user)
-):
-    col = _column(db, column_id, user)
-    board = db.get(BoardModel, col.board_id)
-    data = body.model_dump(exclude_unset=True)
-    if "name" in data:
-        col.name = data["name"]
-    if "position" in data:
-        cols = [c for c in board.columns if c.id != col.id]
-        cols.insert(min(data["position"], len(cols)), col)
-        for i, c in enumerate(cols):
-            c.position = i
-    return _saved(db, board)
-
-
-@router.delete("/columns/{column_id}", response_model=Board)
-def delete_column(column_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    """Deletes the column and its tasks. A board may end up with none."""
-    col = _column(db, column_id, user)
-    board = db.get(BoardModel, col.board_id)
-    db.delete(col)
-    db.flush()
-    for i, c in enumerate(c for c in board.columns if c.id != col.id):
-        c.position = i
-    return _saved(db, board)

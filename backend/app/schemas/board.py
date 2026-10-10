@@ -1,6 +1,8 @@
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints
+
+from ..workflow import WorkflowCode
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
 
@@ -10,6 +12,7 @@ class Column(BaseModel):
 
     id: int
     name: str
+    code: WorkflowCode
     position: int
 
 
@@ -33,12 +36,3 @@ class BoardPatch(BaseModel):
     # None only means "not sent"; an explicit null fails validation.
     name: Name = None
     shared: bool = None
-
-
-class ColumnIn(BaseModel):
-    name: Name
-
-
-class ColumnPatch(BaseModel):
-    name: Name = None
-    position: int = Field(None, ge=0)

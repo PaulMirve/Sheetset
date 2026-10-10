@@ -227,15 +227,33 @@ export const Card = ({
           {plain(description)}
         </Typography>
       )}
-      {(label || due || source || parent || blockers.length > 0) && (
+      {(label ||
+        due ||
+        source ||
+        parent ||
+        blockers.length > 0 ||
+        todo.isBlocked ||
+        todo.needsHumanReview) && (
         <div className="flex flex-wrap gap-1.5 min-w-0">
-          {blockers.length > 0 && (
+          {(blockers.length > 0 || todo.isBlocked) && (
             <Tag
               icon="lock"
               style={{ "--h": "var(--alert)" } as React.CSSProperties}
-              title={`Waiting on ${blockers.map((b) => b.key).join(", ")}`}
+              title={
+                blockers.length
+                  ? `Waiting on ${blockers.map((b) => b.key).join(", ")}`
+                  : "This task is blocked"
+              }
             >
               Blocked
+            </Tag>
+          )}
+          {todo.needsHumanReview && (
+            <Tag
+              icon="lock"
+              style={{ "--h": "var(--alert)" } as React.CSSProperties}
+            >
+              Needs human review
             </Tag>
           )}
           {parent && (

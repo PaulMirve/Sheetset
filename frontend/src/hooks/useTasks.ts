@@ -23,6 +23,8 @@ export const toToDo = (t: Task, boardKey: string): ToDo => ({
     completed: s.done,
   })),
   isEpic: t.is_epic,
+  isBlocked: t.is_blocked,
+  needsHumanReview: t.needs_human_review,
   epic: (t.epic_id ?? undefined) as ToDoId | undefined,
   blockedBy: t.blocked_by as ToDoId[],
   source: t.source ?? undefined,
@@ -37,6 +39,8 @@ const toBody = (fields: Partial<TaskFields>) => {
   for (const [k, v] of Object.entries(fields)) {
     if (k === "column") body.column_id = v;
     else if (k === "isEpic") body.is_epic = v;
+    else if (k === "isBlocked") body.is_blocked = v;
+    else if (k === "needsHumanReview") body.needs_human_review = v;
     else if (k === "epic") body.epic_id = v ?? null;
     else if (k === "blockedBy") body.blocked_by = v ?? [];
     else if (k === "subtasks")

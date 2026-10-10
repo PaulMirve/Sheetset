@@ -3,6 +3,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from ..db.models import Board, Subtask, Task, User
+from ..workflow import WORKFLOW_ORDER
 
 
 def create(db: Session, board_id: int, column_id: int, created_by_id: int, title: str, **fields) -> Task:
@@ -55,11 +56,16 @@ def blockers_on_board(db: Session, board: Board, ids: list[int], task_id: int | 
     return list(tasks)
 
 
-def check_unblocked(board: Board, task: Task, column_id: int) -> None:
-    """A task can't move right while a blocker is outside the last column. Moving back is fine."""
-    order = [c.id for c in board.columns]
-    if order.index(column_id) <= order.index(task.column_id):
+def check_unblocked(board: Board, task: Task, column_id: int, patch: dict | None = None) -> None:
+    """Forward moves require cleared attention flags and completed dependencies."""
+    order = {c.id: WORKFLOW_ORDER[c.code] for c in board.columns}
+    if order[column_id] <= order[task.column_id]:
         return
+    patch = patch or {}
+    if patch.get("is_blocked", task.is_blocked):
+        raise HTTPException(409, "task is blocked")
+    if patch.get("needs_human_review", task.needs_human_review):
+        raise HTTPException(409, "task needs human review")
     waiting = [b for b in task.blockers if b.column_id != board.done_column_id]
     if waiting:
         raise HTTPException(409, "blocked by " + ", ".join(f"{board.key}-{b.number}" for b in waiting))

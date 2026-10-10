@@ -3,3 +3,4 @@ kanban.db
 __pycache__/
 *.pyc
 .env
+.db-backups/

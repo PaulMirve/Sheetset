@@ -1,5 +1,4 @@
 import { Board, BoardId } from "@system-types/Board";
-import { ColumnId } from "@system-types/column";
 import {
   QueryClient,
   useMutation,
@@ -15,7 +14,7 @@ export const useBoards = () =>
     queryFn: () => api<Board[]>("/boards"),
   });
 
-// Board and column writes return the whole board; swap it into the list.
+// Board writes return the whole board; swap it into the list.
 const put = (qc: QueryClient, board: Board) =>
   qc.setQueryData(boardKeys.list(), (old?: Board[]) =>
     old?.some((b) => b.id === board.id)
@@ -50,43 +49,6 @@ export const useDeleteBoard = (id: BoardId) => {
         old?.filter((b) => b.id !== id),
       );
       qc.removeQueries({ queryKey: taskKeys.board(id) });
-    },
-  });
-};
-
-export const useCreateColumn = (boardId: BoardId) => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: { name: string }) =>
-      api<Board>(`/boards/${boardId}/columns`, body),
-    onSuccess: (board) => put(qc, board),
-  });
-};
-
-export const useUpdateColumn = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      id,
-      ...body
-    }: {
-      id: ColumnId;
-      name?: string;
-      position?: number;
-    }) => api<Board>(`/columns/${id}`, body, "PATCH"),
-    onSuccess: (board) => put(qc, board),
-  });
-};
-
-export const useDeleteColumn = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: ColumnId) =>
-      api<Board>(`/columns/${id}`, undefined, "DELETE"),
-    onSuccess: (board) => {
-      put(qc, board);
-      // Its tasks went with it.
-      qc.invalidateQueries({ queryKey: taskKeys.board(board.id) });
     },
   });
 };

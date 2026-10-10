@@ -29,12 +29,12 @@ script:post-response {
 tests {
   test("creates the board with default columns", function() {
     expect(res.getStatus()).to.equal(201);
-    expect(res.getBody().columns).to.have.length(3);
+    expect(res.getBody().columns).to.have.length(5);
   });
 }
 
 docs {
-  Creates a board owned by you, with columns To do, Doing and Done. Sets `{{boardId}}` and `{{columnId}}` (the first column), which the task requests use.
+  Creates a board owned by you, with fixed columns To do, Doing, Code review, Ready for QA and Done. Each column includes a stable `code`: `todo`, `doing`, `code_review`, `ready_for_qa`, `done`. Sets `{{boardId}}` and `{{columnId}}` (the first column), which the task requests use.
 
   `key` (the "PLAT" in PLAT-12) comes from the name: its first 4 letters or digits, plus a number if taken. It never changes.
 

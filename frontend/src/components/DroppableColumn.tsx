@@ -3,7 +3,6 @@ import { ColumnDropData } from "@hooks/useBoardDnd";
 import { Column } from "@system-types/column";
 import classNames from "classnames";
 import Icon from "./Icon";
-import Menu, { MenuItem } from "./Menu";
 import { hue } from "../hue";
 import Typography from "./Typography";
 
@@ -12,7 +11,6 @@ type Props = {
   index: number;
   count: number;
   dragOver: boolean;
-  menu: MenuItem[];
   children: React.ReactNode;
 };
 
@@ -21,7 +19,6 @@ const DroppableColumn = ({
   index,
   count,
   dragOver,
-  menu,
   children,
 }: Props) => {
   const { setNodeRef, isOver } = useDroppable({
@@ -44,11 +41,6 @@ const DroppableColumn = ({
           {column.name}
         </Typography>
         <span className="count-pill">{count}</span>
-        <Menu
-          label={`Options for ${column.name}`}
-          items={menu}
-          className="ml-auto"
-        />
       </div>
       <div ref={setNodeRef} className="flex flex-col gap-2 min-h-16">
         {count ? (

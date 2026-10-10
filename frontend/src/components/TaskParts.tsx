@@ -20,6 +20,7 @@ import {
 } from "../tasks";
 import Button, { button } from "./Button";
 import DatePicker from "./DatePicker";
+import Checkbox from "./Checkbox";
 import Files from "./Files";
 import Icon from "./Icon";
 import InlineInput from "./InlineInput";
@@ -405,6 +406,16 @@ export const TaskProperties = ({
         value={String(todo.column)}
         onChange={(v) => save({ column: toColumn(v) })}
         options={columnOptions(columns, todo, todos)}
+      />
+      <Checkbox
+        label="Blocked"
+        checked={todo.isBlocked}
+        onChange={(e) => save({ isBlocked: e.target.checked })}
+      />
+      <Checkbox
+        label="Needs human review"
+        checked={todo.needsHumanReview}
+        onChange={(e) => save({ needsHumanReview: e.target.checked })}
       />
       <DatePicker
         label="Due date"

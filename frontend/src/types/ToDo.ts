@@ -18,6 +18,8 @@ export type ToDo = {
   assignee?: User;
   subtasks: Subtask[];
   isEpic: boolean;
+  isBlocked: boolean;
+  needsHumanReview: boolean;
   epic?: ToDoId; // the epic this task belongs to
   blockedBy: ToDoId[]; // tasks that have to be done first
   source?: TaskSource;

@@ -3,10 +3,8 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import Button from "@components/Button";
 import DroppableColumn from "@components/DroppableColumn";
 import EmptyState from "@components/EmptyState";
-import Icon from "@components/Icon";
 import MeetingModal from "@components/MeetingModal";
 import { NewTaskModal, TaskDetailModal } from "@components/TaskModal";
 import TaskPage from "@components/TaskPage";
@@ -187,18 +185,8 @@ const Main = ({ board }: { board: Board }) => {
         />
       )}
       {page ? null : columns.length === 0 ? (
-        <EmptyState
-          icon="cols"
-          title="No columns yet"
-          className="pb-24"
-          action={
-            <Button onClick={menus.addColumn}>
-              <Icon name="plus" /> Add column
-            </Button>
-          }
-        >
-          Columns are the stages your tasks move through, like To do, Doing and
-          Done. Add the first one to start.
+        <EmptyState icon="cols" title="Workflow unavailable" className="pb-24">
+          Restart the backend to initialize this board’s fixed workflow.
         </EmptyState>
       ) : (
         <DndContext collisionDetection={closestCenter} {...dndProps}>
@@ -216,7 +204,6 @@ const Main = ({ board }: { board: Board }) => {
                     index={i}
                     count={colTodos.length}
                     dragOver={activeTodo?.column === col.id}
-                    menu={menus.columnMenu(col, i)}
                   >
                     {colTodos.map((todo) => (
                       <ToDoCard
