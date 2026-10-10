@@ -63,6 +63,7 @@ const Menu = ({
           ref={anchor}
           type="button"
           popoverTarget={id}
+          aria-label={label}
           className={classNames(
             "flex items-center gap-2.5 w-full p-2 rounded-xl text-left transition-colors duration-150 hover:bg-ground",
             className,

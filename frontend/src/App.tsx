@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import Button from "@components/Button";
 import EmptyState from "@components/EmptyState";
 import Icon from "@components/Icon";
@@ -18,6 +19,17 @@ const Workspace = () => {
   const boards = useBoards();
   const [picked, setPicked] = useState(savedBoard);
   const [adding, setAdding] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("sidebarCollapsed") === "true",
+  );
+  const collapse = (value: boolean) => {
+    setCollapsed(value);
+    localStorage.setItem("sidebarCollapsed", String(value));
+  };
+  const openAdding = (open: boolean) => {
+    if (open) collapse(false);
+    setAdding(open);
+  };
   const route = useTaskRoute();
   const list = boards.data ?? [];
   // Falls back to the first board when the saved one is gone (deleted, other account).
@@ -37,13 +49,22 @@ const Workspace = () => {
   };
 
   return (
-    <div className="h-full grid grid-cols-[288px_minmax(0,1fr)] max-md:grid-cols-1 max-md:grid-rows-[auto_minmax(0,1fr)]">
+    <div
+      className={classNames(
+        "h-full grid max-md:grid-cols-1 max-md:grid-rows-[auto_minmax(0,1fr)]",
+        collapsed
+          ? "md:grid-cols-[72px_minmax(0,1fr)]"
+          : "md:grid-cols-[288px_minmax(0,1fr)]",
+      )}
+    >
       <Sidebar
         boards={list}
         activeId={board?.id}
         onPick={pick}
         adding={adding}
-        onAdding={setAdding}
+        onAdding={openAdding}
+        collapsed={collapsed}
+        onCollapse={collapse}
       />
       {board ? (
         <Main key={board.id} board={board} />
@@ -55,7 +76,7 @@ const Workspace = () => {
               title="No boards yet"
               action={
                 !adding && (
-                  <Button onClick={() => setAdding(true)}>
+                  <Button onClick={() => openAdding(true)}>
                     <Icon name="plus" /> New board
                   </Button>
                 )

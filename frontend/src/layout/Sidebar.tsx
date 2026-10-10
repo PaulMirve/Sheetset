@@ -23,27 +23,62 @@ type Props = {
   activeId?: BoardId;
   onPick: (id: BoardId) => void;
   /** The New board form is open. Lifted so the empty board area can open it too. */
+  collapsed: boolean;
+  onCollapse: (collapsed: boolean) => void;
   adding: boolean;
   onAdding: (open: boolean) => void;
 };
 
-const Sidebar = ({ boards, activeId, onPick, adding, onAdding }: Props) => {
+const Sidebar = ({
+  boards,
+  activeId,
+  onPick,
+  adding,
+  onAdding,
+  collapsed,
+  onCollapse,
+}: Props) => {
   const { data: me } = useMe();
-  const group = { activeId, onPick };
+  const group = { activeId, onPick, collapsed };
   return (
     <nav
       aria-label="Boards"
       className="flex flex-col min-h-0 bg-rail border-r border-line max-md:border-r-0 max-md:border-b max-md:max-h-[32vh]"
     >
-      <div className="flex items-center gap-2.5 px-[18px] pt-[18px] pb-2 max-md:px-4 max-md:pt-3 max-md:pb-1">
-        <span className="tile w-[30px] h-[30px] rounded-[9px]" style={hue(1)}>
-          <Icon name="board" />
-        </span>
-        <Typography as="span" variant="brand">
-          Sheetset
-        </Typography>
+      <div
+        className={classNames(
+          "flex items-center gap-2.5 pt-[18px] pb-2 max-md:pt-3 max-md:pb-1",
+          collapsed ? "justify-center px-3" : "px-[18px] max-md:px-4",
+        )}
+      >
+        {!collapsed && (
+          <span className="tile w-[30px] h-[30px] rounded-[9px]" style={hue(1)}>
+            <Icon name="board" />
+          </span>
+        )}
+        {!collapsed && (
+          <Typography as="span" variant="brand" className="flex-1">
+            Sheetset
+          </Typography>
+        )}
+        <Button
+          variant="icon"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          aria-controls="sidebar-boards"
+          disabled={adding}
+          onClick={() => onCollapse(!collapsed)}
+        >
+          <Icon name={collapsed ? "arrow" : "arrow-left"} />
+        </Button>
       </div>
-      <div className="flex-1 overflow-auto px-3 pt-1 pb-4">
+      <div
+        id="sidebar-boards"
+        className={classNames("flex-1 overflow-auto px-3 pt-1 pb-4", {
+          "max-md:hidden": collapsed,
+        })}
+      >
         <BoardGroup
           title="Personal"
           icon="lock"
@@ -67,16 +102,26 @@ const Sidebar = ({ boards, activeId, onPick, adding, onAdding }: Props) => {
         ) : (
           <Button
             variant="quiet"
-            className="mt-2 w-full justify-start"
+            className={classNames(
+              "mt-2 w-full",
+              collapsed ? "justify-center px-0" : "justify-start",
+            )}
+            aria-label="New board"
+            title={collapsed ? "New board" : undefined}
             onClick={() => onAdding(true)}
           >
-            <Icon name="plus" /> New board
+            <Icon name="plus" /> {!collapsed && "New board"}
           </Button>
         )}
       </div>
       {me && (
-        <div className="p-3 border-t border-line max-md:py-1">
-          <AccountMenu me={me} />
+        <div
+          className={classNames(
+            "border-t border-line max-md:py-1",
+            collapsed ? "p-1 max-md:hidden" : "p-3",
+          )}
+        >
+          <AccountMenu me={me} collapsed={collapsed} />
         </div>
       )}
     </nav>
@@ -100,7 +145,7 @@ const Who = ({ me, short }: { me: User; short?: boolean }) => (
 );
 
 // The signed-in person at the foot of the rail; their menu holds theme and sign out.
-const AccountMenu = ({ me }: { me: User }) => {
+const AccountMenu = ({ me, collapsed }: { me: User; collapsed: boolean }) => {
   const { theme, toggleTheme } = useTheme();
   const queryClient = useQueryClient();
   return (
@@ -110,10 +155,12 @@ const AccountMenu = ({ me }: { me: User }) => {
       trigger={
         <>
           <Avatar user={me} size="lg" />
-          <span className="flex-1 min-w-0">
-            <Who me={me} short />
-          </span>
-          <Icon name="chev" className="flex-none text-muted" />
+          {!collapsed && (
+            <span className="flex-1 min-w-0">
+              <Who me={me} short />
+            </span>
+          )}
+          {!collapsed && <Icon name="chev" className="flex-none text-muted" />}
         </>
       }
       header={
@@ -203,6 +250,7 @@ const NewBoard = ({
 
 type BoardGroupProps = {
   title: string;
+  collapsed: boolean;
   icon: IconName;
   boards: Board[];
   activeId?: BoardId;
@@ -210,6 +258,7 @@ type BoardGroupProps = {
 };
 
 const BoardGroup = ({
+  collapsed,
   title,
   icon,
   boards,
@@ -217,7 +266,13 @@ const BoardGroup = ({
   onPick,
 }: BoardGroupProps) => (
   <div className="mt-[18px] max-md:mt-2">
-    <div className="flex items-center justify-between px-2 pb-1.5">
+    <div
+      title={title}
+      className={classNames(
+        "flex items-center px-2 pb-1.5",
+        collapsed ? "justify-center" : "justify-between",
+      )}
+    >
       <Typography
         as="span"
         variant="label"
@@ -225,16 +280,18 @@ const BoardGroup = ({
         className="inline-flex items-center gap-1.5"
       >
         <Icon name={icon} size={15} />
-        {title}
+        <span className={collapsed ? "sr-only" : undefined}>{title}</span>
       </Typography>
-      <Typography
-        as="span"
-        variant="chip"
-        color="muted"
-        className="bg-ground rounded-full px-2 py-1"
-      >
-        {boards.length}
-      </Typography>
+      {!collapsed && (
+        <Typography
+          as="span"
+          variant="chip"
+          color="muted"
+          className="bg-ground rounded-full px-2 py-1"
+        >
+          {boards.length}
+        </Typography>
+      )}
     </div>
     {boards.map((board) => (
       <Button
@@ -242,6 +299,8 @@ const BoardGroup = ({
         key={board.id}
         className="rail-row group flex items-center gap-2.5 w-full px-2 py-1.5 mb-0.5 rounded-[10px] text-left hover:bg-ground transition-colors duration-150"
         style={hashHue(String(board.id))}
+        aria-label={board.name}
+        title={collapsed ? board.name : undefined}
         aria-current={board.id === activeId ? "page" : undefined}
         onClick={() => onPick(board.id)}
       >
@@ -251,7 +310,7 @@ const BoardGroup = ({
         <Typography
           as="span"
           variant="rail"
-          className="flex-1 min-w-0 truncate"
+          className={collapsed ? "sr-only" : "flex-1 min-w-0 truncate"}
         >
           {board.name}
         </Typography>
