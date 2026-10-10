@@ -1,5 +1,5 @@
 import { Board } from "@system-types/Board";
-import { Column, ColumnId } from "@system-types/column";
+import { Column } from "@system-types/column";
 import { ToDoId } from "@system-types/ToDo";
 import { Note, SuggestedTask } from "@system-types/meeting";
 import classNames from "classnames";
@@ -10,8 +10,10 @@ import {
 } from "@hooks/useMeetings";
 import { useId, useRef, useState } from "react";
 import { ApiError } from "../api";
+import { fmtDate, localDay } from "../dates";
 import { errorsOf, taskSchema } from "../forms";
 import { hashHue, hue } from "../hue";
+import { toColumn } from "../tasks";
 import Button from "./Button";
 import DatePicker from "./DatePicker";
 import Icon from "./Icon";
@@ -55,13 +57,6 @@ const draftOf = (t: SuggestedTask): Draft => ({
 
 const draftSchema = taskSchema.pick({ title: true, due: true, label: true });
 
-const fmtDate = (d: string) =>
-  new Date(`${d}T00:00`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-const today = () => new Date().toLocaleDateString("en-CA");
-const toColumn = (v: string) => Number(v) as unknown as ColumnId;
 const first = (name?: string | null) => (name ?? "").split(" ")[0];
 
 // A speaker's first name, tinted by the --h hue set on the line.
@@ -272,7 +267,7 @@ const MeetingModal = ({
   const [invalid, setInvalid] = useState("");
   const notesRef = useRef<HTMLDivElement>(null);
 
-  const meetings = useMeetings();
+  const meetings = useMeetings(board.id);
   const detail = useMeeting(pickedId);
   const list = meetings.data;
   const meeting = detail.data;
@@ -439,7 +434,8 @@ const MeetingModal = ({
         <LoadError error={meetings.error} retry={meetings.refetch} />
       ) : list ? (
         list.map((m) => (
-          <button
+          <Button
+            variant="bare"
             key={m.id}
             onClick={() => setPickedId(m.id)}
             style={hue(m.platform === "Zoom" ? 1 : 4)}
@@ -459,7 +455,7 @@ const MeetingModal = ({
               >
                 <span>
                   <Icon name="cal" size={15} />
-                  {m.date === today() ? "Today" : fmtDate(m.date)}
+                  {m.date === localDay() ? "Today" : fmtDate(m.date)}
                   {m.time && ` · ${m.time}`}
                 </span>
                 {m.platform && (
@@ -479,7 +475,7 @@ const MeetingModal = ({
               name="arrow"
               className="flex-none ml-auto text-muted group-hover:text-primary"
             />
-          </button>
+          </Button>
         ))
       ) : (
         [0, 1, 2].map((i) => (
@@ -488,7 +484,8 @@ const MeetingModal = ({
       )}
       {list?.length === 0 && (
         <Typography as="p" color="muted">
-          No meetings yet. They show up here once their notes are processed.
+          No meetings for this board yet. A meeting shows up here once its notes
+          are processed, if you were invited to it.
         </Typography>
       )}
     </div>
@@ -780,7 +777,7 @@ const MeetingModal = ({
                 label="Add to"
                 icon="status"
                 value={String(column)}
-                onChange={(v) => setColumn(Number(v) as unknown as ColumnId)}
+                onChange={(v) => setColumn(toColumn(v))}
                 options={columns.map((c) => ({
                   value: String(c.id),
                   label: c.name,

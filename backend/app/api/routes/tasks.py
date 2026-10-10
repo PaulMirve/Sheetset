@@ -7,56 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ...crud import task as task_crud
-from ...db.models import Attachment, Board, Subtask, User
+from ...crud.task import add_task, blockers_on_board, check_refs_on_board, check_unblocked, subtasks_from
+from ...db.models import Attachment, Board, User
 from ...db.models import Task as TaskModel
 from ...db.session import get_db
 from ...schemas.task import Task, TaskFile, TaskIn, TaskPatch
 from ..deps import current_user, member_board
 
 router = APIRouter(tags=["tasks"])
-
-
-def _check(db: Session, board: Board, data: dict) -> None:
-    """Reject references that point outside the board."""
-    if "column_id" in data and data["column_id"] not in {c.id for c in board.columns}:
-        raise HTTPException(422, "column is not on this board")
-    if data.get("assignee_id") is not None and data["assignee_id"] not in {m.id for m in board.members}:
-        raise HTTPException(422, "assignee is not a board member")
-    if data.get("epic_id") is not None:
-        epic = db.get(TaskModel, data["epic_id"])
-        if epic is None or epic.board_id != board.id or not epic.is_epic:
-            raise HTTPException(422, "epic is not on this board")
-
-
-def _blockers(db: Session, board: Board, ids: list[int], task_id: int | None = None) -> list[TaskModel]:
-    """Tasks on this board that block `task_id`. A task can't block itself."""
-    tasks = db.scalars(select(TaskModel).where(TaskModel.id.in_(ids), TaskModel.board_id == board.id)).all()
-    if len(tasks) != len(set(ids)) or task_id in ids:
-        raise HTTPException(422, "blocker is not another task on this board")
-    # ponytail: no cycle check (A blocks B blocks A is allowed); add a graph walk if it confuses people.
-    return list(tasks)
-
-
-def _check_unblocked(board: Board, task: TaskModel, column_id: int) -> None:
-    """A task can't move right while a blocker is outside the last column. Moving back is fine."""
-    order = [c.id for c in board.columns]
-    if order.index(column_id) <= order.index(task.column_id):
-        return
-    waiting = [b for b in task.blockers if b.column_id != order[-1]]
-    if waiting:
-        raise HTTPException(409, "blocked by " + ", ".join(f"{board.key}-{b.number}" for b in waiting))
-
-
-def _subtasks(items: list[dict]) -> list[Subtask]:
-    return [Subtask(position=i, **s) for i, s in enumerate(items)]
-
-
-def add_task(db: Session, board: Board, user: User, data: dict) -> TaskModel:
-    """Validate and insert a task from TaskIn-shaped `data`. Shared with accepting meeting suggestions."""
-    _check(db, board, data)
-    data["subtasks"] = _subtasks(data.get("subtasks") or [])
-    data["blockers"] = _blockers(db, board, data.pop("blocked_by", None) or [])
-    return task_crud.create(db, board.id, data.pop("column_id"), user.id, data.pop("title"), **data)
 
 
 def _task(db: Session, task_id: int, user: User) -> TaskModel:
@@ -92,18 +50,18 @@ def update_task(
     task = _task(db, task_id, user)
     data = body.model_dump(exclude_unset=True)
     board = db.get(Board, task.board_id)
-    _check(db, board, data)
+    check_refs_on_board(db, board, data)
 
     if "blocked_by" in data:
-        task.blockers = _blockers(db, board, data.pop("blocked_by"), task.id)
+        task.blockers = blockers_on_board(db, board, data.pop("blocked_by"), task.id)
     column_id, position = data.pop("column_id", task.column_id), data.pop("position", None)
     if column_id != task.column_id:
-        _check_unblocked(board, task, column_id)
+        check_unblocked(board, task, column_id)
     if column_id != task.column_id or position is not None:
         # No position when changing column = bottom of the new column.
         task_crud.move(db, task, column_id, sys.maxsize if position is None else position)
     if "subtasks" in data:
-        task.subtasks = _subtasks(data.pop("subtasks"))
+        task.subtasks = subtasks_from(data.pop("subtasks"))
     for k, v in data.items():
         setattr(task, k, v)
     db.commit()
@@ -152,13 +110,22 @@ def _file(db: Session, file_id: int, user: User) -> Attachment:
     return f
 
 
+# Types a browser can show without running anything. Anything else (HTML, SVG, JS...) is sent as a
+# download, so an uploaded file can't run script on the app's origin when someone opens it.
+INLINE_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf", "text/plain"}
+
+
 @router.get("/files/{file_id}")
 def download_file(file_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     f = _file(db, file_id, user)
+    inline = f.type in INLINE_TYPES
     return Response(
         f.data,
-        media_type=f.type,
-        headers={"Content-Disposition": f"inline; filename*=UTF-8''{quote(f.name)}"},
+        media_type=f.type if inline else "application/octet-stream",
+        headers={
+            "Content-Disposition": f"{'inline' if inline else 'attachment'}; filename*=UTF-8''{quote(f.name)}",
+            "X-Content-Type-Options": "nosniff",
+        },
     )
 
 

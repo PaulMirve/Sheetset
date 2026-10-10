@@ -21,6 +21,7 @@ export type SuggestedTask = {
 
 export type Meeting = {
   id: number;
+  board_id: number; // only its members who attended can see it
   title: string;
   date: string;
   time?: string | null;

@@ -1,9 +1,9 @@
 vars {
   baseUrl: http://127.0.0.1:9002
   email: a@b.co
-  password: REDACTED_LOCAL_CREDENTIAL
-  n8nKey: REDACTED_LOCAL_CREDENTIAL
-  token: REDACTED_SESSION_TOKEN
+  password: {{process.env.BRUNO_PASSWORD}}
+  n8nKey: {{process.env.N8N_API_KEY}}
+  token: 
   @number
   meetingId: 1
   @number

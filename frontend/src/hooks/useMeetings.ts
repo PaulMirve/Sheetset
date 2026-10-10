@@ -4,10 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 import { meetingKeys, taskKeys } from "./queryKeys";
 
-export const useMeetings = () =>
+// Meetings on this board that the signed-in user attended.
+export const useMeetings = (boardId: number) =>
   useQuery({
-    queryKey: meetingKeys.list(),
-    queryFn: () => api<MeetingSummary[]>("/meetings"),
+    queryKey: meetingKeys.list(boardId),
+    queryFn: () => api<MeetingSummary[]>(`/meetings?board_id=${boardId}`),
   });
 
 export const useMeeting = (id?: number) =>

@@ -7,14 +7,9 @@ import Avatar from "./Avatar";
 import Button from "./Button";
 import Icon from "./Icon";
 import Tag from "./Tag";
+import { fmtDate, localDay } from "../dates";
 import { epicHue, hashHue, hue } from "../hue";
 import Typography from "./Typography";
-
-const day = (offset = 0) => {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
-};
 
 // Overdue → alert red, due within 2 days → amber, else neutral.
 // Card preview of markdown notes: drop the syntax, keep the words.
@@ -28,12 +23,9 @@ export const plain = (md: string) =>
     .replace(/\\([\\`*_{}[\]()#+\-.!>~|])/g, "$1");
 
 export const DueTag = ({ due }: { due: string }) => {
-  const late = due < day();
-  const soon = !late && due <= day(2);
-  const date = new Date(`${due}T00:00`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+  const late = due < localDay();
+  const soon = !late && due <= localDay(2);
+  const date = fmtDate(due);
   return (
     <Tag
       icon="cal"
@@ -50,12 +42,12 @@ export const DueTag = ({ due }: { due: string }) => {
   );
 };
 
-// An epic's tasks, in board order, with the index of the column each sits in.
-export type EpicKid = { todo: ToDo; column: number; done: boolean };
+// One of an epic's tasks, with the index of the column it sits in.
+export type EpicTaskRow = { todo: ToDo; column: number; done: boolean };
 
 type EpicProps = {
-  // Set on an epic's card.
-  kids?: EpicKid[];
+  // Set on an epic's card: its tasks in board order.
+  epicTasks?: EpicTaskRow[];
   // The epic this task belongs to.
   parent?: ToDo;
   // Tasks this one waits on that aren't done yet.
@@ -67,17 +59,17 @@ type EpicProps = {
 // Rolled-up progress and a disclosure listing the epic's tasks.
 // Its clicks and keys stay here, so they don't open or drag the epic's card.
 const EpicBody = ({
-  kids,
+  epicTasks,
   onOpenTask,
   onAddToEpic,
-}: Required<Pick<EpicProps, "kids">> & EpicProps) => {
+}: Required<Pick<EpicProps, "epicTasks">> & EpicProps) => {
   const [open, setOpen] = useState(false);
-  const done = kids.filter((k) => k.done).length;
+  const done = epicTasks.filter((t) => t.done).length;
   const row =
     "flex items-center gap-2 h-8 px-2.5 rounded-lg bg-ground text-left hover:bg-[color-mix(in_srgb,var(--h)_13%,var(--color-ground))]";
   const addRow = (
-    <button
-      type="button"
+    <Button
+      variant="bare"
       className={classNames(
         row,
         "bg-transparent! text-muted shadow-[inset_0_0_0_1.5px_var(--color-line-strong)]",
@@ -86,9 +78,9 @@ const EpicBody = ({
     >
       <Icon name="plus" size={14} />
       <span className="truncate">
-        {kids.length ? "Add task to this epic" : "Add the first task"}
+        {epicTasks.length ? "Add task to this epic" : "Add the first task"}
       </span>
-    </button>
+    </Button>
   );
   return (
     <div
@@ -97,7 +89,7 @@ const EpicBody = ({
       onKeyDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      {kids.length === 0 ? (
+      {epicTasks.length === 0 ? (
         <>
           <Typography
             color="muted"
@@ -113,13 +105,13 @@ const EpicBody = ({
             role="progressbar"
             aria-label="Tasks done in this epic"
             aria-valuemin={0}
-            aria-valuemax={kids.length}
+            aria-valuemax={epicTasks.length}
             aria-valuenow={done}
             className="h-1 rounded-full bg-line-strong overflow-hidden"
           >
             <div
               className="h-full rounded-full bg-(--hue-4) transition-[width] duration-300 ease-out"
-              style={{ width: `${(done / kids.length) * 100}%` }}
+              style={{ width: `${(done / epicTasks.length) * 100}%` }}
             />
           </div>
           <Button
@@ -135,10 +127,10 @@ const EpicBody = ({
                 "rotate-180": open,
               })}
             />
-            {kids.length} task{kids.length > 1 ? "s" : ""}
+            {epicTasks.length} task{epicTasks.length > 1 ? "s" : ""}
             <span
               className={classNames("ml-auto tabular-nums", {
-                "text-(--hue-4)": done === kids.length,
+                "text-(--hue-4)": done === epicTasks.length,
               })}
             >
               {done} done
@@ -150,16 +142,16 @@ const EpicBody = ({
               variant="chip"
               className="grid grid-cols-[minmax(0,1fr)] gap-1"
             >
-              {kids.map((k) => (
-                <button
-                  type="button"
-                  key={k.todo.id}
-                  style={hue(k.column + 1)}
-                  title={k.todo.title}
+              {epicTasks.map((item) => (
+                <Button
+                  variant="bare"
+                  key={item.todo.id}
+                  style={hue(item.column + 1)}
+                  title={item.todo.title}
                   className={row}
-                  onClick={() => onOpenTask?.(k.todo.id)}
+                  onClick={() => onOpenTask?.(item.todo.id)}
                 >
-                  {k.done ? (
+                  {item.done ? (
                     <Icon
                       name="check"
                       size={14}
@@ -170,12 +162,12 @@ const EpicBody = ({
                   )}
                   <span
                     className={classNames("flex-1 min-w-0 truncate", {
-                      "text-muted line-through": k.done,
+                      "text-muted line-through": item.done,
                     })}
                   >
-                    {k.todo.title}
+                    {item.todo.title}
                   </span>
-                </button>
+                </Button>
               ))}
               {onAddToEpic && addRow}
             </Typography>
@@ -195,7 +187,7 @@ type CardProps = {
 export const Card = ({
   todo,
   className,
-  kids,
+  epicTasks,
   parent,
   blockers = [],
   onOpenTask,
@@ -274,9 +266,9 @@ export const Card = ({
           {due && <DueTag due={due} />}
         </div>
       )}
-      {kids && (
+      {epicTasks && (
         <EpicBody
-          kids={kids}
+          epicTasks={epicTasks}
           onOpenTask={onOpenTask}
           onAddToEpic={onAddToEpic}
         />
@@ -338,7 +330,7 @@ const ToDoCard = ({ todo, landed, onLanded, onOpen, ...epic }: Props) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: todo.id as unknown as number });
+  } = useSortable({ id: todo.id });
 
   return (
     <Card

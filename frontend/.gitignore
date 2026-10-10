@@ -28,3 +28,8 @@ storybook-static
 
 # Machine-local Xcode toolchain paths (license workaround)
 src-tauri/.cargo/config.toml
+
+# tsc output (vite must load vite.config.ts, not a stale .js)
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts

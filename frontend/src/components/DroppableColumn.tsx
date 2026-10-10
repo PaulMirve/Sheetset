@@ -1,4 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
+import { ColumnDropData } from "@hooks/useBoardDnd";
 import { Column } from "@system-types/column";
 import classNames from "classnames";
 import Icon from "./Icon";
@@ -23,7 +24,10 @@ const DroppableColumn = ({
   menu,
   children,
 }: Props) => {
-  const { setNodeRef, isOver } = useDroppable({ id: `column-${column.id}` });
+  const { setNodeRef, isOver } = useDroppable({
+    id: `column-${column.id}`,
+    data: { column: column.id } satisfies ColumnDropData,
+  });
 
   return (
     <section

@@ -237,7 +237,8 @@ const BoardGroup = ({
       </Typography>
     </div>
     {boards.map((board) => (
-      <button
+      <Button
+        variant="bare"
         key={board.id}
         className="rail-row group flex items-center gap-2.5 w-full px-2 py-1.5 mb-0.5 rounded-[10px] text-left hover:bg-ground transition-colors duration-150"
         style={hashHue(String(board.id))}
@@ -247,14 +248,14 @@ const BoardGroup = ({
         <span className="tile w-[30px] h-[30px] rounded-lg text-[13.5px]">
           {board.name[0].toUpperCase()}
         </span>
-        {/* Rail rows are Body at 550; the current board is 700 (DESIGN.md). */}
         <Typography
           as="span"
-          className="flex-1 min-w-0 truncate font-[550] group-aria-[current=page]:font-bold"
+          variant="rail"
+          className="flex-1 min-w-0 truncate"
         >
           {board.name}
         </Typography>
-      </button>
+      </Button>
     ))}
   </div>
 );

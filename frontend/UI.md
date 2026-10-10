@@ -20,6 +20,7 @@ Screens never set font size, weight, letter-spacing or line-height themselves. P
 | `headline-sm` | Dialog titles, empty-state headings | 750 · 24px |
 | `title` | Lane names, card and list-item titles, section headings | 700 · 16px |
 | `body` (default) | Running text, descriptions, secondary lines | 400 · 15.5px |
+| `rail` | Row names in the sidebar rail; bold on the `aria-current="page"` row | 550 (700 current) · 15.5px |
 | `body-lg` | Lede text (sign-in) | 400 · 18px |
 | `label` | Field labels, small headings, links in sentences | 600 · 14px |
 | `chip` | Counts, timestamps, metadata (tabular figures) | 600 · 13.5px |
@@ -48,10 +49,13 @@ Screens never set font size, weight, letter-spacing or line-height themselves. P
 | Need | Component |
 | --- | --- |
 | Any button (primary, secondary, quiet, danger, icon-only) | `Button` |
+| A click target that looks like its content: a clickable `Tag`, a list row, a thumbnail, a stage pill | `Button variant="bare"` |
+| Button that opens the file picker | `FileButton` |
 | Labelled text, email, password or number field | `Input` |
 | Labelled date field with a calendar (never `type="date"`) | `DatePicker` |
 | Labelled dropdown | `Select` |
 | Labelled multi-line field | `TextArea` |
+| Labelled rich-text notes, stored as markdown | `RichTextArea` |
 | Checkbox, with optional label and "some selected" state | `Checkbox` |
 | On/off switch for an immediate setting | `Toggle` |
 | One of a few choices shown as a pill row (Task / Epic) | `Segmented` |
@@ -69,7 +73,6 @@ Screens never set font size, weight, letter-spacing or line-height themselves. P
 - **No raw form elements in screens.** `Input`, `Select` and `TextArea` already bring the label, icon, "optional" hint, error message and the ARIA wiring (`aria-invalid`, `aria-describedby`) through `Field`.
 - **Every control has an accessible name:** a `label`, or an `aria-label` when there's no visible one (icon buttons, `InlineInput`, a bare `Checkbox`).
 - **Colors come from tokens** (`bg-surface`, `text-muted`, `border-line`, `bg-primary-wash`…) or a hue through `--h` (`hue(n)`, `hashHue(s)` in `src/hue.ts`). Never hex values in screens.
-- **Known gap:** whole-row navigation buttons (sidebar board rows, the meeting picker list) are still raw `<button>`s. If you touch one, consider a list-row component.
 
 **Forms validate with zod.** Schemas live in `src/forms.ts` and mirror the backend's limits. Parse the form values with `safeParse`, show `errorsOf(result.error)` on the fields, and send only `result.data`.
 
@@ -109,7 +112,7 @@ export const Default: Story = {
 };
 ```
 
-`Field` is exempt: it's the internal wrapper behind `Input`, `Select` and `TextArea`, and their stories cover it. **Feature components** (`DroppableColumn`, `ToDoCard`, `Subtasks`, `Files`, `TaskModal`, `TaskPage`, `MeetingModal`) are screen parts with app data. They don't have stories yet, but a story with mock data is welcome, and it becomes required once one is reused elsewhere.
+`Field` is exempt: it's the internal wrapper behind `Input`, `Select` and `TextArea`, and their stories cover it. **Feature components** (`DroppableColumn`, `ToDoCard`, `Subtasks`, `Files`, `TaskParts`, `TaskModal`, `TaskPage`, `MeetingModal`) are screen parts with app data. They don't have stories yet, but a story with mock data is welcome, and it becomes required once one is reused elsewhere.
 
 Run them with:
 

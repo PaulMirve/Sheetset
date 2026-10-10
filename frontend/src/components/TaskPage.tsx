@@ -1,59 +1,26 @@
-import { Board } from "@system-types/Board";
 import { Column } from "@system-types/column";
-import { ToDo, ToDoId } from "@system-types/ToDo";
+import { ToDo } from "@system-types/ToDo";
 import classNames from "classnames";
-import { useId, useState } from "react";
+import { useState } from "react";
+import { fmtDate } from "../dates";
 import { epicHue, hashHue, hue } from "../hue";
+import { BoardView, TaskActions, doneColumn } from "../tasks";
 import Button from "./Button";
-import DatePicker from "./DatePicker";
 import EditableTitle from "./EditableTitle";
-import Files from "./Files";
 import Icon from "./Icon";
-import Input from "./Input";
 import Menu from "./Menu";
-import Select from "./Select";
-import Subtasks from "./Subtasks";
 import Tag from "./Tag";
-import {
-  columnOptions,
-  EpicSelect,
-  EpicTasks,
-  Blockers,
-  Labels,
-  Source,
-  TaskFields,
-  toColumn,
-  toEpic,
-  useTaskSave,
-} from "./TaskModal";
-import RichTextArea from "./RichTextArea";
+import { Source, TaskBody, TaskProperties, useTaskSave } from "./TaskParts";
 import { DueTag } from "./ToDoCard";
 import Typography from "./Typography";
 
-type Props = {
-  board: Board;
-  columns: Column[];
-  todos: ToDo[];
-  labels: string[];
-  todo: ToDo;
-  onChange: (patch: Partial<TaskFields>) => void;
-  // Edit another task (unlink it from this epic).
-  onChangeTask: (id: ToDoId, patch: Partial<TaskFields>) => void;
-  onCreate: (fields: TaskFields) => Promise<void>;
-  onOpenTask: (id: ToDoId) => void;
-  onOpenMeeting: (meetingId: number) => void;
-  onDelete: () => void;
-  onBack: () => void;
-  // Back to the board, with this task's card highlighted.
-  onShowOnBoard: () => void;
-};
-
-const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+type Props = BoardView &
+  TaskActions & {
+    todo: ToDo;
+    onBack: () => void;
+    // Back to the board, with this task's card highlighted.
+    onShowOnBoard: () => void;
+  };
 
 const Sep = () => (
   <Icon
@@ -99,8 +66,8 @@ const Stages = ({
               )}
             />
           )}
-          <button
-            type="button"
+          <Button
+            variant="bare"
             aria-current={here ? "step" : undefined}
             title={here ? undefined : `Move to ${c.name}`}
             onClick={() => !here && onMove(c)}
@@ -132,7 +99,7 @@ const Stages = ({
             >
               {c.name}
             </Typography>
-          </button>
+          </Button>
         </li>
       );
     })}
@@ -140,12 +107,19 @@ const Stages = ({
 );
 
 // Where an epic's tasks sit across the board, one segment per column.
-const Spread = ({ columns, kids }: { columns: Column[]; kids: ToDo[] }) => {
+const Spread = ({
+  columns,
+  epicTasks,
+}: {
+  columns: Column[];
+  epicTasks: ToDo[];
+}) => {
   const count = columns.map(
-    (c) => kids.filter((k) => k.column === c.id).length,
+    (c) => epicTasks.filter((t) => t.column === c.id).length,
   );
-  const done = columns.length > 1 ? count[count.length - 1] : 0;
-  const pct = kids.length ? Math.round((done / kids.length) * 100) : 0;
+  const done = epicTasks.filter((t) => t.column === doneColumn(columns)).length;
+  const total = epicTasks.length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
   return (
     <section aria-label="Where this epic’s tasks are" className="grid gap-2.5">
       <Typography color="muted" className="flex items-baseline gap-2.5">
@@ -155,12 +129,12 @@ const Spread = ({ columns, kids }: { columns: Column[]; kids: ToDo[] }) => {
           color="inherit"
           className={classNames(
             "tabular-nums",
-            kids.length && done === kids.length ? "text-(--hue-4)" : "text-ink",
+            total && done === total ? "text-(--hue-4)" : "text-ink",
           )}
         >
-          {done} of {kids.length} done
+          {done} of {total} done
         </Typography>
-        {kids.length ? (
+        {total ? (
           <span className="tabular-nums">{pct}%</span>
         ) : (
           <span>Add tasks below to see them spread across the board.</span>
@@ -172,7 +146,7 @@ const Spread = ({ columns, kids }: { columns: Column[]; kids: ToDo[] }) => {
           .map((c, i) => `${count[i]} in ${c.name}`)
           .join(", ")}
         className={classNames("flex gap-[3px] h-3", {
-          "rounded-full bg-line-strong": !kids.length,
+          "rounded-full bg-line-strong": !total,
         })}
       >
         {columns.map(
@@ -187,18 +161,14 @@ const Spread = ({ columns, kids }: { columns: Column[]; kids: ToDo[] }) => {
             ),
         )}
       </div>
-      {kids.length > 0 && (
+      {total > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {columns.map((c, i) => (
             <Tag
               key={c.id}
               style={hue(i + 1)}
-              dot={i < columns.length - 1 || columns.length === 1}
-              icon={
-                i === columns.length - 1 && columns.length > 1
-                  ? "check"
-                  : undefined
-              }
+              dot={c.id !== doneColumn(columns)}
+              icon={c.id === doneColumn(columns) ? "check" : undefined}
               className={classNames({ "opacity-50": !count[i] })}
             >
               {count[i]} {c.name}
@@ -226,14 +196,12 @@ const TaskPage = ({
   onBack,
   onShowOnBoard,
 }: Props) => {
-  const listId = useId();
   const { errors, save } = useTaskSave(onChange);
   const [copied, setCopied] = useState(false);
-  const epics = todos.filter((t) => t.isEpic && t.id !== todo.id);
   const parent = todos.find((t) => t.isEpic && t.id === todo.epic);
-  const kids = todos.filter((t) => t.epic === todo.id);
-  const at = columns.findIndex((c) => c.id === todo.column);
-  const done = columns.length > 1 && at === columns.length - 1;
+  const epicTasks = todos.filter((t) => t.epic === todo.id);
+  const columnIndex = columns.findIndex((c) => c.id === todo.column);
+  const done = todo.column === doneColumn(columns);
   const kind = todo.isEpic ? "epic" : "task";
 
   const copyLink = () =>
@@ -271,8 +239,8 @@ const TaskPage = ({
           {parent && (
             <>
               <Sep />
-              <button
-                type="button"
+              <Button
+                variant="bare"
                 title="Open the epic"
                 onClick={() => onOpenTask(parent.id)}
                 className="min-w-0 rounded-full hover:brightness-95"
@@ -280,7 +248,7 @@ const TaskPage = ({
                 <Tag icon="layers" style={epicHue(parent.id)}>
                   {parent.title}
                 </Tag>
-              </button>
+              </Button>
             </>
           )}
           <Sep />
@@ -332,7 +300,8 @@ const TaskPage = ({
             <div className="flex flex-wrap items-center gap-1.5">
               {todo.isEpic && (
                 <Tag icon="layers" style={epicHue(todo.id)}>
-                  Epic · {kids.length} task{kids.length === 1 ? "" : "s"}
+                  Epic · {epicTasks.length} task
+                  {epicTasks.length === 1 ? "" : "s"}
                 </Tag>
               )}
               {done && !todo.isEpic && (
@@ -356,11 +325,11 @@ const TaskPage = ({
         </header>
 
         {todo.isEpic ? (
-          <Spread columns={columns} kids={kids} />
+          <Spread columns={columns} epicTasks={epicTasks} />
         ) : (
           <Stages
             columns={columns}
-            at={at}
+            at={columnIndex}
             onMove={(c) => save({ column: c.id })}
           />
         )}
@@ -373,54 +342,18 @@ const TaskPage = ({
                 onOpenMeeting={() => onOpenMeeting(todo.source!.meeting_id)}
               />
             )}
-            <RichTextArea
-              label={todo.isEpic ? "About this epic" : "Notes"}
-              icon="notes"
-              placeholder={
-                todo.isEpic
-                  ? "What is this project, and when is it finished?"
-                  : "Add context, links or acceptance criteria"
-              }
-              defaultValue={todo.description}
-              onChange={(description) => save({ description })}
-              className="min-h-[132px]"
-            />
-            {todo.isEpic ? (
-              <EpicTasks
-                epic={todo}
-                todos={todos}
-                columns={columns}
-                onOpen={onOpenTask}
-                onUnlink={(id) => onChangeTask(id, { epic: undefined })}
-                onAdd={(title) =>
-                  onCreate({
-                    title,
-                    description: "",
-                    column: todo.column,
-                    epic: todo.id,
-                    subtasks: [],
-                  })
-                }
-              />
-            ) : (
-              <Subtasks
-                value={todo.subtasks}
-                onChange={(subtasks) => save({ subtasks })}
-              />
-            )}
-            {errors.subtasks && (
-              <Typography as="p" role="alert" color="alert">
-                {errors.subtasks}
-              </Typography>
-            )}
-            <Blockers
+            <TaskBody
               todo={todo}
-              todos={todos}
+              board={board}
               columns={columns}
-              onOpen={onOpenTask}
-              onChange={(blockedBy) => save({ blockedBy })}
+              todos={todos}
+              onOpenTask={onOpenTask}
+              onChangeTask={onChangeTask}
+              onCreate={onCreate}
+              save={save}
+              errors={errors}
+              notesClassName="min-h-[132px]"
             />
-            <Files boardId={board.id} todo={todo} />
           </div>
 
           <aside
@@ -428,42 +361,14 @@ const TaskPage = ({
             className="p-6 border-l border-line max-lg:order-first max-lg:border-l-0 max-lg:border-b max-md:p-4"
           >
             <div className="sticky top-5 grid gap-4 max-lg:static max-lg:grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
-              <Select
-                label="Column"
-                icon="status"
-                value={String(todo.column)}
-                onChange={(v) => save({ column: toColumn(v) })}
-                options={columnOptions(columns, todo, todos)}
+              <TaskProperties
+                todo={todo}
+                columns={columns}
+                todos={todos}
+                labels={labels}
+                save={save}
+                errors={errors}
               />
-              <DatePicker
-                label="Due date"
-                icon="cal"
-                optional
-                value={todo.due ?? ""}
-                error={errors.due}
-                onChange={(due) => save({ due: due || undefined })}
-              />
-              <Input
-                label="Label"
-                icon="tag"
-                placeholder="e.g. Design"
-                maxLength={24}
-                autoComplete="off"
-                list={listId}
-                defaultValue={todo.label}
-                error={errors.label}
-                onChange={(e) =>
-                  save({ label: e.target.value.trim() || undefined })
-                }
-              />
-              <Labels id={listId} labels={labels} />
-              {!todo.isEpic && (
-                <EpicSelect
-                  epics={epics}
-                  value={todo.epic ? String(todo.epic) : ""}
-                  onChange={(v) => save({ epic: toEpic(v) })}
-                />
-              )}
               <Typography
                 as="dl"
                 variant="label"
@@ -474,14 +379,14 @@ const TaskPage = ({
                     <Icon name="plus" size={15} />
                     Created
                   </dt>
-                  <dd>{fmtDate(todo.created_at)}</dd>
+                  <dd>{fmtDate(todo.created_at, true)}</dd>
                 </div>
                 <div>
                   <dt>
                     <Icon name="pen" size={15} />
                     Last updated
                   </dt>
-                  <dd>{fmtDate(todo.updated_at)}</dd>
+                  <dd>{fmtDate(todo.updated_at, true)}</dd>
                 </div>
               </Typography>
               <Button

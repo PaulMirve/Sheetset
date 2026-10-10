@@ -78,6 +78,7 @@ def test_tasks_flow():
 
     # Suggested tasks: create, edit, delete, accept.
     meeting = {"external_id": "m1", "title": "Sync", "date": "2026-09-24", "summary": "s",
+               "board": "APP", "attendees": ["tasks@b.co", "other@b.co"],
                "tasks": [{"title": "Draft FAQ", "due": "2026-09-29", "label": "Content", "why": "volunteered",
                           "description": "FAQ for the pricing change"}]}
     mid = c.post("/meetings", json=meeting, headers={"X-API-Key": "n8n-test-key"}).json()["id"]
@@ -104,21 +105,10 @@ def test_tasks_flow():
     t = c.post(acc, json={"board_id": bid, "column_id": todo}, headers=me).json()
     assert c.get(f"/meetings/{mid}", headers=me).json()["tasks"][0]["task_id"] == t["id"]
 
-    # Another account sees it as not added yet, and can add it to its own board.
-    assert c.get(f"/meetings/{mid}", headers=other).json()["tasks"][0]["task_id"] is None
-    with SessionLocal() as s:
-        u2 = s.query(User).filter_by(email="other@b.co").one()
-        b2 = Board(key="OTH", name="Other", owner_id=u2.id, members=[u2])
-        b2.columns = [Column(name="To do", position=0)]
-        s.add(b2)
-        s.commit()
-        bid2, todo2 = b2.id, b2.columns[0].id
-    t2 = c.post(acc, json={"board_id": bid2, "column_id": todo2}, headers=other).json()
-    assert c.get(f"/meetings/{mid}", headers=other).json()["tasks"][0]["task_id"] == t2["id"]
-    assert c.get(f"/meetings/{mid}", headers=me).json()["tasks"][0]["task_id"] == t["id"]
-    # Editing the suggestion keeps both links.
+    # An attendee who isn't on the board can't see or accept it.
+    assert c.get(f"/meetings/{mid}", headers=other).status_code == 404
+    # Editing the suggestion keeps the link.
     assert c.put(f"{sug}/0", json={"title": "Draft FAQ v2"}, headers=me).json()[0]["task_id"] == t["id"]
-    assert c.get(f"/meetings/{mid}", headers=other).json()["tasks"][0]["task_id"] == t2["id"]
 
     # Files: raw body upload, members only, 10 MB cap, gone with the task.
     files = f"/tasks/{t['id']}/files"
@@ -131,6 +121,12 @@ def test_tasks_flow():
     r = c.get(f"/files/{f['id']}", headers=me)
     assert (r.content, r.headers["content-type"]) == (b"img", "image/png")
     assert c.get(f"/files/{f['id']}", headers=other).status_code == 404
+    # Anything that could run script comes back as a download, not as itself.
+    html = c.post(f"{files}?name=x.html", content=b"<script>", headers={**me, "Content-Type": "text/html"}).json()
+    r = c.get(f"/files/{html['id']}", headers=me)
+    assert r.headers["content-type"] == "application/octet-stream"
+    assert r.headers["content-disposition"].startswith("attachment")
+    assert c.delete(f"/files/{html['id']}", headers=me).status_code == 204
     assert c.delete(f"/files/{f['id']}", headers=me).status_code == 204
     assert c.get(f"/tasks/{t['id']}", headers=me).json()["files"] == []
 

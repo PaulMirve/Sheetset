@@ -34,6 +34,11 @@ def test_auth_flow():
     assert c.get("/me", headers={"Authorization": f"Bearer {token}"}).status_code == 403
     assert c.post("/login", json={"email": "a@b.co", "password": "REDACTED_LOCAL_CREDENTIAL"}).status_code == 403
 
+    # Unknown emails fail like wrong passwords, and repeated failures get throttled.
+    bad = {"email": "nobody@b.co", "password": "wrongpass"}
+    codes = [c.post("/login", json=bad).status_code for _ in range(10)]
+    assert codes[0] == 401 and codes[-1] == 429
+
 
 if __name__ == "__main__":
     test_auth_flow()

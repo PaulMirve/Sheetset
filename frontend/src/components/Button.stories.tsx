@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import Button from "./Button";
+import { expect, fn } from "storybook/test";
 import Icon from "./Icon";
+import Tag from "./Tag";
 
 const meta: Meta<typeof Button> = {
   component: Button,
@@ -15,7 +17,7 @@ const meta: Meta<typeof Button> = {
   argTypes: {
     variant: {
       control: "select",
-      options: ["primary", "secondary", "quiet", "danger", "icon"],
+      options: ["primary", "secondary", "quiet", "danger", "icon", "bare"],
     },
   },
 };
@@ -51,5 +53,22 @@ export const IconOnly: Story = {
     variant: "icon",
     "aria-label": "More",
     children: <Icon name="more" />,
+  },
+};
+
+/** A clickable Tag: the button adds behavior and focus, the Tag brings the look. */
+export const Bare: Story = {
+  args: {
+    variant: "bare",
+    title: "Open the epic",
+    className: "rounded-full hover:brightness-95",
+    onClick: fn(),
+    children: <Tag icon="layers">Spring launch</Tag>,
+  },
+  play: async ({ args, canvas, userEvent }) => {
+    const btn = canvas.getByRole("button", { name: "Spring launch" });
+    await expect(btn).toHaveAttribute("type", "button");
+    await userEvent.click(btn);
+    await expect(args.onClick).toHaveBeenCalled();
   },
 };

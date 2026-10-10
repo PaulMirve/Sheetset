@@ -44,6 +44,11 @@ class Board(Base):
         cascade="all, delete-orphan", passive_deletes=True, order_by="Column.position"
     )
 
+    @property
+    def done_column_id(self) -> int | None:
+        """The last column counts as done, once there's more than one. Mirrors doneColumn() in the frontend."""
+        return self.columns[-1].id if len(self.columns) > 1 else None
+
 
 class Column(Base):
     __tablename__ = "columns"
@@ -51,7 +56,7 @@ class Column(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     board_id: Mapped[int] = mapped_column(ForeignKey("boards.id", ondelete="CASCADE"), index=True)
     name: Mapped[str]
-    position: Mapped[int] = mapped_column(default=0)  # last column = "done"
+    position: Mapped[int] = mapped_column(default=0)  # last column = "done" (Board.done_column_id)
 
     tasks: Mapped[list["Task"]] = relationship(
         cascade="all, delete-orphan", passive_deletes=True, order_by="Task.position"
@@ -142,6 +147,10 @@ class Meeting(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     external_id: Mapped[str] = mapped_column(unique=True)  # n8n/platform id; re-posts replace the row
+    # Visible to users who are members of this board AND whose email is in `attendees`.
+    # None only on meetings ingested before boards were required; nobody sees those.
+    board_id: Mapped[int | None] = mapped_column(ForeignKey("boards.id", ondelete="CASCADE"), index=True)
+    attendees: Mapped[list] = mapped_column(JSON, default=list)  # lowercased emails
     title: Mapped[str]
     date: Mapped[date]
     time: Mapped[str | None]
@@ -152,9 +161,9 @@ class Meeting(Base):
     notes: Mapped[list] = mapped_column(JSON, default=list)  # suggested tasks point into this by index (src)
     summary: Mapped[str]
     decisions: Mapped[list] = mapped_column(JSON, default=list)
-    tasks: Mapped[list] = mapped_column(JSON, default=list)
+    suggestions: Mapped[list] = mapped_column("tasks", JSON, default=list)  # SuggestedTask dicts, by index
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     @property
     def task_count(self) -> int:
-        return len(self.tasks)
+        return len(self.suggestions)

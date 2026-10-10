@@ -13,6 +13,8 @@ export const typography = cva("", {
         "font-[750] text-[24px] leading-[1.25] tracking-[-0.015em]",
       title: "font-bold text-[16px] leading-[1.35]",
       body: "text-[15.5px] leading-[1.45]",
+      // Rail row names: Body at 550, 700 on the current row (an aria-current="page" group).
+      rail: "font-[550] text-[15.5px] leading-[1.45] group-aria-[current=page]:font-bold",
       "body-lg": "text-[18px] leading-[1.45]",
       label: "font-semibold text-[14px] leading-[1.45]",
       chip: "font-semibold text-[13.5px] leading-none tabular-nums",

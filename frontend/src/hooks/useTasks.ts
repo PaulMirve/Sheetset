@@ -3,7 +3,7 @@ import { ColumnId } from "@system-types/column";
 import { SubtaskId } from "@system-types/Subtask";
 import { Task, TaskFile } from "@system-types/task";
 import { ToDo, ToDoId } from "@system-types/ToDo";
-import { TaskFields } from "@components/TaskModal";
+import { TaskFields } from "../tasks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiBlob } from "../api";
 import { taskKeys } from "./queryKeys";

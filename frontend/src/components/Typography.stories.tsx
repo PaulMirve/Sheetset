@@ -7,6 +7,7 @@ const VARIANTS = [
   "headline-sm",
   "title",
   "body",
+  "rail",
   "body-lg",
   "label",
   "chip",
@@ -32,6 +33,9 @@ export const HeadlineSmall: Story = {
 };
 export const Title: Story = { args: { variant: "title", children: "Title" } };
 export const Body: Story = { args: { variant: "body", children: "Body" } };
+export const Rail: Story = {
+  args: { variant: "rail", children: "Platform launch" },
+};
 export const BodyLarge: Story = {
   args: { variant: "body-lg", color: "muted", children: "Body large" },
 };

@@ -11,7 +11,7 @@ export const boardKeys = {
 
 export const meetingKeys = {
   all: ["meetings"] as const,
-  list: () => [...meetingKeys.all, "list"] as const,
+  list: (boardId: number) => [...meetingKeys.all, "list", boardId] as const,
   detail: (id: number) => [...meetingKeys.all, "detail", id] as const,
 };
 

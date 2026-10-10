@@ -1,6 +1,6 @@
 import datetime as dt
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 
 
 class Note(BaseModel):
@@ -23,7 +23,7 @@ class SuggestedTask(BaseModel):
     task_id: int | None = None  # set once accepted
 
 
-class MeetingIn(BaseModel):
+class MeetingBase(BaseModel):
     external_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     date: dt.date
@@ -35,13 +35,20 @@ class MeetingIn(BaseModel):
     notes: list[Note] = []
     summary: str
     decisions: list[str] = []
-    tasks: list[SuggestedTask] = []
+    tasks: list[SuggestedTask] = []  # suggestions; the name is n8n's contract
 
 
-class Meeting(MeetingIn):
+class MeetingIn(MeetingBase):
+    board: str = Field(min_length=1)  # board key, e.g. "PLAT"
+    attendees: list[EmailStr] = Field(min_length=1)  # only these users (if board members) see the meeting
+    url: HttpUrl | None = None  # http(s) only: it becomes a link in the app
+
+
+class Meeting(MeetingBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    board_id: int
     created_at: dt.datetime
 
 

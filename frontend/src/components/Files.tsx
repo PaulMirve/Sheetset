@@ -10,8 +10,10 @@ import { ToDo } from "@system-types/ToDo";
 import { useQueryClient } from "@tanstack/react-query";
 import classNames from "classnames";
 import { useEffect, useRef, useState } from "react";
+import { fmtDate } from "../dates";
 import { hashHue } from "../hue";
 import Button from "./Button";
+import FileButton from "./FileButton";
 import Icon from "./Icon";
 import Typography from "./Typography";
 
@@ -24,8 +26,7 @@ const fmtSize = (n: number) =>
     : n < 1048576
       ? `${Math.round(n / 1024)} KB`
       : `${(n / 1048576).toFixed(1)} MB`;
-const meta = (f: TaskFile) =>
-  `${fmtSize(f.size)} · ${new Date(f.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+const meta = (f: TaskFile) => `${fmtSize(f.size)} · ${fmtDate(f.created_at)}`;
 
 const removeClass =
   "hover:text-alert! hover:bg-alert-wash! opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100";
@@ -161,7 +162,6 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
   const del = useDeleteFile(boardId, todo.id);
   const qc = useQueryClient();
   const ref = useRef<HTMLElement>(null);
-  const input = useRef<HTMLInputElement>(null);
   const [dropping, setDropping] = useState(false);
   const [error, setError] = useState("");
   const [viewing, setViewing] = useState<number | null>(null);
@@ -234,14 +234,18 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
     <section
       ref={ref}
       aria-label="Files"
-      className={classNames(
-        "relative grid grid-cols-[minmax(0,1fr)] gap-2.5 rounded-[14px]",
-        {
-          "after:content-['Drop_to_attach'] after:absolute after:-inset-2 after:z-10 after:grid after:place-items-center after:rounded-2xl after:border-2 after:border-dashed after:border-primary after:bg-primary-wash after:text-primary after:font-semibold":
-            dropping,
-        },
-      )}
+      className="relative grid grid-cols-[minmax(0,1fr)] gap-2.5 rounded-[14px]"
     >
+      {dropping && (
+        <Typography
+          variant="label"
+          color="primary"
+          aria-hidden
+          className="absolute -inset-2 z-10 grid place-items-center rounded-2xl border-2 border-dashed border-primary bg-primary-wash"
+        >
+          Drop to attach
+        </Typography>
+      )}
       <Typography
         variant="label"
         color="muted"
@@ -252,28 +256,19 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
         {todo.files.length > 0 && (
           <>
             <span className="ml-auto tabular-nums">{todo.files.length}</span>
-            <Button
+            <FileButton
               variant="quiet"
+              multiple
               className="ml-2 h-[34px]"
-              onClick={() => input.current?.click()}
+              onFiles={add}
               disabled={upload.isPending}
             >
               <Icon name="plus" />
               {upload.isPending ? "Attaching…" : "Add files"}
-            </Button>
+            </FileButton>
           </>
         )}
       </Typography>
-      <input
-        ref={input}
-        type="file"
-        multiple
-        hidden
-        onChange={(e) => {
-          add([...(e.target.files ?? [])]);
-          e.target.value = "";
-        }}
-      />
       {photos.length > 0 && (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2.5">
           {photos.map((f, i) => (
@@ -281,14 +276,14 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
               key={f.id}
               className="group relative grid gap-1.5 m-0 min-w-0"
             >
-              <button
-                type="button"
+              <Button
+                variant="bare"
                 aria-label={`View ${f.name}`}
                 onClick={() => setViewing(i)}
                 className="aspect-4/3 overflow-hidden rounded-xl bg-ground shadow-[inset_0_0_0_1px_var(--color-line)] cursor-zoom-in transition-[box-shadow,transform] duration-150 hover:shadow-lift hover:-translate-y-px"
               >
                 <Thumb file={f} className="block size-full object-cover" />
-              </button>
+              </Button>
               <Typography
                 as="figcaption"
                 variant="chip"
@@ -325,8 +320,8 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
               <span className="grid place-items-center size-9 rounded-[10px] flex-none bg-[color-mix(in_srgb,var(--h)_16%,transparent)] text-[color-mix(in_srgb,var(--h)_62%,var(--color-ink))]">
                 <Icon name="file" size={18} />
               </span>
-              <button
-                type="button"
+              <Button
+                variant="bare"
                 title={`Open ${f.name} in a new tab`}
                 onClick={() => open(f)}
                 className="flex-1 min-w-0 grid text-left hover:[&>:first-child]:underline"
@@ -337,7 +332,7 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
                 <Typography variant="chip" color="muted" className="truncate">
                   {meta(f)}
                 </Typography>
-              </button>
+              </Button>
               <Button
                 variant="icon"
                 aria-label={`Download ${f.name}`}
@@ -360,9 +355,10 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
         </div>
       )}
       {todo.files.length === 0 && (
-        <button
-          type="button"
-          onClick={() => input.current?.click()}
+        <FileButton
+          variant="bare"
+          multiple
+          onFiles={add}
           disabled={upload.isPending}
           className="grid justify-items-center gap-1 py-5 px-4 rounded-[14px] border-[1.5px] border-dashed border-line-strong text-muted transition-colors hover:border-primary hover:bg-primary-wash hover:text-ink"
         >
@@ -373,7 +369,9 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
             ) : (
               <>
                 Drop photos or files here, or{" "}
-                <span className="text-primary font-semibold">browse</span>
+                <Typography as="span" variant="label" color="primary">
+                  browse
+                </Typography>
               </>
             )}
           </Typography>
@@ -385,7 +383,7 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
           >
             Up to 10 MB each. You can also paste a screenshot.
           </Typography>
-        </button>
+        </FileButton>
       )}
       {error && (
         <Typography as="p" role="alert" color="alert">

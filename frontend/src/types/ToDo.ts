@@ -2,7 +2,6 @@ import { Brand } from "./Brand";
 import { ColumnId } from "./column";
 import { Subtask } from "./Subtask";
 import { TaskFile, TaskSource } from "./task";
-import { ToDoStatus } from "./ToDoStatus";
 import { User } from "./user";
 
 export type ToDoId = Brand<number, "ToDoId">;
@@ -13,7 +12,6 @@ export type ToDo = {
   key: string;
   title: string;
   description: string;
-  status?: ToDoStatus;
   column: ColumnId;
   due?: string; // YYYY-MM-DD
   label?: string;

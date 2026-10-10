@@ -1,42 +1,33 @@
-import { Board } from "@system-types/Board";
-import { Column, ColumnId } from "@system-types/column";
-import { TaskSource } from "@system-types/task";
+import { ColumnId } from "@system-types/column";
 import { ToDo, ToDoId } from "@system-types/ToDo";
-import classNames from "classnames";
-import { ComponentProps, FormEvent, useId, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { errorsOf, taskSchema } from "../forms";
 import { epicHue, hashHue, hue } from "../hue";
-import Button, { button } from "./Button";
+import { BoardView, TaskActions, TaskFields, toColumn, toEpic } from "../tasks";
+import Button from "./Button";
 import DatePicker from "./DatePicker";
 import EditableTitle from "./EditableTitle";
-import Files from "./Files";
 import Icon from "./Icon";
-import InlineInput from "./InlineInput";
 import Input from "./Input";
 import Modal from "./Modal";
+import RichTextArea from "./RichTextArea";
 import Segmented from "./Segmented";
 import Select from "./Select";
 import Subtasks from "./Subtasks";
 import Tag from "./Tag";
-import RichTextArea from "./RichTextArea";
+import {
+  columnOptions,
+  EpicSelect,
+  Labels,
+  notesPlaceholder,
+  Source,
+  TaskBody,
+  TaskProperties,
+  useTaskSave,
+} from "./TaskParts";
 import Typography from "./Typography";
 
-export type TaskFields = Pick<
-  ToDo,
-  "title" | "description" | "column" | "due" | "label" | "subtasks" | "epic"
-> & { isEpic?: boolean; blockedBy?: ToDoId[] };
-
-type Shared = {
-  board: Board;
-  columns: Column[];
-  // Every task on the board, for the epic picker and an epic's task list.
-  todos: ToDo[];
-  // Existing labels, suggested in the Label field.
-  labels: string[];
-  onClose: () => void;
-};
-
-export const toColumn = (v: string) => Number(v) as unknown as ColumnId;
+type DialogProps = BoardView & { onClose: () => void };
 
 const Crumbs = ({
   board,
@@ -46,7 +37,7 @@ const Crumbs = ({
   parent,
   onOpenParent,
   code,
-}: Shared & {
+}: DialogProps & {
   // The task's public id, once it exists.
   code?: string;
   column: ColumnId;
@@ -72,8 +63,8 @@ const Crumbs = ({
       )}
       {parent &&
         (onOpenParent ? (
-          <button
-            type="button"
+          <Button
+            variant="bare"
             title={`Open “${parent.title}”`}
             onClick={onOpenParent}
             className="min-w-0 rounded-full hover:brightness-95"
@@ -81,7 +72,7 @@ const Crumbs = ({
             <Tag icon="layers" style={epicHue(parent.id)}>
               {parent.title}
             </Tag>
-          </button>
+          </Button>
         ) : (
           <Tag icon="layers" style={epicHue(parent.id)}>
             {parent.title}
@@ -91,372 +82,12 @@ const Crumbs = ({
   );
 };
 
-export const Labels = ({ id, labels }: { id: string; labels: string[] }) => (
-  <datalist id={id}>
-    {labels.map((l) => (
-      <option key={l} value={l} />
-    ))}
-  </datalist>
-);
-
-/** Blockers of `todo` that aren't in the last column yet. */
-export const waitingOn = (todo: ToDo, todos: ToDo[], columns: Column[]) =>
-  todos.filter(
-    (t) =>
-      todo.blockedBy.includes(t.id) &&
-      t.column !== columns[columns.length - 1]?.id,
-  );
-
-/** Whether `todo` may move to `column`: never right of where it is while blocked. Mirrors the API. */
-export const canMove = (
-  todo: ToDo,
-  column: ColumnId,
-  todos: ToDo[],
-  columns: Column[],
-) => {
-  const at = (id: ColumnId) => columns.findIndex((c) => c.id === id);
-  return (
-    at(column) <= at(todo.column) || !waitingOn(todo, todos, columns).length
-  );
-};
-
-// With a task, columns it can't move to (it's blocked) are disabled.
-export const columnOptions = (
-  columns: Column[],
-  todo?: ToDo,
-  todos: ToDo[] = [],
-) =>
-  columns.map((c) => {
-    const disabled = todo ? !canMove(todo, c.id, todos, columns) : false;
-    return {
-      value: String(c.id),
-      label: disabled ? `${c.name} (blocked)` : c.name,
-      disabled,
-    };
-  });
-
-export const EpicSelect = ({
-  epics,
-  ...props
-}: { epics: ToDo[] } & Omit<
-  ComponentProps<typeof Select>,
-  "label" | "options"
->) => (
-  <Select
-    label="Epic"
-    icon="layers"
-    optional
-    disabled={!epics.length}
-    title={epics.length ? undefined : "This board has no epics yet."}
-    {...props}
-    options={[
-      {
-        value: "",
-        label: epics.length ? "No epic" : "No epics on this board yet",
-      },
-      ...epics.map((e) => ({ value: String(e.id), label: e.title })),
-    ]}
-  />
-);
-
-export const toEpic = (v: string) => (v ? (Number(v) as ToDoId) : undefined);
-
-/** The meeting a task came from, with the quoted note line. */
-export const Source = ({
-  source,
-  onOpenMeeting,
-}: {
-  source: TaskSource;
-  onOpenMeeting: () => void;
-}) => (
-  <section
-    aria-label="Source meeting"
-    style={hue(3)}
-    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 p-3.5 rounded-[14px] bg-[color-mix(in_srgb,var(--h)_9%,var(--color-surface))] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--h)_22%,transparent)] max-md:grid-cols-[auto_minmax(0,1fr)]"
-  >
-    <span className="tile size-10 rounded-xl" aria-hidden>
-      <Icon name="video" size={20} />
-    </span>
-    <div className="grid gap-0.5 min-w-0">
-      <Typography variant="title">{source.title}</Typography>
-      <Typography variant="chip" color="muted">
-        {[
-          "Created from this meeting",
-          new Date(`${source.date}T00:00`).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          }),
-          source.time,
-          source.platform,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </Typography>
-      {source.quote && (
-        <Typography
-          as="blockquote"
-          className="flex gap-2.5 mt-2 py-2 px-3 rounded-[10px] bg-surface"
-        >
-          {source.at && (
-            <Typography
-              as="time"
-              variant="chip"
-              color="muted"
-              className="pt-px"
-            >
-              {source.at}
-            </Typography>
-          )}
-          <span>
-            {source.who && (
-              <Typography
-                as="b"
-                variant="label"
-                color="inherit"
-                style={hashHue(source.who)}
-                className="text-[color-mix(in_srgb,var(--h)_60%,var(--color-ink))]"
-              >
-                {source.who.split(" ")[0]}{" "}
-              </Typography>
-            )}
-            {source.quote}
-          </span>
-        </Typography>
-      )}
-    </div>
-    <span className="flex gap-1.5 max-md:col-span-full">
-      <Button
-        variant="secondary"
-        onClick={onOpenMeeting}
-        className="max-md:flex-1"
-      >
-        <Icon name="video" size={15} /> Open meeting
-      </Button>
-      {/* The recording or call on its platform, when the meeting has a link. */}
-      {source.url && (
-        <a
-          href={source.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title={`Open in ${source.platform ?? "a new tab"}`}
-          aria-label={`Open in ${source.platform ?? "a new tab"} (opens in a new tab)`}
-          className={button({ variant: "secondary", className: "px-3!" })}
-        >
-          <Icon name="external" size={15} />
-        </a>
-      )}
-    </span>
-  </section>
-);
-
-/** "Tasks in this epic": open, unlink, or add one in the epic's column. */
-export const EpicTasks = ({
-  epic,
-  todos,
-  columns,
-  onOpen,
-  onUnlink,
-  onAdd,
-}: {
-  epic: ToDo;
-  todos: ToDo[];
-  columns: Column[];
-  onOpen: (id: ToDoId) => void;
-  onUnlink: (id: ToDoId) => void;
-  onAdd: (title: string) => void;
-}) => {
-  const last = columns.length > 1 ? columns[columns.length - 1].id : null;
-  // Board order: by column, then position.
-  const kids = columns.flatMap((c) =>
-    todos.filter((t) => t.epic === epic.id && t.column === c.id),
-  );
-  const done = kids.filter((k) => k.column === last).length;
-  const row =
-    "group flex items-center gap-2.5 h-11 pl-3 pr-1.5 rounded-[10px] bg-ground border border-transparent transition-[background-color,border-color,box-shadow] duration-150 hover:border-line-strong focus-within:bg-surface focus-within:border-primary focus-within:shadow-[0_0_0_4px_var(--color-primary-wash)]";
-  return (
-    <fieldset className="grid gap-1.5">
-      <Typography
-        as="legend"
-        variant="label"
-        color="muted"
-        className="flex items-center gap-1.5 w-full mb-1.5"
-      >
-        <Icon name="layers" size={15} />
-        Tasks in this epic
-        {kids.length > 0 && (
-          <span
-            className={classNames("ml-auto tabular-nums", {
-              "text-(--hue-4)": done === kids.length,
-            })}
-          >
-            {done} of {kids.length}
-          </span>
-        )}
-      </Typography>
-      {kids.length > 0 && (
-        <div
-          role="progressbar"
-          aria-label="Tasks done in this epic"
-          aria-valuemin={0}
-          aria-valuemax={kids.length}
-          aria-valuenow={done}
-          className="h-1 mb-1.5 rounded-full bg-line-strong overflow-hidden"
-        >
-          <div
-            className="h-full rounded-full bg-(--hue-4) transition-[width] duration-300 ease-out"
-            style={{ width: `${(done / kids.length) * 100}%` }}
-          />
-        </div>
-      )}
-      {kids.map((k) => {
-        const ci = columns.findIndex((c) => c.id === k.column);
-        const isDone = k.column === last;
-        return (
-          <div key={k.id} className={row} style={hue(ci + 1)}>
-            {isDone ? (
-              <Icon name="check" size={16} style={{ color: "var(--hue-4)" }} />
-            ) : (
-              <span className="size-2 rounded-full flex-none bg-(--h)" />
-            )}
-            <button
-              type="button"
-              onClick={() => onOpen(k.id)}
-              className={classNames(
-                "flex-1 min-w-0 py-1 text-left truncate hover:underline underline-offset-3 decoration-line-strong",
-                { "text-muted line-through": isDone },
-              )}
-            >
-              {k.title}
-            </button>
-            <Tag icon="status" className="flex-none max-md:hidden">
-              {columns[ci].name}
-            </Tag>
-            <Button
-              type="button"
-              variant="icon"
-              aria-label={`Remove ${k.title} from this epic`}
-              title="Remove from epic"
-              onClick={() => onUnlink(k.id)}
-              className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 hover:text-alert! hover:bg-alert-wash!"
-            >
-              <Icon name="unlink" size={15} />
-            </Button>
-          </div>
-        );
-      })}
-      <label className={classNames(row, "text-muted cursor-text")}>
-        <Icon name="plus" size={18} />
-        <InlineInput
-          aria-label="New task in this epic"
-          placeholder="Add a task, press Enter"
-          maxLength={200}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter" || e.metaKey || e.ctrlKey) return;
-            e.preventDefault();
-            const title = e.currentTarget.value.trim();
-            e.currentTarget.value = "";
-            if (title) onAdd(title);
-          }}
-        />
-      </label>
-    </fieldset>
-  );
-};
-
-/** "Blocked by": the tasks this one waits on. Pick one to add, open or remove each. */
-export const Blockers = ({
-  todo,
-  todos,
-  columns,
-  onOpen,
-  onChange,
-}: {
-  todo: ToDo;
-  todos: ToDo[];
-  columns: Column[];
-  onOpen: (id: ToDoId) => void;
-  onChange: (blockedBy: ToDoId[]) => void;
-}) => {
-  const last = columns.length > 1 ? columns[columns.length - 1].id : null;
-  const blockers = todos.filter((t) => todo.blockedBy.includes(t.id));
-  const choices = todos.filter(
-    (t) => t.id !== todo.id && !todo.blockedBy.includes(t.id),
-  );
-  return (
-    <div className="grid gap-1.5">
-      <Select
-        label="Blocked by"
-        icon="lock"
-        optional
-        value=""
-        disabled={!choices.length}
-        onChange={(v) => onChange([...todo.blockedBy, Number(v) as ToDoId])}
-        options={[
-          {
-            value: "",
-            label: choices.length
-              ? "Add a task this waits on"
-              : "No other tasks on this board",
-          },
-          ...choices.map((t) => ({
-            value: String(t.id),
-            hint: t.key,
-            label: t.title,
-          })),
-        ]}
-      />
-      {blockers.map((b) => {
-        const ci = columns.findIndex((c) => c.id === b.column);
-        const isDone = b.column === last;
-        return (
-          <div
-            key={b.id}
-            style={hue(ci + 1)}
-            className="group flex items-center gap-2.5 h-11 pl-3 pr-1.5 rounded-[10px] bg-ground"
-          >
-            {isDone ? (
-              <Icon name="check" size={16} style={{ color: "var(--hue-4)" }} />
-            ) : (
-              <span className="size-2 rounded-full flex-none bg-(--h)" />
-            )}
-            <button
-              type="button"
-              onClick={() => onOpen(b.id)}
-              className={classNames(
-                "flex-1 min-w-0 py-1 text-left truncate hover:underline underline-offset-3 decoration-line-strong",
-                { "text-muted line-through": isDone },
-              )}
-            >
-              {b.title}
-            </button>
-            <Tag icon="status" className="flex-none max-md:hidden">
-              {columns[ci].name}
-            </Tag>
-            <Button
-              type="button"
-              variant="icon"
-              aria-label={`${b.title} no longer blocks this`}
-              title="Remove blocker"
-              onClick={() =>
-                onChange(todo.blockedBy.filter((id) => id !== b.id))
-              }
-              className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 hover:text-alert! hover:bg-alert-wash!"
-            >
-              <Icon name="unlink" size={15} />
-            </Button>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
 export const NewTaskModal = ({
   onCreate,
   asEpic = false,
   epic: initialEpic,
   ...shared
-}: Shared & {
+}: DialogProps & {
   onCreate: (fields: TaskFields) => Promise<void>;
   // Open in epic mode (board menu → New epic).
   asEpic?: boolean;
@@ -638,11 +269,7 @@ export const NewTaskModal = ({
           label="Notes"
           icon="notes"
           optional
-          placeholder={
-            isEpic
-              ? "What is this project, and when is it finished?"
-              : "Add context, links or acceptance criteria"
-          }
+          placeholder={notesPlaceholder(isEpic)}
         />
         <div
           style={
@@ -663,22 +290,6 @@ export const NewTaskModal = ({
   );
 };
 
-// Invalid edits aren't saved; the field shows why until it's fixed.
-export const useTaskSave = (onChange: (patch: Partial<TaskFields>) => void) => {
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const save = (patch: Partial<TaskFields>) => {
-    const r = taskSchema.partial().safeParse(patch);
-    const keys = Object.keys(patch);
-    setErrors((prev) => {
-      const next = { ...prev };
-      keys.forEach((k) => delete next[k]);
-      return r.success ? next : { ...next, ...errorsOf(r.error) };
-    });
-    if (r.success) onChange(r.data);
-  };
-  return { errors, save };
-};
-
 // Every edit saves immediately, like the wireframe.
 export const TaskDetailModal = ({
   todo,
@@ -690,24 +301,14 @@ export const TaskDetailModal = ({
   onOpenMeeting,
   onOpenPage,
   ...shared
-}: Shared & {
-  todo: ToDo;
-  // Open this task on its own page.
-  onOpenPage: () => void;
-  onChange: (patch: Partial<TaskFields>) => void;
-  onDelete: () => void;
-  // Open another task in this dialog (the parent epic, or one of an epic's tasks).
-  onOpenTask: (id: ToDoId) => void;
-  // Edit another task (unlink it from this epic).
-  onChangeTask: (id: ToDoId, patch: Partial<TaskFields>) => void;
-  onCreate: (fields: TaskFields) => Promise<void>;
-  // Show the meeting this task came from.
-  onOpenMeeting: (meetingId: number) => void;
-}) => {
+}: DialogProps &
+  TaskActions & {
+    todo: ToDo;
+    // Open this task on its own page.
+    onOpenPage: () => void;
+  }) => {
   const { board, columns, labels, todos, onClose } = shared;
-  const listId = useId();
   const { errors, save } = useTaskSave(onChange);
-  const epics = todos.filter((t) => t.isEpic && t.id !== todo.id);
   const parent = todos.find((t) => t.isEpic && t.id === todo.epic);
   const kind = todo.isEpic ? "epic" : "task";
 
@@ -762,88 +363,26 @@ export const TaskDetailModal = ({
         />
       )}
       <div className="grid grid-cols-2 items-start gap-4 max-md:grid-cols-1">
-        <Select
-          label="Column"
-          icon="status"
-          value={String(todo.column)}
-          onChange={(v) => save({ column: toColumn(v) })}
-          options={columnOptions(columns, todo, todos)}
-        />
-        <DatePicker
-          label="Due date"
-          icon="cal"
-          optional
-          value={todo.due ?? ""}
-          error={errors.due}
-          onChange={(due) => save({ due: due || undefined })}
-        />
-        <Input
-          label="Label"
-          icon="tag"
-          placeholder="e.g. Design"
-          maxLength={24}
-          autoComplete="off"
-          list={listId}
-          defaultValue={todo.label}
-          error={errors.label}
-          onChange={(e) => save({ label: e.target.value.trim() || undefined })}
-        />
-        <Labels id={listId} labels={labels} />
-        {!todo.isEpic && (
-          <EpicSelect
-            epics={epics}
-            value={todo.epic ? String(todo.epic) : ""}
-            onChange={(v) => save({ epic: toEpic(v) })}
-          />
-        )}
-      </div>
-      <RichTextArea
-        label={todo.isEpic ? "About this epic" : "Notes"}
-        icon="notes"
-        placeholder={
-          todo.isEpic
-            ? "What is this project, and when is it finished?"
-            : "Add context, links or acceptance criteria"
-        }
-        defaultValue={todo.description}
-        onChange={(description) => save({ description })}
-      />
-      {todo.isEpic ? (
-        <EpicTasks
-          epic={todo}
-          todos={todos}
+        <TaskProperties
+          todo={todo}
           columns={columns}
-          onOpen={onOpenTask}
-          onUnlink={(id) => onChangeTask(id, { epic: undefined })}
-          onAdd={(title) =>
-            onCreate({
-              title,
-              description: "",
-              column: todo.column,
-              epic: todo.id,
-              subtasks: [],
-            })
-          }
+          todos={todos}
+          labels={labels}
+          save={save}
+          errors={errors}
         />
-      ) : (
-        <Subtasks
-          value={todo.subtasks}
-          onChange={(subtasks) => save({ subtasks })}
-        />
-      )}
-      {errors.subtasks && (
-        <Typography as="p" role="alert" color="alert">
-          {errors.subtasks}
-        </Typography>
-      )}
-      <Blockers
+      </div>
+      <TaskBody
         todo={todo}
-        todos={todos}
+        board={board}
         columns={columns}
-        onOpen={onOpenTask}
-        onChange={(blockedBy) => save({ blockedBy })}
+        todos={todos}
+        onOpenTask={onOpenTask}
+        onChangeTask={onChangeTask}
+        onCreate={onCreate}
+        save={save}
+        errors={errors}
       />
-      <Files boardId={board.id} todo={todo} />
     </Modal>
   );
 };
