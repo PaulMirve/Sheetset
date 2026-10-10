@@ -10,7 +10,7 @@ from app.main import app  # noqa: E402
 c = TestClient(app)
 
 
-SIGNUP = {"email": "a@b.co", "password": "REDACTED_LOCAL_CREDENTIAL", "first_name": "Ada", "last_name": "Lovelace"}
+SIGNUP = {"email": "a@b.co", "password": "fixture-only-password-9284", "first_name": "Ada", "last_name": "Lovelace"}
 
 
 def test_auth_flow():
@@ -19,7 +19,7 @@ def test_auth_flow():
     assert c.post("/signup", json={**SIGNUP, "email": "c@b.co", "password": "short"}).status_code == 400
     assert c.post("/signup", json={**SIGNUP, "email": "d@b.co", "first_name": ""}).status_code == 422
     assert c.post("/login", json={"email": "a@b.co", "password": "wrongpass"}).status_code == 401
-    token = c.post("/login", json={"email": "a@b.co", "password": "REDACTED_LOCAL_CREDENTIAL"}).json()["token"]
+    token = c.post("/login", json={"email": "a@b.co", "password": "fixture-only-password-9284"}).json()["token"]
     me = c.get("/me", headers={"Authorization": f"Bearer {token}"}).json()
     assert me == {"id": 1, "email": "a@b.co", "first_name": "Ada", "last_name": "Lovelace", "is_active": True}
     assert c.get("/me", headers={"Authorization": f"Bearer {token}x"}).status_code == 401
@@ -32,7 +32,7 @@ def test_auth_flow():
         s.get(User, 1).is_active = False
         s.commit()
     assert c.get("/me", headers={"Authorization": f"Bearer {token}"}).status_code == 403
-    assert c.post("/login", json={"email": "a@b.co", "password": "REDACTED_LOCAL_CREDENTIAL"}).status_code == 403
+    assert c.post("/login", json={"email": "a@b.co", "password": "fixture-only-password-9284"}).status_code == 403
 
     # Unknown emails fail like wrong passwords, and repeated failures get throttled.
     bad = {"email": "nobody@b.co", "password": "wrongpass"}

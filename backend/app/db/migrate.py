@@ -78,6 +78,8 @@ def initialize_database(engine: Engine) -> Path | None:
             changed = (
                 not has_code
                 or not {"is_blocked", "needs_human_review"}.issubset(task_fields)
+                or not inspector.has_table("task_executions")
+                or not inspector.has_table("execution_events")
                 or any(len(existing) != len(WORKFLOW) for existing in boards.values())
                 or any(
                     (r["code"], r["name"], r["position"]) != p[:3]

@@ -40,7 +40,7 @@ MEETING = {
 
 
 def auth(email):
-    body = {"email": email, "password": "REDACTED_LOCAL_CREDENTIAL", "first_name": "Ada", "last_name": "Lovelace"}
+    body = {"email": email, "password": "fixture-only-password-9284", "first_name": "Ada", "last_name": "Lovelace"}
     return {"Authorization": f"Bearer {c.post('/signup', json=body).json()['token']}"}
 
 

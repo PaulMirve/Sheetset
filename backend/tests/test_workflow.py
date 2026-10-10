@@ -7,7 +7,7 @@ c = TestClient(app)
 
 def test_attention_flags_keep_stage_and_guard_every_forward_move():
     token = c.post("/signup", json={
-        "email": "workflow@b.co", "password": "REDACTED_LOCAL_CREDENTIAL", "first_name": "Ada", "last_name": "Lovelace",
+        "email": "workflow@b.co", "password": "fixture-only-password-9284", "first_name": "Ada", "last_name": "Lovelace",
     }).json()["token"]
     headers = {"Authorization": f"Bearer {token}"}
     board = c.post("/boards", json={"name": "Workflow"}, headers=headers).json()

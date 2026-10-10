@@ -56,3 +56,45 @@ databases and reset database contents and login throttling between cases.
 From `frontend/`, run `yarn typecheck`, `npx eslint src`,
 `npx vitest run --config vitest.workflow.config.ts` and
 `npx vitest run --project storybook`.
+
+
+## Orchestrator reservations
+
+`POST /tasks/{id}/claim` accepts `execution_id` (UUID), `expected_board_id`,
+`project`, `profile`, `developer` and `reviewer`. It reserves the SQLite writer,
+checks membership and current eligibility, inserts the execution and moves a
+concrete To do task to Doing in one transaction. Blocked flags or unfinished
+blockers cause 409. A competing execution gets 409; an identical retry with the
+same execution ID returns the original execution. Returning an active task to
+To do manually does not remove its reservation.
+
+`GET /tasks/{id}/executions` and `GET /executions/{uuid}/events` expose history
+to board members. The owning user can append an event through
+`POST /executions/{uuid}/events` with `event_id`, `kind`, `payload`; duplicate IDs
+are idempotent only for identical content, and payloads are capped at 64 KB.
+Store large reports using the existing file endpoint. Never put credentials in
+events. History survives completion; deleting the task deletes its executions.
+
+`POST /executions/{uuid}/stage` accepts `stage` (doing or code_review) and
+`expected_column_id`. It verifies an active execution, attention flags and the
+observed column before moving the task. The orchestrator must also compare its
+saved specification against the current ticket before continuing: column checks
+do not detect all concurrent edits to title, description or dependencies.
+
+`POST /executions/{uuid}/finish` accepts `status` (ready_for_qa,
+needs_human_review or cancelled) and `expected_column_id`. Ready for QA requires
+the current Code review stage and normal dependency/flag validation. Cancellation
+or escalation leaves the column unchanged and sets needs_human_review. Finishing
+releases the active reservation but preserves history. Only the execution's
+owning user may write events or finish. A completed execution never starts again
+merely because its original claim is retried.
+
+These endpoints use the same bearer authentication as task CRUD. Existing UI
+and task endpoints remain compatible. Automations must use the claim endpoint;
+a GET followed by ordinary PATCH to Doing is not a reservation. No automatic
+expiry is implemented: a crashed execution remains reserved for explicit recovery.
+
+Startup adds the execution tables transactionally and backs up an existing
+database before the addition. Existing task fields, column IDs and memberships
+are preserved. Rollback follows the backup procedure above; retain new execution
+history before restoring an older backup.

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from sqlalchemy import Column as SAColumn
 from sqlalchemy import JSON, DateTime, ForeignKey, LargeBinary, String, Table, UniqueConstraint, func
@@ -171,3 +171,40 @@ class Meeting(Base):
     @property
     def task_count(self) -> int:
         return len(self.suggestions)
+
+
+class TaskExecution(Base):
+    """A durable claim. Nullable unique active_task_id allows past runs per ticket."""
+
+    __tablename__ = "task_executions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"), index=True)
+    active_task_id: Mapped[int | None] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"), unique=True
+    )
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    project: Mapped[str] = mapped_column(String(100))
+    profile: Mapped[str] = mapped_column(String(20))
+    developer: Mapped[str] = mapped_column(String(20))
+    reviewer: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20), default="claimed")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class ExecutionEvent(Base):
+    """Append-only events, with caller-generated IDs for retry safety."""
+
+    __tablename__ = "execution_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    execution_id: Mapped[str] = mapped_column(
+        ForeignKey("task_executions.id", ondelete="CASCADE"), index=True
+    )
+    kind: Mapped[str] = mapped_column(String(60))
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now()
+    )
