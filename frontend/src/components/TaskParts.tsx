@@ -407,16 +407,6 @@ export const TaskProperties = ({
         onChange={(v) => save({ column: toColumn(v) })}
         options={columnOptions(columns, todo, todos)}
       />
-      <Checkbox
-        label="Blocked"
-        checked={todo.isBlocked}
-        onChange={(e) => save({ isBlocked: e.target.checked })}
-      />
-      <Checkbox
-        label="Needs human review"
-        checked={todo.needsHumanReview}
-        onChange={(e) => save({ needsHumanReview: e.target.checked })}
-      />
       <DatePicker
         label="Due date"
         icon="cal"
@@ -444,6 +434,22 @@ export const TaskProperties = ({
           onChange={(v) => save({ epic: toEpic(v) })}
         />
       )}
+      <div
+        role="group"
+        aria-label="Flags"
+        className="col-span-full flex flex-wrap items-center gap-x-6 gap-y-2"
+      >
+        <Checkbox
+          label="Blocked"
+          checked={todo.isBlocked}
+          onChange={(e) => save({ isBlocked: e.target.checked })}
+        />
+        <Checkbox
+          label="Needs human review"
+          checked={todo.needsHumanReview}
+          onChange={(e) => save({ needsHumanReview: e.target.checked })}
+        />
+      </div>
     </>
   );
 };
