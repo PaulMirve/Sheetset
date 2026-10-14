@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { KeyboardEvent, useId, useRef, useState } from "react";
+import { CSSProperties, KeyboardEvent, useId, useRef, useState } from "react";
 import Field, { a11yProps, FieldProps, inputClass } from "./Field";
 import Icon from "./Icon";
 import { typography } from "./Typography";
@@ -9,8 +9,14 @@ type Option = {
   label: string;
   /** Muted lead-in before the label, e.g. a task key. */
   hint?: string;
+  /** Hue for a leading colour dot, e.g. `hue(n)` for a column. */
+  dot?: CSSProperties;
   disabled?: boolean;
 };
+
+const Dot = ({ hue }: { hue: CSSProperties }) => (
+  <span className="dot size-2! mx-0.5" style={hue} aria-hidden />
+);
 
 type Props = FieldProps & {
   /** Choices, in display order. */
@@ -158,6 +164,7 @@ const Select = ({
           !v && "text-muted",
         )}
       >
+        {current?.dot && <Dot hue={current.dot} />}
         <span className="flex-1 min-w-0 truncate">
           {current?.hint && (
             <span className="mr-1.5 text-muted tabular-nums">
@@ -226,6 +233,7 @@ const Select = ({
                     {o.hint}
                   </span>
                 )}
+                {o.dot && <Dot hue={o.dot} />}
                 <span className="flex-1 min-w-0 truncate">{o.label}</span>
                 <Icon
                   name="check"

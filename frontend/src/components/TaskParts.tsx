@@ -50,11 +50,12 @@ export const columnOptions = (
   todo?: ToDo,
   todos: ToDo[] = [],
 ) =>
-  columns.map((c) => {
+  columns.map((c, i) => {
     const disabled = todo ? !canMove(todo, c.id, todos, columns) : false;
     return {
       value: String(c.id),
       label: disabled ? `${c.name} (blocked)` : c.name,
+      dot: hue(i + 1),
       disabled,
     };
   });

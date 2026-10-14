@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, within } from "storybook/test";
 import Select from "./Select";
+import { hue } from "../hue";
 
 const COLUMNS = [
   { value: "todo", label: "To do" },
@@ -85,4 +86,11 @@ export const WithError: Story = {
 
 export const Disabled: Story = {
   args: { disabled: true },
+};
+
+/** Workflow columns lead with their colour dot, in the menu and on the field. */
+export const WithDots: Story = {
+  args: {
+    options: COLUMNS.map((c, i) => ({ ...c, dot: hue(i + 1) })),
+  },
 };
