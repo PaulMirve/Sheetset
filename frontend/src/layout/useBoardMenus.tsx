@@ -10,11 +10,7 @@ import { useState } from "react";
 type Dialog = { kind: "rename-board" | "delete-board" };
 
 /** Board actions and their rename/delete dialogs. Workflow columns are fixed. */
-export const useBoardMenus = (
-  board: Board,
-  todos: ToDo[],
-  onNewEpic: () => void,
-) => {
+export const useBoardMenus = (board: Board, todos: ToDo[]) => {
   const me = useMe().data;
   const updateBoard = useUpdateBoard(board.id);
   const deleteBoard = useDeleteBoard(board.id);
@@ -27,7 +23,6 @@ export const useBoardMenus = (
       label: "Rename board",
       onSelect: () => setDialog({ kind: "rename-board" }),
     },
-    { icon: "layers", label: "New epic", onSelect: onNewEpic },
     ...(me?.id === board.owner_id
       ? [
           "-" as const,

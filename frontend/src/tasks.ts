@@ -2,6 +2,7 @@
 import { Board } from "@system-types/Board";
 import { Column, ColumnId, WorkflowCode } from "@system-types/column";
 import { ToDo, ToDoId } from "@system-types/ToDo";
+import { localDay } from "./dates";
 
 /** What the task forms edit and the API hooks send. */
 export type TaskFields = Pick<
@@ -90,3 +91,37 @@ export const newEpicTask = (epic: ToDo, title: string): TaskFields => ({
   epic: epic.id,
   subtasks: [],
 });
+
+/** Where an epic stands, worked out from its tasks. The epic's own column is ignored. */
+export type EpicStatus = "attention" | "progress" | "todo" | "done";
+
+export const epicStats = (epic: ToDo, todos: ToDo[], columns: Column[]) => {
+  const tasks = epicTasksOf(epic, todos, columns);
+  const doneId = doneColumn(columns);
+  const todoId = columns.find((c) => c.code === "todo")?.id;
+  const open = tasks.filter((t) => t.column !== doneId);
+  const today = localDay();
+  const blocked = open.filter(
+    (t) => t.isBlocked || waitingOn(t, todos, columns).length > 0,
+  ).length;
+  const review = open.filter((t) => t.needsHumanReview).length;
+  const overdue = open.filter((t) => t.due && t.due < today).length;
+  const finished = tasks.length > 0 && open.length === 0;
+  const late = !finished && !!epic.due && epic.due < today;
+  const status: EpicStatus = finished
+    ? "done"
+    : blocked || review || overdue || late
+      ? "attention"
+      : open.every((t) => t.column === todoId)
+        ? "todo"
+        : "progress";
+  return {
+    tasks,
+    done: tasks.length - open.length,
+    blocked,
+    review,
+    overdue,
+    late,
+    status,
+  };
+};

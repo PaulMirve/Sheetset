@@ -1,8 +1,10 @@
-import Button from "@components/Button";
 import Icon from "@components/Icon";
 import Menu, { MenuItem } from "@components/Menu";
+import Segmented from "@components/Segmented";
 import Typography from "@components/Typography";
+import { openBoard, openEpics } from "@hooks/useTaskRoute";
 import { Board } from "@system-types/Board";
+import { ReactNode } from "react";
 import { hashHue } from "../hue";
 
 type Props = {
@@ -11,8 +13,11 @@ type Props = {
   done: number;
   total: number;
   menu: MenuItem[];
-  onNewTask: () => void;
-  onFromMeeting: () => void;
+  tab: "board" | "epics";
+  // Open epics, counted on the Epics tab.
+  epics: number;
+  // The tab's own actions, left of the board menu.
+  children: ReactNode;
 };
 
 const Navbar = ({
@@ -21,10 +26,11 @@ const Navbar = ({
   done,
   total,
   menu,
-  onNewTask,
-  onFromMeeting,
+  tab,
+  epics,
+  children,
 }: Props) => (
-  <header className="flex items-center justify-between gap-6 px-7 pt-6 pb-5 max-md:flex-col max-md:items-start max-md:gap-3.5 max-md:px-4 max-md:pt-[18px] max-md:pb-3.5">
+  <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 px-7 pt-6 pb-5 max-md:flex-col max-md:items-start max-md:gap-3.5 max-md:px-4 max-md:pt-[18px] max-md:pb-3.5">
     <div className="flex items-center gap-3.5 min-w-0">
       <span
         className="tile w-12 h-12 rounded-[14px] text-[22px]"
@@ -64,18 +70,23 @@ const Navbar = ({
       </div>
     </div>
     <div className="flex items-center gap-2 flex-none max-md:flex-wrap">
-      {/* Tasks need a column to land in. */}
-      <Button
-        variant="secondary"
-        onClick={onFromMeeting}
-        disabled={columns === 0}
-      >
-        <Icon name="spark" /> From meeting
-      </Button>
-      <Button onClick={onNewTask} disabled={columns === 0}>
-        <Icon name="plus" /> New task
-      </Button>
+      {children}
       <Menu label="Board options" items={menu} />
+    </div>
+    {/* Its own row, under the title. */}
+    <div className="w-full">
+      <Segmented
+        label="View"
+        className="w-fit max-md:w-full [&>label]:flex-auto [&>label]:px-4 [&>label]:whitespace-nowrap"
+        options={[
+          { value: "board", label: "Board", icon: "board" },
+          { value: "epics", label: `Epics · ${epics}`, icon: "layers" },
+        ]}
+        value={tab}
+        onChange={(v) =>
+          v === "epics" ? openEpics(board.key) : openBoard(board.key)
+        }
+      />
     </div>
   </header>
 );

@@ -8,9 +8,18 @@ import EmptyState from "@components/EmptyState";
 import MeetingModal from "@components/MeetingModal";
 import { NewTaskModal, TaskDetailModal } from "@components/TaskModal";
 import TaskPage from "@components/TaskPage";
-import ToDoCard, { Card, EpicTaskRow } from "@components/ToDoCard";
+import Button from "@components/Button";
+import Icon from "@components/Icon";
+import ToDoCard, { Card } from "@components/ToDoCard";
 import { useBoardDnd } from "@hooks/useBoardDnd";
-import { openTaskPage, useTaskRoute } from "@hooks/useTaskRoute";
+import { useMe } from "@hooks/useMe";
+import {
+  openBoard,
+  openEpics,
+  openTaskPage,
+  useBoardRoute,
+  useTaskRoute,
+} from "@hooks/useTaskRoute";
 import {
   useCreateTask,
   useDeleteTask,
@@ -25,10 +34,10 @@ import {
   TaskActions,
   TaskFields,
   doneColumn,
-  epicTasksOf,
   newEpicTask,
   waitingOn,
 } from "../tasks";
+import { EmptyEpic, EpicHeader, EpicList, TaskFilter, epicsOf } from "./Epics";
 import Navbar from "./Navbar";
 import { useBoardMenus } from "./useBoardMenus";
 
@@ -61,7 +70,9 @@ const Main = ({ board }: { board: Board }) => {
     setMeetingId(id);
     setOpenTask("meeting");
   };
-  const menus = useBoardMenus(board, todos, () => openNew({ asEpic: true }));
+  const menus = useBoardMenus(board, todos);
+  const me = useMe().data;
+  const [filter, setFilter] = useState<TaskFilter>("all");
   const detail = todos.find((t) => t.id === openTask);
   const route = useTaskRoute();
   const page =
@@ -70,6 +81,12 @@ const Main = ({ board }: { board: Board }) => {
       : undefined;
   const openPage = (id: ToDoId | null) =>
     openTaskPage(todos.find((t) => t.id === id)?.key ?? null);
+  // Epics is the default tab; the Board tab and an epic's board have their own links.
+  const boardRoute = useBoardRoute();
+  const here = boardRoute?.board === board.key ? boardRoute : null;
+  const tab = here?.tab ?? "epics";
+  const epics = epicsOf(todos, columns);
+  const entry = epics.find((e) => here?.epic && e.epic.key === here.epic);
   const view: BoardView = {
     board,
     columns,
@@ -109,19 +126,25 @@ const Main = ({ board }: { board: Board }) => {
     onDelete,
   });
 
-  // Epics are containers, not work: they don't count towards the board's totals.
+  // Epics are containers, not work: they live in the Epics tab, not in the columns.
   const work = todos.filter((t) => !t.isEpic);
-  const epicRows = (epic: ToDo): EpicTaskRow[] =>
-    epicTasksOf(epic, todos, columns).map((t) => ({
-      todo: t,
-      column: columns.findIndex((c) => c.id === t.column),
-      done: t.column === done,
-    }));
+  const stuck = (t: ToDo) =>
+    t.isBlocked || waitingOn(t, todos, columns).length > 0;
+  const filters: Record<TaskFilter, (t: ToDo) => boolean> = {
+    all: () => true,
+    blocked: stuck,
+    review: (t) => t.needsHumanReview,
+    mine: (t) => !!me && t.assignee?.id === me.id,
+  };
+  const inEpic = entry ? entry.stats.tasks : [];
+  const visible = entry
+    ? (t: ToDo) => t.epic === entry.epic.id && filters[filter](t)
+    : (t: ToDo) => !t.isEpic;
 
   return (
     <main
       className={
-        page
+        page || entry
           ? "min-w-0 min-h-0 grid"
           : "min-w-0 min-h-0 grid grid-rows-[auto_minmax(0,1fr)]"
       }
@@ -133,24 +156,49 @@ const Main = ({ board }: { board: Board }) => {
           {...view}
           {...actionsFor(page, openPage, () => {
             removeTask(page.id);
-            openPage(null);
+            if (page.isEpic) openEpics(board.key);
+            else openBoard(board.key);
           })}
-          onBack={() => openPage(null)}
+          // A task goes back to the Board tab, an epic to its own board.
+          onBack={() =>
+            page.isEpic ? openEpics(board.key, page.key) : openBoard(board.key)
+          }
           onShowOnBoard={() => {
+            if (page.isEpic) return openEpics(board.key, page.key);
             setLandedId(page.id);
-            openPage(null);
+            openBoard(board.key);
           }}
         />
-      ) : (
+      ) : entry ? null : (
         <Navbar
           board={board}
           columns={columns.length}
           menu={menus.boardMenu}
           done={work.filter((t) => t.column === done).length}
           total={work.length}
-          onNewTask={() => openNew()}
-          onFromMeeting={() => openMeeting()}
-        />
+          tab={tab}
+          epics={epics.filter((e) => e.stats.status !== "done").length}
+        >
+          {tab === "epics" ? (
+            <Button onClick={() => openNew({ asEpic: true })}>
+              <Icon name="plus" /> New epic
+            </Button>
+          ) : (
+            <>
+              {/* Tasks need a column to land in. */}
+              <Button
+                variant="secondary"
+                onClick={() => openMeeting()}
+                disabled={columns.length === 0}
+              >
+                <Icon name="spark" /> From meeting
+              </Button>
+              <Button onClick={() => openNew()} disabled={columns.length === 0}>
+                <Icon name="plus" /> New task
+              </Button>
+            </>
+          )}
+        </Navbar>
       )}
       {menus.dialogs}
       {openTask === "new" && (
@@ -184,57 +232,106 @@ const Main = ({ board }: { board: Board }) => {
           onClose={() => setOpenTask(null)}
         />
       )}
-      {page ? null : columns.length === 0 ? (
+      {page ? null : tab === "epics" && !entry ? (
+        <EpicList
+          board={board}
+          columns={columns}
+          todos={todos}
+          onNewEpic={() => openNew({ asEpic: true })}
+        />
+      ) : columns.length === 0 ? (
         <EmptyState icon="cols" title="Workflow unavailable" className="pb-24">
           Restart the backend to initialize this board’s fixed workflow.
         </EmptyState>
       ) : (
-        <DndContext collisionDetection={closestCenter} {...dndProps}>
-          <div className="flex items-start gap-3.5 overflow-auto px-7 pb-6 max-md:px-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
-            {columns.map((col, i) => {
-              const colTodos = todos.filter((t) => t.column === col.id);
-              return (
-                <SortableContext
-                  key={col.id}
-                  items={colTodos.map((t) => t.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <DroppableColumn
-                    column={col}
-                    index={i}
-                    count={colTodos.length}
-                    dragOver={activeTodo?.column === col.id}
-                  >
-                    {colTodos.map((todo) => (
-                      <ToDoCard
-                        key={todo.id}
-                        todo={todo}
-                        epicTasks={todo.isEpic ? epicRows(todo) : undefined}
-                        parent={todos.find(
-                          (t) => t.isEpic && t.id === todo.epic,
-                        )}
-                        blockers={waitingOn(todo, todos, columns)}
-                        onOpenTask={setOpenTask}
-                        onAddToEpic={() => openNew({ epic: todo.id })}
-                        landed={todo.id === landedId}
-                        onLanded={() => setLandedId(null)}
-                        onOpen={() => setOpenTask(todo.id)}
-                      />
-                    ))}
-                  </DroppableColumn>
-                </SortableContext>
-              );
-            })}
-          </div>
-          <DragOverlay>
-            {activeTodo ? (
-              <Card
-                todo={activeTodo}
-                className="shadow-lift! rotate-[1.5deg] cursor-grabbing"
-              />
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+        <div className={entry ? "min-h-0 overflow-auto" : "contents"}>
+          {entry && (
+            <EpicHeader
+              key={entry.epic.id}
+              board={board}
+              columns={columns}
+              entries={epics}
+              entry={entry}
+              filter={filter}
+              counts={{
+                all: inEpic.length,
+                blocked: inEpic.filter(filters.blocked).length,
+                review: inEpic.filter(filters.review).length,
+                mine: inEpic.filter(filters.mine).length,
+              }}
+              onFilter={setFilter}
+              onChange={(patch) =>
+                updateTask.mutate({ id: entry.epic.id, patch })
+              }
+              onNewTask={() => openNew({ epic: entry.epic.id })}
+              onActivity={() => openPage(entry.epic.id)}
+            />
+          )}
+          {entry && !inEpic.length ? (
+            <EmptyEpic
+              epic={entry.epic}
+              onNewTask={() => openNew({ epic: entry.epic.id })}
+            />
+          ) : (
+            <DndContext collisionDetection={closestCenter} {...dndProps}>
+              <div className="flex items-start gap-3.5 overflow-auto px-7 pb-6 max-md:px-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
+                {columns.map((col, i) => {
+                  // Drags work on every task, so positions stay right; only the visible ones show.
+                  const colTodos = todos.filter(
+                    (t) => t.column === col.id && visible(t),
+                  );
+                  return (
+                    <SortableContext
+                      key={col.id}
+                      items={colTodos.map((t) => t.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <DroppableColumn
+                        column={col}
+                        index={i}
+                        count={colTodos.length}
+                        dragOver={activeTodo?.column === col.id}
+                      >
+                        {colTodos.map((todo) => (
+                          <ToDoCard
+                            key={todo.id}
+                            todo={todo}
+                            // On an epic's board every card shares the epic, so the chip goes.
+                            parent={
+                              entry
+                                ? undefined
+                                : todos.find(
+                                    (t) => t.isEpic && t.id === todo.epic,
+                                  )
+                            }
+                            blockers={waitingOn(todo, todos, columns)}
+                            onOpenEpic={() => {
+                              const epic = todos.find(
+                                (t) => t.id === todo.epic,
+                              );
+                              if (epic) openEpics(board.key, epic.key);
+                            }}
+                            landed={todo.id === landedId}
+                            onLanded={() => setLandedId(null)}
+                            onOpen={() => setOpenTask(todo.id)}
+                          />
+                        ))}
+                      </DroppableColumn>
+                    </SortableContext>
+                  );
+                })}
+              </div>
+              <DragOverlay>
+                {activeTodo ? (
+                  <Card
+                    todo={activeTodo}
+                    className="shadow-lift! rotate-[1.5deg] cursor-grabbing"
+                  />
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          )}
+        </div>
       )}
     </main>
   );

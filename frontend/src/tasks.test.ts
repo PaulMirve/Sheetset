@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Column } from "./types/column";
 import type { ToDo, ToDoId } from "./types/ToDo";
-import { canMove, doneColumn, toColumn, waitingOn } from "./tasks";
+import { canMove, doneColumn, epicStats, toColumn, waitingOn } from "./tasks";
 
 const columns: Column[] = [
   { id: toColumn("1"), code: "todo", name: "To do", position: 0 },
@@ -70,5 +70,35 @@ describe("fixed workflow", () => {
     const todo = task({ column: toColumn("3") });
     expect(canMove(todo, toColumn("2"), [todo], columns)).toBe(true);
     expect(canMove(todo, toColumn("99"), [todo], columns)).toBe(false);
+  });
+});
+
+describe("epic status", () => {
+  const epic = task({ id: 10 as ToDoId, isEpic: true, column: toColumn("5") });
+  const child = (id: number, patch: Partial<ToDo> = {}) =>
+    task({ id: id as ToDoId, epic: epic.id, column: toColumn("1"), ...patch });
+  const status = (...todos: ToDo[]) =>
+    epicStats(epic, [epic, ...todos], columns).status;
+
+  it("comes from its tasks, not the epic's own column", () => {
+    expect(status()).toBe("todo");
+    expect(status(child(1))).toBe("todo");
+    expect(status(child(1), child(2, { column: toColumn("3") }))).toBe(
+      "progress",
+    );
+    expect(status(child(1, { column: toColumn("5") }))).toBe("done");
+  });
+
+  it("needs attention when a task is stuck or late", () => {
+    expect(status(child(1, { isBlocked: true }))).toBe("attention");
+    expect(status(child(1, { needsHumanReview: true }))).toBe("attention");
+    expect(status(child(1, { due: "2000-01-01" }))).toBe("attention");
+    expect(status(child(1), child(2, { blockedBy: [1 as ToDoId] }))).toBe(
+      "attention",
+    );
+    // Finished work isn't stuck.
+    expect(status(child(1, { column: toColumn("5"), isBlocked: true }))).toBe(
+      "done",
+    );
   });
 });

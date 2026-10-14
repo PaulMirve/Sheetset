@@ -3,7 +3,7 @@ import Button from "@components/Button";
 import EmptyState from "@components/EmptyState";
 import Icon from "@components/Icon";
 import { useBoards } from "@hooks/useBoards";
-import { openTaskPage, useTaskRoute } from "@hooks/useTaskRoute";
+import { openTaskPage, useBoardRoute, useTaskRoute } from "@hooks/useTaskRoute";
 import { BoardId } from "@system-types/Board";
 import { useState, useSyncExternalStore } from "react";
 import { getToken, subscribeToken } from "./api";
@@ -30,7 +30,9 @@ const Workspace = () => {
     if (open) collapse(false);
     setAdding(open);
   };
-  const route = useTaskRoute();
+  const taskRoute = useTaskRoute();
+  const boardRoute = useBoardRoute();
+  const route = taskRoute ?? boardRoute;
   const list = boards.data ?? [];
   // Falls back to the first board when the saved one is gone (deleted, other account).
   const board = list.find((b) => b.id === picked) ?? list[0];
@@ -39,7 +41,7 @@ const Workspace = () => {
     setPicked(id);
     localStorage.setItem("board", String(id));
   };
-  // A task link switches to its board.
+  // A task or epics link switches to its board.
   const linked = route && list.find((b) => b.key === route.board);
   if (linked && linked.id !== picked) remember(linked.id);
 

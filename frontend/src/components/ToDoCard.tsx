@@ -2,7 +2,6 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ToDo } from "@system-types/ToDo";
 import classNames from "classnames";
-import { useState } from "react";
 import Avatar from "./Avatar";
 import Button from "./Button";
 import Icon from "./Icon";
@@ -42,140 +41,13 @@ export const DueTag = ({ due }: { due: string }) => {
   );
 };
 
-// One of an epic's tasks, with the index of the column it sits in.
-export type EpicTaskRow = { todo: ToDo; column: number; done: boolean };
-
 type EpicProps = {
-  // Set on an epic's card: its tasks in board order.
-  epicTasks?: EpicTaskRow[];
   // The epic this task belongs to.
   parent?: ToDo;
   // Tasks this one waits on that aren't done yet.
   blockers?: ToDo[];
-  onOpenTask?: (id: ToDo["id"]) => void;
-  onAddToEpic?: () => void;
-};
-
-// Rolled-up progress and a disclosure listing the epic's tasks.
-// Its clicks and keys stay here, so they don't open or drag the epic's card.
-const EpicBody = ({
-  epicTasks,
-  onOpenTask,
-  onAddToEpic,
-}: Required<Pick<EpicProps, "epicTasks">> & EpicProps) => {
-  const [open, setOpen] = useState(false);
-  const done = epicTasks.filter((t) => t.done).length;
-  const row =
-    "flex items-center gap-2 h-8 px-2.5 rounded-lg bg-ground text-left hover:bg-[color-mix(in_srgb,var(--h)_13%,var(--color-ground))]";
-  const addRow = (
-    <Button
-      variant="bare"
-      className={classNames(
-        row,
-        "bg-transparent! text-muted shadow-[inset_0_0_0_1.5px_var(--color-line-strong)]",
-      )}
-      onClick={onAddToEpic}
-    >
-      <Icon name="plus" size={14} />
-      <span className="truncate">
-        {epicTasks.length ? "Add task to this epic" : "Add the first task"}
-      </span>
-    </Button>
-  );
-  return (
-    <div
-      className="grid gap-2 cursor-default"
-      onClick={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      {epicTasks.length === 0 ? (
-        <>
-          <Typography
-            color="muted"
-            className="py-2.5 px-3 rounded-[10px] border-[1.5px] border-dashed border-line-strong text-center"
-          >
-            No tasks in this epic yet.
-          </Typography>
-          {onAddToEpic && addRow}
-        </>
-      ) : (
-        <>
-          <div
-            role="progressbar"
-            aria-label="Tasks done in this epic"
-            aria-valuemin={0}
-            aria-valuemax={epicTasks.length}
-            aria-valuenow={done}
-            className="h-1 rounded-full bg-line-strong overflow-hidden"
-          >
-            <div
-              className="h-full rounded-full bg-(--hue-4) transition-[width] duration-300 ease-out"
-              style={{ width: `${(done / epicTasks.length) * 100}%` }}
-            />
-          </div>
-          <Button
-            variant="quiet"
-            aria-expanded={open}
-            onClick={() => setOpen(!open)}
-            className="h-8 -mx-1 px-1.5 justify-start"
-          >
-            <Icon
-              name="chevron-down"
-              size={15}
-              className={classNames("transition-transform", {
-                "rotate-180": open,
-              })}
-            />
-            {epicTasks.length} task{epicTasks.length > 1 ? "s" : ""}
-            <span
-              className={classNames("ml-auto tabular-nums", {
-                "text-(--hue-4)": done === epicTasks.length,
-              })}
-            >
-              {done} done
-            </span>
-          </Button>
-          {open && (
-            <Typography
-              as="div"
-              variant="chip"
-              className="grid grid-cols-[minmax(0,1fr)] gap-1"
-            >
-              {epicTasks.map((item) => (
-                <Button
-                  variant="bare"
-                  key={item.todo.id}
-                  style={hue(item.column + 1)}
-                  title={item.todo.title}
-                  className={row}
-                  onClick={() => onOpenTask?.(item.todo.id)}
-                >
-                  {item.done ? (
-                    <Icon
-                      name="check"
-                      size={14}
-                      style={{ color: "var(--hue-4)" }}
-                    />
-                  ) : (
-                    <span className="size-[7px] rounded-full flex-none bg-(--h)" />
-                  )}
-                  <span
-                    className={classNames("flex-1 min-w-0 truncate", {
-                      "text-muted line-through": item.done,
-                    })}
-                  >
-                    {item.todo.title}
-                  </span>
-                </Button>
-              ))}
-              {onAddToEpic && addRow}
-            </Typography>
-          )}
-        </>
-      )}
-    </div>
-  );
+  // Clicking the epic chip opens the epic's board.
+  onOpenEpic?: () => void;
 };
 
 type CardProps = {
@@ -187,11 +59,9 @@ type CardProps = {
 export const Card = ({
   todo,
   className,
-  epicTasks,
   parent,
   blockers = [],
-  onOpenTask,
-  onAddToEpic,
+  onOpenEpic,
   style,
   ...props
 }: CardProps) => {
@@ -256,16 +126,38 @@ export const Card = ({
               Needs human review
             </Tag>
           )}
-          {parent && (
-            <Tag
-              icon="layers"
-              style={epicHue(parent.id)}
-              className="max-w-full"
-              title={`Part of “${parent.title}”`}
-            >
-              {parent.title}
-            </Tag>
-          )}
+          {parent &&
+            (onOpenEpic ? (
+              // Its clicks stay here, so they don't open or drag the card.
+              <Button
+                variant="bare"
+                title={`Open the “${parent.title}” epic`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenEpic();
+                }}
+                onKeyDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="min-w-0 max-w-full rounded-full hover:brightness-95"
+              >
+                <Tag
+                  icon="layers"
+                  style={epicHue(parent.id)}
+                  className="max-w-full"
+                >
+                  {parent.title}
+                </Tag>
+              </Button>
+            ) : (
+              <Tag
+                icon="layers"
+                style={epicHue(parent.id)}
+                className="max-w-full"
+                title={`Part of “${parent.title}”`}
+              >
+                {parent.title}
+              </Tag>
+            ))}
           {source && (
             <Tag
               icon="video"
@@ -283,13 +175,6 @@ export const Card = ({
           )}
           {due && <DueTag due={due} />}
         </div>
-      )}
-      {epicTasks && (
-        <EpicBody
-          epicTasks={epicTasks}
-          onOpenTask={onOpenTask}
-          onAddToEpic={onAddToEpic}
-        />
       )}
       <Typography
         variant="chip"

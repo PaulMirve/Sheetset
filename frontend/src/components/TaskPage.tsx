@@ -111,7 +111,43 @@ const Stages = ({
   </ol>
 );
 
-// Where an epic's tasks sit across the board, one segment per column.
+/** Where an epic's tasks sit across the board: one segment per column, sized by its count. */
+export const SpreadBar = ({
+  columns,
+  epicTasks,
+  className,
+}: {
+  columns: Column[];
+  epicTasks: ToDo[];
+  className?: string;
+}) => {
+  const count = columns.map(
+    (c) => epicTasks.filter((t) => t.column === c.id).length,
+  );
+  return (
+    <div
+      role="img"
+      aria-label={columns.map((c, i) => `${count[i]} in ${c.name}`).join(", ")}
+      className={classNames("flex gap-[3px] h-3", className, {
+        "rounded-full bg-line-strong": !epicTasks.length,
+      })}
+    >
+      {columns.map(
+        (c, i) =>
+          count[i] > 0 && (
+            <i
+              key={c.id}
+              title={`${count[i]} in ${c.name}`}
+              style={{ ...hue(i + 1), flexGrow: count[i] }}
+              className="min-w-3 rounded-full bg-[color-mix(in_srgb,var(--h)_80%,var(--color-surface))] transition-[flex-grow] duration-300"
+            />
+          ),
+      )}
+    </div>
+  );
+};
+
+// The epic page's progress: done count, the bar, and a tag per column.
 const Spread = ({
   columns,
   epicTasks,
@@ -145,27 +181,7 @@ const Spread = ({
           <span>Add tasks below to see them spread across the board.</span>
         )}
       </Typography>
-      <div
-        role="img"
-        aria-label={columns
-          .map((c, i) => `${count[i]} in ${c.name}`)
-          .join(", ")}
-        className={classNames("flex gap-[3px] h-3", {
-          "rounded-full bg-line-strong": !total,
-        })}
-      >
-        {columns.map(
-          (c, i) =>
-            count[i] > 0 && (
-              <i
-                key={c.id}
-                title={`${count[i]} in ${c.name}`}
-                style={{ ...hue(i + 1), flexGrow: count[i] }}
-                className="min-w-3 rounded-full bg-[color-mix(in_srgb,var(--h)_80%,var(--color-surface))] transition-[flex-grow] duration-300"
-              />
-            ),
-        )}
-      </div>
+      <SpreadBar columns={columns} epicTasks={epicTasks} />
       {total > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {columns.map((c, i) => (
