@@ -70,3 +70,28 @@ export const AccountTrigger: Story = {
     await expect(remove).toHaveBeenCalled();
   },
 };
+
+/** Items that can't be chosen right now stay listed, greyed out, with the reason as a tooltip. */
+export const DisabledItem: Story = {
+  args: {
+    label: "Move PLAT-008",
+    items: [
+      { icon: "status", label: "To do", onSelect: fn() },
+      {
+        icon: "status",
+        label: "Code review",
+        disabled: true,
+        title: "Blocked tasks can’t move forward",
+        onSelect: remove,
+      },
+    ],
+  },
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Move PLAT-008" }),
+    );
+    await expect(
+      canvas.getByRole("button", { name: "Code review" }),
+    ).toBeDisabled();
+  },
+};

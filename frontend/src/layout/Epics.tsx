@@ -218,7 +218,7 @@ export const EpicList = ({
 
   return (
     <div className="min-h-0 overflow-auto px-7 pb-8 max-md:px-4">
-      <div className="grid gap-3 max-w-[1100px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 max-w-[1100px]">
         <Segmented
           label="Show"
           className="w-fit max-w-full overflow-x-auto [&>label]:flex-auto [&>label]:px-3.5 [&>label]:whitespace-nowrap"
@@ -315,6 +315,14 @@ export const EpicList = ({
 };
 
 export type TaskFilter = "all" | "blocked" | "review" | "mine";
+export type TaskView = "cards" | "rows";
+
+// Picked once for every epic, on this device. Phones start on rows.
+export const savedTaskView = (): TaskView =>
+  (localStorage.getItem("epicView") as TaskView | null) ??
+  (matchMedia("(max-width: 767px)").matches ? "rows" : "cards");
+export const saveTaskView = (v: TaskView) =>
+  localStorage.setItem("epicView", v);
 
 /** Whether a task shows under the epic board's quick filter. */
 export const matches = (
@@ -342,25 +350,16 @@ const About = ({
     <div className="grid content-start gap-2 min-w-0">
       {open ? (
         <RichTextArea
-          label="About this epic"
+          label="Description"
           icon="notes"
           placeholder={notesPlaceholder(true)}
           defaultValue={epic.description}
           onChange={(description) => save({ description })}
         />
       ) : (
-        <>
-          <Typography
-            variant="label"
-            color="muted"
-            className="flex items-center gap-1.5 min-h-[34px]"
-          >
-            <Icon name="notes" size={15} /> About this epic
-          </Typography>
-          <Typography className="line-clamp-3 max-w-[72ch]">
-            {plain(epic.description)}
-          </Typography>
-        </>
+        <Typography className="line-clamp-3 max-w-[72ch]">
+          {plain(epic.description)}
+        </Typography>
       )}
       {epic.description && (
         <Button
@@ -390,6 +389,8 @@ export const EpicHeader = ({
   filter,
   counts,
   onFilter,
+  view,
+  onView,
   onChange,
   onNewTask,
   onActivity,
@@ -402,15 +403,20 @@ export const EpicHeader = ({
   filter: TaskFilter;
   counts: Record<TaskFilter, number>;
   onFilter: (f: TaskFilter) => void;
+  view: TaskView;
+  onView: (v: TaskView) => void;
   onChange: TaskActions["onChange"];
   onNewTask: () => void;
   onActivity: () => void;
 }) => {
   const { epic, stats } = entry;
+  const [aboutOpen, setAboutOpen] = useState(
+    () => localStorage.getItem("epicAbout") !== "closed",
+  );
   const at = entries.findIndex((e) => e.epic.id === epic.id);
   const go = (i: number) => openEpics(board.key, entries[i].epic.key);
   return (
-    <div className="grid gap-5 px-7 pt-[18px] pb-5 max-md:px-4 max-md:pt-3 max-md:gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-7 pt-[18px] pb-5 max-md:px-4 max-md:pt-3 max-md:gap-4">
       <nav
         aria-label="Breadcrumb"
         className="flex flex-wrap items-center gap-1.5 min-h-10"
@@ -504,28 +510,83 @@ export const EpicHeader = ({
         </div>
       </header>
 
-      <section
-        aria-label="About this epic"
-        className="grid grid-cols-[minmax(0,1fr)_320px] gap-8 p-6 rounded-[20px] bg-surface shadow-rest max-lg:grid-cols-1 max-lg:gap-5 max-md:p-4"
+      {/* Folds to one line; open or folded is remembered on this device. */}
+      <details
+        open={aboutOpen}
+        onToggle={(e) => {
+          const open = e.currentTarget.open;
+          setAboutOpen(open);
+          localStorage.setItem("epicAbout", open ? "open" : "closed");
+        }}
+        className="group/about rounded-[20px] bg-surface shadow-rest"
       >
-        <About key={epic.id} epic={epic} onChange={onChange} />
-        <Files boardId={board.id} todo={epic} />
-      </section>
+        <Typography
+          as="summary"
+          variant="label"
+          color="muted"
+          className="flex items-center gap-2.5 min-w-0 px-6 py-4 rounded-[20px] cursor-pointer list-none select-none hover:text-ink max-md:px-4 [&::-webkit-details-marker]:hidden"
+        >
+          <Icon
+            name="chevron-down"
+            size={16}
+            className="flex-none -rotate-90 transition-transform duration-200 group-open/about:rotate-0"
+          />
+          <Icon name="notes" size={15} className="flex-none" />
+          <span className="flex-none">About this epic</span>
+          <Typography
+            as="span"
+            color="muted"
+            className="min-w-0 truncate group-open/about:hidden"
+          >
+            {epic.description ? plain(epic.description) : "No description yet"}
+          </Typography>
+          {epic.files.length > 0 && (
+            <Typography
+              as="span"
+              variant="chip"
+              color="muted"
+              className="flex-none inline-flex items-center gap-1 ml-auto group-open/about:hidden"
+            >
+              <Icon name="clip" size={15} />
+              {epic.files.length}
+            </Typography>
+          )}
+        </Typography>
+        <section
+          aria-label="About this epic"
+          className="grid grid-cols-[minmax(0,1fr)_320px] gap-8 px-6 pb-6 max-lg:grid-cols-1 max-lg:gap-5 max-md:px-4 max-md:pb-4"
+        >
+          <About key={epic.id} epic={epic} onChange={onChange} />
+          <Files boardId={board.id} todo={epic} />
+        </section>
+      </details>
 
       {stats.tasks.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <Segmented
-            label="Show tasks"
-            className="w-fit max-w-full overflow-x-auto [&>label]:flex-auto [&>label]:px-3.5 [&>label]:whitespace-nowrap"
-            value={filter}
-            onChange={onFilter}
-            options={[
-              { value: "all", label: `All · ${counts.all}` },
-              { value: "blocked", label: `Blocked · ${counts.blocked}` },
-              { value: "review", label: `Needs review · ${counts.review}` },
-              { value: "mine", label: `Mine · ${counts.mine}` },
-            ]}
-          />
+          <span className="flex flex-wrap items-center gap-2.5 min-w-0 max-w-full">
+            <Segmented
+              label="Task layout"
+              className="w-fit [&>label]:flex-auto [&>label]:px-3.5 [&>label]:whitespace-nowrap"
+              value={view}
+              onChange={onView}
+              options={[
+                { value: "cards", label: "Cards", icon: "board" },
+                { value: "rows", label: "Rows", icon: "notes" },
+              ]}
+            />
+            <Segmented
+              label="Show tasks"
+              className="w-fit max-w-full overflow-x-auto [&>label]:flex-auto [&>label]:px-3.5 [&>label]:whitespace-nowrap"
+              value={filter}
+              onChange={onFilter}
+              options={[
+                { value: "all", label: `All · ${counts.all}` },
+                { value: "blocked", label: `Blocked · ${counts.blocked}` },
+                { value: "review", label: `Needs review · ${counts.review}` },
+                { value: "mine", label: `Mine · ${counts.mine}` },
+              ]}
+            />
+          </span>
           <Progress
             columns={columns}
             stats={stats}

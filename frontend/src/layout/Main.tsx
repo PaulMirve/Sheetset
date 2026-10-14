@@ -10,6 +10,7 @@ import { NewTaskModal, TaskDetailModal } from "@components/TaskModal";
 import TaskPage from "@components/TaskPage";
 import Button from "@components/Button";
 import Icon from "@components/Icon";
+import Typography from "@components/Typography";
 import ToDoCard, { Card } from "@components/ToDoCard";
 import { useBoardDnd } from "@hooks/useBoardDnd";
 import { useMe } from "@hooks/useMe";
@@ -37,7 +38,17 @@ import {
   newEpicTask,
   waitingOn,
 } from "../tasks";
-import { EmptyEpic, EpicHeader, EpicList, TaskFilter, epicsOf } from "./Epics";
+import EpicRows from "./EpicRows";
+import {
+  EmptyEpic,
+  EpicHeader,
+  EpicList,
+  TaskFilter,
+  TaskView,
+  epicsOf,
+  saveTaskView,
+  savedTaskView,
+} from "./Epics";
 import Navbar from "./Navbar";
 import { useBoardMenus } from "./useBoardMenus";
 
@@ -73,6 +84,7 @@ const Main = ({ board }: { board: Board }) => {
   const menus = useBoardMenus(board, todos);
   const me = useMe().data;
   const [filter, setFilter] = useState<TaskFilter>("all");
+  const [taskView, setTaskView] = useState<TaskView>(savedTaskView);
   const detail = todos.find((t) => t.id === openTask);
   const route = useTaskRoute();
   const page =
@@ -260,6 +272,11 @@ const Main = ({ board }: { board: Board }) => {
                 mine: inEpic.filter(filters.mine).length,
               }}
               onFilter={setFilter}
+              view={taskView}
+              onView={(v) => {
+                setTaskView(v);
+                saveTaskView(v);
+              }}
               onChange={(patch) =>
                 updateTask.mutate({ id: entry.epic.id, patch })
               }
@@ -274,55 +291,82 @@ const Main = ({ board }: { board: Board }) => {
             />
           ) : (
             <DndContext collisionDetection={closestCenter} {...dndProps}>
-              <div className="flex items-start gap-3.5 overflow-auto px-7 pb-6 max-md:px-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
-                {columns.map((col, i) => {
-                  // Drags work on every task, so positions stay right; only the visible ones show.
-                  const colTodos = todos.filter(
-                    (t) => t.column === col.id && visible(t),
-                  );
-                  return (
-                    <SortableContext
-                      key={col.id}
-                      items={colTodos.map((t) => t.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <DroppableColumn
-                        column={col}
-                        index={i}
-                        count={colTodos.length}
-                        dragOver={activeTodo?.column === col.id}
+              {entry && taskView === "rows" ? (
+                <EpicRows
+                  key={entry.epic.id}
+                  epic={entry.epic.id}
+                  columns={columns}
+                  todos={todos}
+                  visible={visible}
+                  onOpenTask={setOpenTask}
+                  onMove={(t, c) =>
+                    updateTask.mutate({ id: t.id, patch: { column: c.id } })
+                  }
+                  onAdd={(c, title) =>
+                    create.mutateAsync({
+                      ...newEpicTask(entry.epic, title),
+                      column: c.id,
+                    })
+                  }
+                />
+              ) : (
+                <div className="flex items-start gap-3.5 overflow-auto px-7 pb-6 max-md:px-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
+                  {columns.map((col, i) => {
+                    // Drags work on every task, so positions stay right; only the visible ones show.
+                    const colTodos = todos.filter(
+                      (t) => t.column === col.id && visible(t),
+                    );
+                    return (
+                      <SortableContext
+                        key={col.id}
+                        items={colTodos.map((t) => t.id)}
+                        strategy={verticalListSortingStrategy}
                       >
-                        {colTodos.map((todo) => (
-                          <ToDoCard
-                            key={todo.id}
-                            todo={todo}
-                            // On an epic's board every card shares the epic, so the chip goes.
-                            parent={
-                              entry
-                                ? undefined
-                                : todos.find(
-                                    (t) => t.isEpic && t.id === todo.epic,
-                                  )
-                            }
-                            blockers={waitingOn(todo, todos, columns)}
-                            onOpenEpic={() => {
-                              const epic = todos.find(
-                                (t) => t.id === todo.epic,
-                              );
-                              if (epic) openEpics(board.key, epic.key);
-                            }}
-                            landed={todo.id === landedId}
-                            onLanded={() => setLandedId(null)}
-                            onOpen={() => setOpenTask(todo.id)}
-                          />
-                        ))}
-                      </DroppableColumn>
-                    </SortableContext>
-                  );
-                })}
-              </div>
+                        <DroppableColumn
+                          column={col}
+                          index={i}
+                          count={colTodos.length}
+                          dragOver={activeTodo?.column === col.id}
+                        >
+                          {colTodos.map((todo) => (
+                            <ToDoCard
+                              key={todo.id}
+                              todo={todo}
+                              // On an epic's board every card shares the epic, so the chip goes.
+                              parent={
+                                entry
+                                  ? undefined
+                                  : todos.find(
+                                      (t) => t.isEpic && t.id === todo.epic,
+                                    )
+                              }
+                              blockers={waitingOn(todo, todos, columns)}
+                              onOpenEpic={() => {
+                                const epic = todos.find(
+                                  (t) => t.id === todo.epic,
+                                );
+                                if (epic) openEpics(board.key, epic.key);
+                              }}
+                              landed={todo.id === landedId}
+                              onLanded={() => setLandedId(null)}
+                              onOpen={() => setOpenTask(todo.id)}
+                            />
+                          ))}
+                        </DroppableColumn>
+                      </SortableContext>
+                    );
+                  })}
+                </div>
+              )}
               <DragOverlay>
-                {activeTodo ? (
+                {activeTodo && entry && taskView === "rows" ? (
+                  <Typography
+                    variant="label"
+                    className="px-4 py-3 rounded-xl bg-surface shadow-lift cursor-grabbing truncate"
+                  >
+                    {activeTodo.title}
+                  </Typography>
+                ) : activeTodo ? (
                   <Card
                     todo={activeTodo}
                     className="shadow-lift! rotate-[1.5deg] cursor-grabbing"

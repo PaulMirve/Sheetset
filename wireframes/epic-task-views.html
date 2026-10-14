@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sheetset · Epic board: Cards / Rows · wireframes</title>
+<style>
+  /* Low-fidelity on purpose: greys only, so the review is about structure, not colour. */
+  :root {
+    --ink: #222; --muted: #777; --faint: #bbb; --line: #d6d6d6; --fill: #efefef; --fill-2: #e2e2e2;
+    --paper: #fff; --ground: #f6f6f6; --note: #fff6c8; --note-ink: #6b5900; --mark: #d0392b;
+    font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, sans-serif; color: var(--ink);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #e9e9e9; padding: 40px 32px 80px; }
+  h1 { font-size: 26px; letter-spacing: -.02em; }
+  .intro { max-width: 760px; margin-bottom: 36px; }
+  .intro p { color: var(--muted); margin-top: 8px; }
+  .toc { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .toc a { color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; text-decoration: none; font-weight: 600; font-size: 13px; }
+
+  section.screen { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; margin-bottom: 64px; align-items: start; }
+  .screen > header { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; }
+  .screen > header b { font-size: 12px; background: var(--ink); color: #fff; border-radius: 6px; padding: 2px 8px; }
+  .screen > header h2 { font-size: 19px; }
+  .screen > header span { color: var(--muted); }
+
+  .frame { background: var(--ground); border: 2px solid #9a9a9a; border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: 180px minmax(0, 1fr); position: relative; }
+  .rail { background: var(--paper); border-right: 1.5px solid var(--line); padding: 14px 10px; display: grid; align-content: start; gap: 4px; }
+  .rail .brand { display: flex; gap: 8px; align-items: center; font-weight: 700; margin-bottom: 12px; }
+  .rail .row { display: flex; gap: 8px; align-items: center; padding: 5px 6px; border-radius: 8px; }
+  .rail .row.on { background: var(--fill); font-weight: 600; }
+  .tile { width: 22px; height: 22px; border-radius: 6px; background: var(--fill-2); border: 1.5px solid var(--faint); flex: none; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+  .main { min-width: 0; padding: 18px 22px; display: grid; align-content: start; gap: 14px; }
+
+  .crumb { color: var(--muted); font-size: 13px; display: flex; gap: 6px; align-items: center; }
+  .crumb u { text-decoration: none; border-bottom: 1px dashed var(--faint); }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .head h3 { font-size: 22px; letter-spacing: -.01em; }
+  .flags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .actions { display: flex; gap: 6px; flex: none; }
+  .btn { border: 1.5px solid var(--faint); background: var(--paper); border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: 13px; white-space: nowrap; }
+  .btn.pri { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+  .about { background: var(--paper); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 14px; color: var(--faint); font-size: 12.5px; display: flex; justify-content: space-between; }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .seg { display: inline-flex; background: var(--fill); border-radius: 9px; padding: 3px; gap: 2px; }
+  .seg span { padding: 4px 12px; border-radius: 7px; font-weight: 600; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+  .seg span.on { background: var(--paper); color: var(--ink); box-shadow: 0 1px 0 var(--line); }
+  .left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .bar { display: grid; gap: 4px; width: 240px; }
+  .bar .track { display: flex; height: 9px; border-radius: 999px; overflow: hidden; gap: 2px; }
+  .bar small { color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; }
+  .s-todo { background: #e4e4e4; } .s-doing { background: #b5b5b5; } .s-cr { background: #999; } .s-qa { background: #777; } .s-done { background: #333; }
+
+  .chip { border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px; padding: 1px 9px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .chip.stuck { border-style: dashed; border-color: #888; }
+
+  /* Cards */
+  .lanes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  .lane { background: var(--fill); border-radius: 12px; padding: 8px; display: grid; gap: 7px; align-content: start; min-height: 220px; }
+  .lane h4 { font-size: 12.5px; display: flex; justify-content: space-between; padding: 2px 4px 4px; }
+  .lane h4 small { color: var(--muted); }
+  .card { background: var(--paper); border: 1.5px solid var(--line); border-radius: 9px; padding: 8px 9px; display: grid; gap: 6px; font-size: 12.5px; min-width: 0; }
+  .card .k { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .card .ft { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .card.ghost { border-style: dashed; color: var(--faint); text-align: center; background: transparent; }
+
+  /* Rows */
+  .list { background: var(--paper); border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .sec + .sec { border-top: 1.5px solid var(--line); }
+  .sec-h { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--ground); font-weight: 700; font-size: 13.5px; }
+  .sec-h .car { width: 18px; text-align: center; color: var(--muted); }
+  .sec-h .dot { width: 10px; height: 10px; border-radius: 50%; background: #999; }
+  .sec-h .n { font-size: 11.5px; background: var(--fill-2); border-radius: 999px; padding: 0 7px; }
+  .sec-h .mini { margin-left: auto; color: var(--muted); font-weight: 600; font-size: 12px; display: flex; gap: 10px; align-items: center; }
+  .sec-h.closed { background: var(--paper); color: var(--muted); }
+  .cols { display: grid; grid-template-columns: 22px 74px minmax(0, 1fr) 210px 90px 60px 30px; gap: 12px; align-items: center; padding: 6px 14px; font-size: 11.5px; color: var(--muted); font-weight: 600; border-bottom: 1.5px solid var(--line); }
+  .r { display: grid; grid-template-columns: 22px 74px minmax(0, 1fr) 210px 90px 60px 30px; gap: 12px; align-items: center; padding: 8px 14px; border-top: 1px solid var(--fill); font-size: 13px; }
+  .r:hover, .r.hover { background: #fafafa; }
+  .r .grip { color: var(--faint); letter-spacing: -2px; }
+  .r .k { color: var(--muted); font-size: 12px; font-weight: 600; }
+  .r .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .r .tags { display: flex; gap: 5px; overflow: hidden; }
+  .r .muted { color: var(--muted); font-size: 12px; }
+  .av { width: 22px; height: 22px; border-radius: 50%; background: var(--fill-2); border: 1.5px solid var(--faint); display: inline-block; }
+  .r.done .t { color: var(--muted); text-decoration: line-through; font-weight: 500; }
+  .add { padding: 8px 14px 10px 48px; color: var(--faint); font-size: 12.5px; font-weight: 600; border-top: 1px solid var(--fill); }
+  .drop { margin: 4px 14px; border: 2px dashed #888; border-radius: 8px; height: 30px; }
+  .pop { position: absolute; background: var(--paper); border: 1.5px solid #999; border-radius: 12px; padding: 6px; display: grid; gap: 2px; width: 190px; box-shadow: 0 8px 24px rgba(0,0,0,.12); font-size: 13px; z-index: 3; }
+  .pop span { padding: 5px 8px; border-radius: 7px; display: flex; gap: 8px; align-items: center; }
+  .pop span.on { background: var(--fill); font-weight: 600; }
+  .pop span.off { color: var(--faint); }
+  .pop .dot { width: 8px; height: 8px; border-radius: 50%; background: #999; }
+
+  /* Annotation markers + notes */
+  .m { position: relative; }
+  .m::after { content: attr(data-n); position: absolute; top: -9px; right: -9px; width: 20px; height: 20px; border-radius: 50%; background: var(--mark); color: #fff; font: 700 11px/20px ui-sans-serif, system-ui; text-align: center; z-index: 4; }
+  .list .m::after { top: 4px; right: 4px; }
+  .notes { background: var(--note); color: var(--note-ink); border-radius: 12px; padding: 16px 16px 16px 14px; display: grid; gap: 12px; font-size: 13.5px; position: sticky; top: 16px; }
+  .notes h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+  .notes ol { padding-left: 0; list-style: none; display: grid; gap: 10px; counter-reset: n; }
+  .notes li { counter-increment: n; display: grid; grid-template-columns: 20px 1fr; gap: 8px; }
+  .notes li::before { content: counter(n); width: 20px; height: 20px; border-radius: 50%; background: var(--mark); color: #fff; font-weight: 700; font-size: 11px; display: grid; place-items: center; }
+  .notes .q { border-top: 1.5px dashed #d9c76a; padding-top: 10px; }
+
+  .phone { width: 340px; background: var(--ground); border: 2px solid #9a9a9a; border-radius: 26px; padding: 16px 12px; display: grid; gap: 10px; align-content: start; }
+  .phone .r { grid-template-columns: minmax(0, 1fr) auto; padding: 9px 12px; }
+  .phone .r .sub { grid-column: 1 / -1; display: flex; gap: 5px; flex-wrap: wrap; }
+  .duo { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+
+  @media (max-width: 1100px) {
+    section.screen { grid-template-columns: 1fr; }
+    .notes { position: static; }
+    .duo { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Epic board: Cards or Rows</h1>
+  <p>This adds one switch to the epic board you already approved. <b>Cards</b> is today's kanban. <b>Rows</b> lists the same tasks with one collapsible section per status, in workflow order. The filters, "Task in epic", and the epic's description and files are the same in both. The wireframe is low-fidelity, and the red numbers point to the notes.</p>
+  <nav class="toc">
+    <a href="#e">E · Cards</a>
+    <a href="#f">F · Rows</a>
+    <a href="#g">G · Moving, collapsing, phone</a>
+  </nav>
+</div>
+
+<!-- E ─────────────────────────────────────────────── -->
+<section class="screen" id="e">
+  <header><b>E</b><h2>Cards (today's board), now with the switch</h2><span>#/board/PLAT/epic/PLAT-001</span></header>
+  <div class="frame">
+    <aside class="rail">
+      <div class="brand"><span class="tile"></span>Sheetset</div>
+      <div class="row on"><span class="tile">P</span>Platform</div>
+      <div class="row"><span class="tile">M</span>Mobile app</div>
+    </aside>
+    <div class="main">
+      <div class="crumb"><u>Platform</u> › <u>Epics</u> › <b style="color:var(--ink)">PLAT-001</b><span style="margin-left:auto" class="btn ghost">← 1 of 5 ▾ →</span></div>
+      <div class="head">
+        <div><h3>◆ Billing migration to Stripe</h3>
+          <div class="flags"><span class="chip stuck">2 blocked</span><span class="chip stuck">1 needs review</span><span class="chip stuck">Overdue · Oct 10</span></div></div>
+        <div class="actions"><span class="btn">Activity</span><span class="btn pri">+ Task in epic</span></div>
+      </div>
+      <div class="about"><span>About this epic · Files (unchanged)</span><span>▾</span></div>
+      <div class="toolbar">
+        <div class="left">
+          <div class="seg m" data-n="1"><span class="on">▦ Cards</span><span>☰ Rows</span></div>
+          <div class="seg"><span class="on">All · 8</span><span>Blocked · 2</span><span>Needs review · 1</span><span>Mine · 0</span></div>
+        </div>
+        <div class="bar"><div class="track"><i class="s-todo" style="flex:2"></i><i class="s-doing" style="flex:2"></i><i class="s-cr" style="flex:1"></i><i class="s-qa" style="flex:1"></i><i class="s-done" style="flex:2"></i></div><small><span>2 of 8 done</span><span>25%</span></small></div>
+      </div>
+      <div class="lanes">
+        <div class="lane"><h4>To do <small>2</small></h4>
+          <div class="card"><span class="k">PLAT-006</span>Write migration dry-run script<div class="ft"><span class="chip stuck">Blocked</span></div></div>
+          <div class="card"><span class="k">PLAT-007</span>Customer comms plan<div class="ft"><span class="chip">ops</span></div></div>
+        </div>
+        <div class="lane"><h4>Doing <small>2</small></h4>
+          <div class="card"><span class="k">PLAT-008</span>Map legacy plan IDs<div class="ft"><span class="chip stuck">Blocked</span></div></div>
+          <div class="card"><span class="k">PLAT-009</span>Tax rates import<div class="ft"><span class="chip stuck">Overdue · Oct 9</span></div></div>
+        </div>
+        <div class="lane"><h4>Code review <small>1</small></h4>
+          <div class="card"><span class="k">PLAT-010</span>Invoice PDF template<div class="ft"><span class="chip stuck">Needs human review</span></div></div>
+        </div>
+        <div class="lane"><h4>Ready for QA <small>1</small></h4>
+          <div class="card"><span class="k">PLAT-011</span>Proration preview</div>
+        </div>
+        <div class="lane"><h4>Done <small>2</small></h4>
+          <div class="card"><span class="k">PLAT-012</span>Stripe sandbox account</div>
+          <div class="card"><span class="k">PLAT-013</span>Webhook signing</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <h4>Notes</h4>
+    <ol>
+      <li><span><b>Cards / Rows switch</b> sits at the start of the toolbar, before the filters, using the same pill control as Board / Epics. Your choice is remembered on this device for every epic, so you pick it once.</span></li>
+    </ol>
+    <div class="q"><b>Unchanged:</b> the columns, drag and drop, and the card contents are exactly what's shipped today.</div>
+  </aside>
+</section>
+
+<!-- F ─────────────────────────────────────────────── -->
+<section class="screen" id="f">
+  <header><b>F</b><h2>Rows: one section per status</h2><span>same URL, the switch set to Rows</span></header>
+  <div class="frame">
+    <aside class="rail">
+      <div class="brand"><span class="tile"></span>Sheetset</div>
+      <div class="row on"><span class="tile">P</span>Platform</div>
+      <div class="row"><span class="tile">M</span>Mobile app</div>
+    </aside>
+    <div class="main">
+      <div class="crumb"><u>Platform</u> › <u>Epics</u> › <b style="color:var(--ink)">PLAT-001</b><span style="margin-left:auto" class="btn ghost">← 1 of 5 ▾ →</span></div>
+      <div class="head">
+        <div><h3>◆ Billing migration to Stripe</h3>
+          <div class="flags"><span class="chip stuck">2 blocked</span><span class="chip stuck">1 needs review</span><span class="chip stuck">Overdue · Oct 10</span></div></div>
+        <div class="actions"><span class="btn">Activity</span><span class="btn pri">+ Task in epic</span></div>
+      </div>
+      <div class="about"><span>About this epic · Files (unchanged)</span><span>▾</span></div>
+      <div class="toolbar">
+        <div class="left">
+          <div class="seg"><span>▦ Cards</span><span class="on">☰ Rows</span></div>
+          <div class="seg"><span class="on">All · 8</span><span>Blocked · 2</span><span>Needs review · 1</span><span>Mine · 0</span></div>
+        </div>
+        <div class="bar"><div class="track"><i class="s-todo" style="flex:2"></i><i class="s-doing" style="flex:2"></i><i class="s-cr" style="flex:1"></i><i class="s-qa" style="flex:1"></i><i class="s-done" style="flex:2"></i></div><small><span>2 of 8 done</span><span>25%</span></small></div>
+      </div>
+
+      <div class="list">
+        <div class="cols m" data-n="1"><span></span><span>ID</span><span>Task</span><span>Flags · label</span><span>Due</span><span>Subtasks</span><span></span></div>
+
+        <div class="sec">
+          <div class="sec-h m" data-n="2"><span class="car">▾</span><span class="dot"></span>To do<span class="n">2</span><span class="mini">1 blocked</span></div>
+          <div class="r"><span class="grip m" data-n="3">⋮⋮</span><span class="k">PLAT-006</span><span class="t">Write migration dry-run script</span><span class="tags"><span class="chip stuck">Blocked</span></span><span class="muted">—</span><span class="muted">0/3</span><span class="av"></span></div>
+          <div class="r"><span class="grip">⋮⋮</span><span class="k">PLAT-007</span><span class="t">Customer comms plan</span><span class="tags"><span class="chip">ops</span></span><span class="muted">Oct 22</span><span class="muted">—</span><span class="av"></span></div>
+          <div class="add m" data-n="4">+ Add task to To do</div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-h"><span class="car">▾</span><span class="dot"></span>Doing<span class="n">2</span><span class="mini">1 blocked · 1 overdue</span></div>
+          <div class="r hover"><span class="grip">⋮⋮</span><span class="k">PLAT-008</span><span class="t">Map legacy plan IDs</span><span class="tags"><span class="chip stuck">Blocked</span></span><span class="muted">—</span><span class="muted">2/5</span><span class="av"></span></div>
+          <div class="r"><span class="grip">⋮⋮</span><span class="k">PLAT-009</span><span class="t">Tax rates import</span><span class="tags"></span><span class="chip stuck">Oct 9</span><span class="muted">—</span><span class="av"></span></div>
+          <div class="add">+ Add task to Doing</div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-h"><span class="car">▾</span><span class="dot"></span>Code review<span class="n">1</span><span class="mini">1 needs review</span></div>
+          <div class="r"><span class="grip">⋮⋮</span><span class="k">PLAT-010</span><span class="t">Invoice PDF template</span><span class="tags"><span class="chip stuck">Needs human review</span></span><span class="muted">—</span><span class="muted">—</span><span class="av"></span></div>
+          <div class="add">+ Add task to Code review</div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-h"><span class="car">▾</span><span class="dot"></span>Ready for QA<span class="n">1</span></div>
+          <div class="r"><span class="grip">⋮⋮</span><span class="k">PLAT-011</span><span class="t">Proration preview</span><span class="tags"></span><span class="muted">—</span><span class="muted">—</span><span class="av"></span></div>
+          <div class="add">+ Add task to Ready for QA</div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-h closed m" data-n="5"><span class="car">▸</span><span class="dot"></span>Done<span class="n">2</span><span class="mini">Show</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <h4>Notes</h4>
+    <ol>
+      <li><span><b>Fixed columns</b> so you can scan down the list: ID, title, flags and label, due date, subtasks done, assignee. On narrow windows the subtasks and due columns are dropped first.</span></li>
+      <li><span><b>Each status is a section</b>, in workflow order, with its colour dot and count. Click the header to collapse or expand it. When collapsed, the header still shows a summary ("1 blocked · 1 overdue"), so nothing stuck is hidden.</span></li>
+      <li><span><b>Drag a row</b> to reorder it, or drop it into another section to move it to that status. The same rules as the board apply: a blocked task can't move forward.</span></li>
+      <li><span><b>Add task in a section</b> creates the task in this epic, already in that status. It's an inline title field, like the subtask list.</span></li>
+      <li><span><b>Done starts collapsed.</b> Which sections are open is remembered per epic.</span></li>
+    </ol>
+    <div class="q">Clicking a row opens the same task dialog as clicking a card.</div>
+  </aside>
+</section>
+
+<!-- G ─────────────────────────────────────────────── -->
+<section class="screen" id="g">
+  <header><b>G</b><h2>Moving without dragging, empty sections, phone</h2><span>details</span></header>
+  <div class="duo">
+    <div style="display:grid; gap:16px">
+      <div class="list" style="position:relative; overflow:visible">
+        <div class="sec">
+          <div class="sec-h"><span class="car">▾</span><span class="dot"></span>Doing<span class="n">2</span></div>
+          <div class="r hover"><span class="grip">⋮⋮</span><span class="k">PLAT-008</span><span class="t">Map legacy plan IDs</span><span class="tags"><span class="chip m" data-n="1">● Doing ▾</span></span><span class="muted">—</span><span class="muted">2/5</span><span class="av"></span></div>
+          <div class="pop" style="left:330px; top:78px">
+            <span><i class="dot"></i>To do</span>
+            <span class="on"><i class="dot"></i>Doing ✓</span>
+            <span class="off"><i class="dot"></i>Code review · blocked</span>
+            <span class="off"><i class="dot"></i>Ready for QA · blocked</span>
+            <span class="off"><i class="dot"></i>Done · blocked</span>
+          </div>
+          <div class="drop m" data-n="2"></div>
+          <div class="r"><span class="grip">⋮⋮</span><span class="k">PLAT-009</span><span class="t">Tax rates import</span><span class="tags"></span><span class="chip stuck">Oct 9</span><span class="muted">—</span><span class="av"></span></div>
+        </div>
+        <div class="sec">
+          <div class="sec-h closed m" data-n="3"><span class="car">▸</span><span class="dot"></span>Ready for QA<span class="n">0</span><span class="mini">Empty · drop here</span></div>
+        </div>
+        <div class="sec">
+          <div class="sec-h closed"><span class="car">▸</span><span class="dot"></span>Done<span class="n">2</span><span class="mini">Show</span></div>
+        </div>
+      </div>
+      <div class="list m" data-n="4" style="padding:16px; color:var(--muted)">
+        <b style="color:var(--ink)">With "Blocked" filter on:</b> sections with no matching tasks fold to a single line ("Code review · 0 of 1 shown"). The counts in the section headers follow the filter.
+      </div>
+    </div>
+    <div class="phone m" data-n="5">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:16px">◆ Billing migration</b><span class="btn pri">+ Task</span></div>
+      <div class="seg"><span>▦ Cards</span><span class="on">☰ Rows</span></div>
+      <div class="list">
+        <div class="sec">
+          <div class="sec-h"><span class="car">▾</span><span class="dot"></span>To do<span class="n">2</span></div>
+          <div class="r"><span class="t">Write migration dry-run script</span><span class="av"></span><span class="sub"><span class="chip stuck">Blocked</span><span class="muted">PLAT-006 · 0/3</span></span></div>
+          <div class="r"><span class="t">Customer comms plan</span><span class="av"></span><span class="sub"><span class="chip">ops</span><span class="muted">PLAT-007 · Oct 22</span></span></div>
+        </div>
+        <div class="sec">
+          <div class="sec-h"><span class="car">▾</span><span class="dot"></span>Doing<span class="n">2</span></div>
+          <div class="r"><span class="t">Map legacy plan IDs</span><span class="av"></span><span class="sub"><span class="chip stuck">Blocked</span><span class="muted">PLAT-008 · 2/5</span></span></div>
+        </div>
+        <div class="sec"><div class="sec-h closed"><span class="car">▸</span><span class="dot"></span>Code review<span class="n">1</span></div></div>
+        <div class="sec"><div class="sec-h closed"><span class="car">▸</span><span class="dot"></span>Done<span class="n">2</span></div></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <h4>Notes</h4>
+    <ol>
+      <li><span><b>Status pill on hover or focus</b> lets you move a row without dragging, using keyboard or touch. Columns the task can't move to (it's blocked) are shown but disabled, with the reason.</span></li>
+      <li><span><b>The drop slot</b> shows where a dragged row will land, in this section or another one.</span></li>
+      <li><span><b>Empty sections</b> stay listed as a single folded line, so the workflow is always complete and you can still drop a task into them.</span></li>
+      <li><span><b>Filters</b> work the same as in Cards. Sections only count the tasks shown.</span></li>
+      <li><span><b>On a phone</b> each row is two lines: title and avatar, then flags, ID and subtasks. Rows read better than swiping sideways through columns, so Rows is the default on phones until you pick otherwise.</span></li>
+    </ol>
+    <div class="q"><b>Open:</b> should the Board tab (all tasks, not just one epic) get the same Cards / Rows switch? It isn't included here; it's a small follow-up if you want it.</div>
+  </aside>
+</section>
+
+</body>
+</html>

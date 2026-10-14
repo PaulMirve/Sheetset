@@ -11,6 +11,10 @@ export type MenuItem =
       onSelect: () => void;
       /** Destructive action, shown in alert red. */
       danger?: boolean;
+      /** Shown but not choosable; say why in `title`. */
+      disabled?: boolean;
+      /** Tooltip, e.g. why the item is disabled. */
+      title?: string;
     }
   | "-";
 
@@ -105,8 +109,10 @@ const Menu = ({
             <button
               key={it.label}
               type="button"
+              disabled={it.disabled}
+              title={it.title}
               className={classNames(
-                "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-left font-[550] outline-none transition-colors duration-150",
+                "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-[9px] text-left font-[550] outline-none transition-colors duration-150 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-transparent",
                 it.danger
                   ? "text-alert hover:bg-alert-wash focus-visible:bg-alert-wash"
                   : "hover:bg-ground focus-visible:bg-ground [&>svg]:text-muted",
