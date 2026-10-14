@@ -186,7 +186,8 @@ type SectionProps = {
   onToggle: (open: boolean) => void;
   onOpenTask: (id: ToDoId) => void;
   onMove: (todo: ToDo, column: Column) => void;
-  onAdd: (title: string) => void;
+  // Resolves once the task exists; rejects if it couldn't be created.
+  onAdd: (title: string) => Promise<unknown>;
 };
 
 // One status: a collapsible header that's also a drop target, its rows, and an add line.
@@ -220,12 +221,26 @@ const Section = ({
         [rows.filter((t) => t.needsHumanReview).length, "needs review"],
         [rows.filter((t) => t.due && t.due < today).length, "overdue"],
       ].filter(([n]) => n);
-  const add = (e: KeyboardEvent<HTMLInputElement>) => {
-    const title = e.currentTarget.value.trim();
-    if (e.key !== "Enter" || !title) return;
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState("");
+  // The title stays until the task exists, so a failed create loses nothing.
+  const add = async (e: KeyboardEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const title = input.value.trim();
+    if (e.key !== "Enter" || !title || adding) return;
     e.preventDefault();
-    onAdd(title);
-    e.currentTarget.value = "";
+    setAdding(true);
+    setAddError("");
+    try {
+      await onAdd(title);
+      input.value = "";
+    } catch (err) {
+      setAddError(
+        `Couldn’t add “${title}”: ${err instanceof Error ? err.message : "try again"}.`,
+      );
+    } finally {
+      setAdding(false);
+    }
   };
   return (
     <details
@@ -287,10 +302,30 @@ const Section = ({
             aria-label={`New task in ${column.name}`}
             placeholder={`Add a task to ${column.name}, press Enter`}
             maxLength={200}
+            aria-invalid={!!addError || undefined}
+            aria-describedby={addError ? `${column.id}-add-error` : undefined}
+            readOnly={adding}
+            onChange={() => setAddError("")}
             onKeyDown={add}
           />
         </Typography>
+        {adding && (
+          <Typography as="span" variant="chip" color="muted">
+            Adding…
+          </Typography>
+        )}
       </label>
+      {addError && (
+        <Typography
+          as="p"
+          role="alert"
+          id={`${column.id}-add-error`}
+          color="alert"
+          className="px-4 pb-3 pl-[54px] max-md:pl-4"
+        >
+          {addError}
+        </Typography>
+      )}
     </details>
   );
 };
@@ -323,7 +358,7 @@ const EpicRows = ({
   visible: (t: ToDo) => boolean;
   onOpenTask: (id: ToDoId) => void;
   onMove: (todo: ToDo, column: Column) => void;
-  onAdd: (column: Column, title: string) => void;
+  onAdd: (column: Column, title: string) => Promise<unknown>;
 }) => {
   const [closed, setClosed] = useState(() => loadClosed(epic));
   // Empty sections stay folded unless you open one this visit.

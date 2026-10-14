@@ -35,7 +35,9 @@ import {
   TaskActions,
   TaskFields,
   doneColumn,
+  TaskFilter,
   newEpicTask,
+  showsUnder,
   waitingOn,
 } from "../tasks";
 import EpicRows from "./EpicRows";
@@ -43,7 +45,6 @@ import {
   EmptyEpic,
   EpicHeader,
   EpicList,
-  TaskFilter,
   TaskView,
   epicsOf,
   saveTaskView,
@@ -140,17 +141,11 @@ const Main = ({ board }: { board: Board }) => {
 
   // Epics are containers, not work: they live in the Epics tab, not in the columns.
   const work = todos.filter((t) => !t.isEpic);
-  const stuck = (t: ToDo) =>
-    t.isBlocked || waitingOn(t, todos, columns).length > 0;
-  const filters: Record<TaskFilter, (t: ToDo) => boolean> = {
-    all: () => true,
-    blocked: stuck,
-    review: (t) => t.needsHumanReview,
-    mine: (t) => !!me && t.assignee?.id === me.id,
-  };
+  const shows = (f: TaskFilter) => (t: ToDo) =>
+    showsUnder(f, t, todos, columns, me?.id);
   const inEpic = entry ? entry.stats.tasks : [];
   const visible = entry
-    ? (t: ToDo) => t.epic === entry.epic.id && filters[filter](t)
+    ? (t: ToDo) => t.epic === entry.epic.id && shows(filter)(t)
     : (t: ToDo) => !t.isEpic;
 
   return (
@@ -267,9 +262,9 @@ const Main = ({ board }: { board: Board }) => {
               filter={filter}
               counts={{
                 all: inEpic.length,
-                blocked: inEpic.filter(filters.blocked).length,
-                review: inEpic.filter(filters.review).length,
-                mine: inEpic.filter(filters.mine).length,
+                blocked: inEpic.filter(shows("blocked")).length,
+                review: inEpic.filter(shows("review")).length,
+                mine: inEpic.filter(shows("mine")).length,
               }}
               onFilter={setFilter}
               view={taskView}

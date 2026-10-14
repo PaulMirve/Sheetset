@@ -15,7 +15,8 @@ export type ToDo = {
   column: ColumnId;
   due?: string; // YYYY-MM-DD
   label?: string;
-  assignee?: User;
+  assignee?: User; // ponytail: not mapped yet, needs a board members endpoint
+  assigneeId?: number; // the assignee's user id, from the API's assignee_id
   subtasks: Subtask[];
   isEpic: boolean;
   isBlocked: boolean;

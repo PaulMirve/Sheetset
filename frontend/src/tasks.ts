@@ -92,6 +92,23 @@ export const newEpicTask = (epic: ToDo, title: string): TaskFields => ({
   subtasks: [],
 });
 
+/** The epic board's quick filters. */
+export type TaskFilter = "all" | "blocked" | "review" | "mine";
+
+/** Whether `t` shows under `filter`. `me` is the signed-in user's id. */
+export const showsUnder = (
+  filter: TaskFilter,
+  t: ToDo,
+  todos: ToDo[],
+  columns: Column[],
+  me?: number,
+) =>
+  filter === "all" ||
+  (filter === "blocked" &&
+    (t.isBlocked || waitingOn(t, todos, columns).length > 0)) ||
+  (filter === "review" && t.needsHumanReview) ||
+  (filter === "mine" && me !== undefined && t.assigneeId === me);
+
 /** Where an epic stands, worked out from its tasks. The epic's own column is ignored. */
 export type EpicStatus = "attention" | "progress" | "todo" | "done";
 

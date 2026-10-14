@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { Column } from "./types/column";
 import type { ToDo, ToDoId } from "./types/ToDo";
-import { canMove, doneColumn, epicStats, toColumn, waitingOn } from "./tasks";
+import {
+  canMove,
+  doneColumn,
+  epicStats,
+  showsUnder,
+  toColumn,
+  waitingOn,
+} from "./tasks";
 
 const columns: Column[] = [
   { id: toColumn("1"), code: "todo", name: "To do", position: 0 },
@@ -100,5 +107,35 @@ describe("epic status", () => {
     expect(status(child(1, { column: toColumn("5"), isBlocked: true }))).toBe(
       "done",
     );
+  });
+});
+
+describe("epic board quick filters", () => {
+  const me = 7;
+  const shows = (filter: Parameters<typeof showsUnder>[0], t: ToDo) =>
+    showsUnder(filter, t, [t], columns, me);
+
+  it("Mine shows tasks assigned to the signed-in user, by id", () => {
+    expect(shows("mine", task({ assigneeId: me }))).toBe(true);
+    expect(shows("mine", task({ assigneeId: 8 }))).toBe(false);
+    expect(shows("mine", task())).toBe(false);
+    // Signed-out (no id yet): nothing is "mine", even unassigned tasks.
+    expect(showsUnder("mine", task(), [task()], columns)).toBe(false);
+  });
+
+  it("Blocked counts the flag and unfinished blockers", () => {
+    const blocker = task({ id: 2 as ToDoId });
+    const waiting = task({ blockedBy: [blocker.id] });
+    expect(shows("blocked", task({ isBlocked: true }))).toBe(true);
+    expect(showsUnder("blocked", waiting, [waiting, blocker], columns)).toBe(
+      true,
+    );
+    expect(shows("blocked", task())).toBe(false);
+  });
+
+  it("Needs review and All", () => {
+    expect(shows("review", task({ needsHumanReview: true }))).toBe(true);
+    expect(shows("review", task())).toBe(false);
+    expect(shows("all", task())).toBe(true);
   });
 });

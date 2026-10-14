@@ -19,7 +19,13 @@ import { User } from "@system-types/user";
 import classNames from "classnames";
 import { CSSProperties, useState } from "react";
 import { epicHue, hashHue, hue } from "../hue";
-import { EpicStatus, TaskActions, doneColumn, epicStats } from "../tasks";
+import {
+  EpicStatus,
+  TaskActions,
+  TaskFilter,
+  doneColumn,
+  epicStats,
+} from "../tasks";
 
 type Stats = ReturnType<typeof epicStats>;
 export type EpicEntry = { epic: ToDo; stats: Stats };
@@ -314,7 +320,6 @@ export const EpicList = ({
   );
 };
 
-export type TaskFilter = "all" | "blocked" | "review" | "mine";
 export type TaskView = "cards" | "rows";
 
 // Picked once for every epic, on this device. Phones start on rows.
@@ -323,18 +328,6 @@ export const savedTaskView = (): TaskView =>
   (matchMedia("(max-width: 767px)").matches ? "rows" : "cards");
 export const saveTaskView = (v: TaskView) =>
   localStorage.setItem("epicView", v);
-
-/** Whether a task shows under the epic board's quick filter. */
-export const matches = (
-  filter: TaskFilter,
-  t: ToDo,
-  stuck: (t: ToDo) => boolean,
-  me?: number,
-) =>
-  filter === "all" ||
-  (filter === "blocked" && stuck(t)) ||
-  (filter === "review" && t.needsHumanReview) ||
-  (filter === "mine" && t.assignee?.id === me);
 
 // The epic's notes: three lines at rest, the full editor on demand.
 const About = ({
@@ -524,7 +517,7 @@ export const EpicHeader = ({
           as="summary"
           variant="label"
           color="muted"
-          className="flex items-center gap-2.5 min-w-0 px-6 py-4 rounded-[20px] cursor-pointer list-none select-none hover:text-ink max-md:px-4 [&::-webkit-details-marker]:hidden"
+          className="flex items-center gap-2.5 min-w-0 h-[52px] px-6 rounded-[20px] cursor-pointer list-none select-none hover:text-ink max-md:px-4 [&::-webkit-details-marker]:hidden"
         >
           <Icon
             name="chevron-down"
@@ -557,7 +550,10 @@ export const EpicHeader = ({
           className="grid grid-cols-[minmax(0,1fr)_320px] gap-8 px-6 pb-6 max-lg:grid-cols-1 max-lg:gap-5 max-md:px-4 max-md:pb-4"
         >
           <About key={epic.id} epic={epic} onChange={onChange} />
-          <Files boardId={board.id} todo={epic} />
+          {/* Side by side, the Files heading (34px row) sits on the summary's line (52px row). */}
+          <div className="relative min-w-0 lg:-mt-[43px]">
+            <Files boardId={board.id} todo={epic} />
+          </div>
         </section>
       </details>
 

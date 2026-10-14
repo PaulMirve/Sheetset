@@ -17,6 +17,7 @@ export const toToDo = (t: Task, boardKey: string): ToDo => ({
   column: t.column_id as unknown as ColumnId,
   due: t.due ?? undefined,
   label: t.label ?? undefined,
+  assigneeId: t.assignee_id ?? undefined,
   subtasks: t.subtasks.map((s) => ({
     id: s.id as unknown as SubtaskId,
     title: s.title,
