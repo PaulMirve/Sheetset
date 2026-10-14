@@ -134,7 +134,7 @@ const Subtasks = ({ value, onChange, optional, epic }: Props) => {
   };
 
   return (
-    <fieldset ref={setLive} className="grid gap-1.5">
+    <fieldset ref={setLive} className="grid gap-1.5 min-w-0">
       <Typography
         as="legend"
         variant="label"

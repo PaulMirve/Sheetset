@@ -176,7 +176,7 @@ export const Source = ({
 };
 
 const linkRow =
-  "group flex items-center gap-2.5 h-11 pl-3 pr-1.5 rounded-[10px] bg-ground border border-transparent transition-[background-color,border-color,box-shadow] duration-150 hover:border-line-strong focus-within:bg-surface focus-within:border-primary focus-within:shadow-[0_0_0_4px_var(--color-primary-wash)]";
+  "group flex items-center gap-2.5 min-w-0 h-11 pl-3 pr-1.5 rounded-[10px] bg-ground border border-transparent transition-[background-color,border-color,box-shadow] duration-150 hover:border-line-strong focus-within:bg-surface focus-within:border-primary focus-within:shadow-[0_0_0_4px_var(--color-primary-wash)]";
 
 /** A linked task (an epic's task, a blocker): its column dot, title to open it, column and a remove button. */
 const TaskLinkRow = ({
@@ -249,7 +249,7 @@ export const EpicTasks = ({
   const epicTasks = epicTasksOf(epic, todos, columns);
   const done = epicTasks.filter((t) => t.column === doneColumn(columns)).length;
   return (
-    <fieldset className="grid gap-1.5">
+    <fieldset className="grid gap-1.5 min-w-0">
       <Typography
         as="legend"
         variant="label"

@@ -73,7 +73,7 @@ const Modal = ({
       </div>
       <div
         className={classNames(
-          "min-h-0 overflow-auto grid content-start gap-[18px] px-6 pt-4 pb-[22px]",
+          "min-h-0 overflow-auto grid grid-cols-[minmax(0,1fr)] content-start gap-[18px] px-6 pt-4 pb-[22px]",
           bodyClassName,
         )}
       >
