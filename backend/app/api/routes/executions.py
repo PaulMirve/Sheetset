@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from ...crud.task import check_unblocked, move
 from ...db.models import Board, ExecutionEvent, Task, TaskExecution, User
 from ...db.session import get_db
-from ...schemas.execution import ClaimIn, Event, EventIn, Execution, FinishIn, StageIn
+from ...schemas.execution import ClaimIn, Event, EventIn, Execution, FinishIn, ResumeIn, StageIn
 from ..deps import current_user, member_board
 
 router = APIRouter(tags=["executions"])
@@ -159,5 +159,39 @@ def stage(execution_id: UUID, body: StageIn, db: Session = Depends(get_db), user
     move(db, task, target, sys.maxsize)
     execution.status = body.stage
     db.add(ExecutionEvent(id=str(uuid4()), execution_id=execution.id, kind="stage", payload={"stage": body.stage}))
+    db.commit()
+    return execution
+
+
+@router.post("/executions/{execution_id}/resume", response_model=Execution)
+def resume(execution_id: UUID, body: ResumeIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    _lock(db)
+    execution, task, board = _execution(db, str(execution_id), user, owner=True)
+    columns = {c.code: c.id for c in board.columns}
+    if task.column_id != body.expected_column_id or task.column_id not in {columns["doing"], columns["code_review"]}:
+        raise HTTPException(409, "task changed; inspect before resuming")
+    if task.is_blocked:
+        raise HTTPException(409, "task is blocked")
+    if execution.active_task_id == task.id:
+        if task.needs_human_review:
+            raise HTTPException(409, "active execution requires human intervention")
+        db.commit()
+        return execution
+    if execution.status != "needs_human_review" or not task.needs_human_review:
+        raise HTTPException(409, "only an escalated execution can be resumed explicitly")
+    if db.scalar(select(TaskExecution.id).where(TaskExecution.active_task_id == task.id)):
+        raise HTTPException(409, "another execution owns the task")
+    observed = body.expected_task_updated_at
+    if observed.tzinfo is not None:
+        observed = observed.astimezone(timezone.utc).replace(tzinfo=None)
+    if task.updated_at != observed:
+        raise HTTPException(409, "task changed since recovery inspection")
+    check_unblocked(board, task, columns["ready_for_qa"], {"needs_human_review": False})
+    task.needs_human_review = False
+    move(db, task, columns["doing"], sys.maxsize)
+    execution.active_task_id = task.id
+    execution.status = "doing"
+    execution.finished_at = None
+    db.add(ExecutionEvent(id=str(uuid4()), execution_id=execution.id, kind="resumed", payload={"from": "needs_human_review"}))
     db.commit()
     return execution

@@ -55,3 +55,8 @@ class FinishIn(BaseModel):
 class StageIn(BaseModel):
     stage: Literal["doing", "code_review"]
     expected_column_id: int = Field(gt=0)
+
+
+class ResumeIn(BaseModel):
+    expected_column_id: int = Field(gt=0)
+    expected_task_updated_at: dt.datetime
