@@ -5,6 +5,7 @@ import {
   canMove,
   doneColumn,
   epicStats,
+  matchesQuery,
   showsUnder,
   toColumn,
   waitingOn,
@@ -33,6 +34,7 @@ const task = (patch: Partial<ToDo> = {}): ToDo => ({
   isBlocked: false,
   needsHumanReview: false,
   subtasks: [],
+  criteria: [],
   blockedBy: [],
   files: [],
   created_at: "2026-10-09",
@@ -133,9 +135,35 @@ describe("epic board quick filters", () => {
     expect(shows("blocked", task())).toBe(false);
   });
 
+  it("Ready shows open tasks with nothing in the way", () => {
+    const blocker = task({ id: 2 as ToDoId });
+    const waiting = task({ blockedBy: [blocker.id] });
+    expect(shows("ready", task())).toBe(true);
+    expect(shows("ready", task({ isBlocked: true }))).toBe(false);
+    expect(showsUnder("ready", waiting, [waiting, blocker], columns)).toBe(
+      false,
+    );
+    // A finished blocker no longer holds it up; done tasks aren't "ready".
+    const finished = { ...blocker, column: toColumn("5") };
+    expect(showsUnder("ready", waiting, [waiting, finished], columns)).toBe(
+      true,
+    );
+    expect(shows("ready", task({ column: toColumn("5") }))).toBe(false);
+  });
+
   it("Needs review and All", () => {
     expect(shows("review", task({ needsHumanReview: true }))).toBe(true);
     expect(shows("review", task())).toBe(false);
     expect(shows("all", task())).toBe(true);
+  });
+});
+
+describe("matchesQuery", () => {
+  it("matches key or title, ignoring case and spaces", () => {
+    const t = task({ key: "APP-007", title: "Fix login" });
+    expect(matchesQuery(t, "")).toBe(true);
+    expect(matchesQuery(t, " LOGIN ")).toBe(true);
+    expect(matchesQuery(t, "app-007")).toBe(true);
+    expect(matchesQuery(t, "signup")).toBe(false);
   });
 });

@@ -59,6 +59,7 @@ Screens never set font size, weight, letter-spacing or line-height themselves. P
 | Checkbox, with optional label and "some selected" state | `Checkbox` |
 | On/off switch for an immediate setting | `Toggle` |
 | One of a few choices shown as a pill row (Task / Epic) | `Segmented` |
+| Search box with no visible label, debounced (task search) | `SearchInput` |
 | Text edited in place inside a row that draws the field | `InlineInput` |
 | Dialog title you can edit in place | `EditableTitle` |
 | Chip / pill (label, due date, metadata) | `Tag` |

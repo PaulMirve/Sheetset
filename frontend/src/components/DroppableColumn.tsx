@@ -31,7 +31,7 @@ const DroppableColumn = ({
       aria-label={column.name}
       style={hue(index + 1)}
       className={classNames(
-        "lane flex flex-col flex-[0_0_clamp(264px,calc((100vw-416px)/4),340px)] max-h-full overflow-y-auto px-2 pb-2 rounded-[18px] max-md:basis-[84vw] max-md:snap-start",
+        "lane flex flex-col flex-none w-[clamp(264px,calc((100vw-416px)/4),340px)] max-h-full overflow-y-auto px-2 pb-2 rounded-[18px] max-md:w-[84vw] max-md:snap-start",
         { "drag-over": dragOver || isOver },
       )}
     >

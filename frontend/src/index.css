@@ -3,6 +3,8 @@
 /* Values live in colors.scss; this only exposes them to Tailwind. */
 @theme static {
   --font-sans: "Figtree", system-ui, sans-serif;
+  /* Room for five full lanes and a column beside them. */
+  --breakpoint-wide: 143.75rem;
   --color-ground: var(--ground);
   --color-rail: var(--rail);
   --color-surface: var(--surface);

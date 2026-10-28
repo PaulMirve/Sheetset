@@ -489,14 +489,21 @@ export const TaskBody = ({
         onAdd={(title) => onCreate(newEpicTask(todo, title))}
       />
     ) : (
-      <Subtasks
-        value={todo.subtasks}
-        onChange={(subtasks) => save({ subtasks })}
-      />
+      <>
+        <Subtasks
+          value={todo.subtasks}
+          onChange={(subtasks) => save({ subtasks })}
+        />
+        <Subtasks
+          criteria
+          value={todo.criteria}
+          onChange={(criteria) => save({ criteria })}
+        />
+      </>
     )}
-    {errors.subtasks && (
+    {(errors.subtasks || errors.criteria) && (
       <Typography as="p" role="alert" color="alert">
-        {errors.subtasks}
+        {errors.subtasks || errors.criteria}
       </Typography>
     )}
     <Blockers

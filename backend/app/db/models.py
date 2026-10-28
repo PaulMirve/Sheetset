@@ -103,6 +103,9 @@ class Task(Base):
     subtasks: Mapped[list["Subtask"]] = relationship(
         cascade="all, delete-orphan", passive_deletes=True, order_by="Subtask.position"
     )
+    criteria: Mapped[list["Criterion"]] = relationship(
+        cascade="all, delete-orphan", passive_deletes=True, order_by="Criterion.position"
+    )
     files: Mapped[list["Attachment"]] = relationship(
         cascade="all, delete-orphan", passive_deletes=True, order_by="Attachment.id"
     )
@@ -120,6 +123,18 @@ class Task(Base):
 
 class Subtask(Base):
     __tablename__ = "subtasks"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"), index=True)
+    position: Mapped[int] = mapped_column(default=0)
+    title: Mapped[str]
+    done: Mapped[bool] = mapped_column(default=False)
+
+
+class Criterion(Base):
+    """One acceptance criterion; same shape as a subtask."""
+
+    __tablename__ = "acceptance_criteria"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"), index=True)

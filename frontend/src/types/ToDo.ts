@@ -18,6 +18,7 @@ export type ToDo = {
   assignee?: User; // ponytail: not mapped yet, needs a board members endpoint
   assigneeId?: number; // the assignee's user id, from the API's assignee_id
   subtasks: Subtask[];
+  criteria: Subtask[]; // acceptance criteria, same checklist shape
   isEpic: boolean;
   isBlocked: boolean;
   needsHumanReview: boolean;

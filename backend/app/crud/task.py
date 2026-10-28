@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from ..db.models import Board, Subtask, Task, User
+from ..db.models import Board, Criterion, Subtask, Task, User
 from ..workflow import WORKFLOW_ORDER
 
 
@@ -71,13 +71,18 @@ def check_unblocked(board: Board, task: Task, column_id: int, patch: dict | None
         raise HTTPException(409, "blocked by " + ", ".join(f"{board.key}-{b.number}" for b in waiting))
 
 
-def subtasks_from(items: list[dict]) -> list[Subtask]:
-    return [Subtask(position=i, **s) for i, s in enumerate(items)]
+def subtasks_from(items: list[dict], model=Subtask) -> list[Subtask]:
+    return [model(position=i, **s) for i, s in enumerate(items)]
+
+
+def criteria_from(items: list[dict]) -> list[Criterion]:
+    return subtasks_from(items, Criterion)
 
 
 def add_task(db: Session, board: Board, user: User, data: dict) -> Task:
     """Validate and insert a task from TaskIn-shaped `data`. Shared with accepting meeting suggestions."""
     check_refs_on_board(db, board, data)
     data["subtasks"] = subtasks_from(data.get("subtasks") or [])
+    data["criteria"] = criteria_from(data.get("criteria") or [])
     data["blockers"] = blockers_on_board(db, board, data.pop("blocked_by", None) or [])
     return create(db, board.id, data.pop("column_id"), user.id, data.pop("title"), **data)

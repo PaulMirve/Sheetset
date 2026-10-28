@@ -330,10 +330,10 @@ const Section = ({
   );
 };
 
-// Remembered per epic: which non-empty sections you folded. Done starts folded.
-const closedKey = (epic: ToDoId) => `epicRows:${epic}`;
-const loadClosed = (epic: ToDoId): string[] => {
-  const saved = localStorage.getItem(closedKey(epic));
+// Remembered per epic (or the whole board): which non-empty sections you folded. Done starts folded.
+const closedKey = (id: string) => `epicRows:${id}`;
+const loadClosed = (id: string): string[] => {
+  const saved = localStorage.getItem(closedKey(id));
   try {
     return saved ? JSON.parse(saved) : ["done"];
   } catch {
@@ -341,9 +341,9 @@ const loadClosed = (epic: ToDoId): string[] => {
   }
 };
 
-/** An epic's tasks as rows, one collapsible section per workflow status. */
+/** An epic's tasks, or the whole board's, as rows: one collapsible section per workflow status. */
 const EpicRows = ({
-  epic,
+  id,
   columns,
   todos,
   visible,
@@ -351,7 +351,8 @@ const EpicRows = ({
   onMove,
   onAdd,
 }: {
-  epic: ToDoId;
+  // The epic's id, or "board-<id>" for the whole board; keys the folded sections.
+  id: string;
   columns: Column[];
   // Every task on the board, so drags keep positions right.
   todos: ToDo[];
@@ -360,7 +361,7 @@ const EpicRows = ({
   onMove: (todo: ToDo, column: Column) => void;
   onAdd: (column: Column, title: string) => Promise<unknown>;
 }) => {
-  const [closed, setClosed] = useState(() => loadClosed(epic));
+  const [closed, setClosed] = useState(() => loadClosed(id));
   // Empty sections stay folded unless you open one this visit.
   const [opened, setOpened] = useState<string[]>([]);
   const toggle = (code: string, empty: boolean, open: boolean) => {
@@ -372,7 +373,7 @@ const EpicRows = ({
       ? closed.filter((c) => c !== code)
       : [...new Set([...closed, code])];
     setClosed(next);
-    localStorage.setItem(closedKey(epic), JSON.stringify(next));
+    localStorage.setItem(closedKey(id), JSON.stringify(next));
   };
   return (
     <div className="px-7 pb-8 max-md:px-4">

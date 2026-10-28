@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ...crud import task as task_crud
-from ...crud.task import add_task, blockers_on_board, check_refs_on_board, check_unblocked, subtasks_from
+from ...crud.task import add_task, blockers_on_board, check_refs_on_board, check_unblocked, criteria_from, subtasks_from
 from ...db.models import Attachment, Board, User
 from ...db.models import Task as TaskModel
 from ...db.session import get_db
@@ -62,6 +62,8 @@ def update_task(
         task_crud.move(db, task, column_id, sys.maxsize if position is None else position)
     if "subtasks" in data:
         task.subtasks = subtasks_from(data.pop("subtasks"))
+    if "criteria" in data:
+        task.criteria = criteria_from(data.pop("criteria"))
     for k, v in data.items():
         setattr(task, k, v)
     db.commit()

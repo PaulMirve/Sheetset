@@ -18,6 +18,8 @@ type Props = {
   epics: number;
   // The tab's own actions, left of the board menu.
   children: ReactNode;
+  // Extra controls beside the Board / Epics switch.
+  toolbar?: ReactNode;
 };
 
 const Navbar = ({
@@ -29,6 +31,7 @@ const Navbar = ({
   tab,
   epics,
   children,
+  toolbar,
 }: Props) => (
   <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 px-7 pt-6 pb-5 max-md:flex-col max-md:items-start max-md:gap-3.5 max-md:px-4 max-md:pt-[18px] max-md:pb-3.5">
     <div className="flex items-center gap-3.5 min-w-0">
@@ -74,7 +77,7 @@ const Navbar = ({
       <Menu label="Board options" items={menu} />
     </div>
     {/* Its own row, under the title. */}
-    <div className="w-full">
+    <div className="w-full flex flex-wrap items-center gap-2.5">
       <Segmented
         label="View"
         className="w-fit max-md:w-full [&>label]:flex-auto [&>label]:px-4 [&>label]:whitespace-nowrap"
@@ -87,6 +90,7 @@ const Navbar = ({
           v === "epics" ? openEpics(board.key) : openBoard(board.key)
         }
       />
+      {toolbar}
     </div>
   </header>
 );

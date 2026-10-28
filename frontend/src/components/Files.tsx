@@ -2,6 +2,7 @@ import {
   MAX_FILE,
   fileUrlQuery,
   useDeleteFile,
+  useFileText,
   useFileUrl,
   useUploadFiles,
 } from "@hooks/useTasks";
@@ -15,9 +16,13 @@ import { hashHue } from "../hue";
 import Button from "./Button";
 import FileButton from "./FileButton";
 import Icon from "./Icon";
+import { RichText } from "./RichTextArea";
 import Typography from "./Typography";
 
 const isImage = (f: TaskFile) => f.type.startsWith("image/");
+// Browsers often send .md with no type or a non-standard one, so trust the name too.
+const isMarkdown = (f: TaskFile) =>
+  /markdown/.test(f.type) || /\.(md|markdown)$/i.test(f.name);
 const extOf = (name: string) =>
   (name.match(/\.([a-z0-9]+)$/i)?.[1] ?? "file").toLowerCase();
 const fmtSize = (n: number) =>
@@ -153,9 +158,59 @@ const Viewer = ({
   );
 };
 
+/** Full-screen reader for a markdown file. */
+const Reader = ({ file, onClose }: { file: TaskFile; onClose: () => void }) => {
+  const ref = useRef<HTMLDialogElement>(null);
+  const text = useFileText(file.id);
+  useEffect(() => ref.current?.showModal(), []);
+
+  return (
+    <dialog
+      ref={ref}
+      aria-label={file.name}
+      onCancel={(e) => {
+        e.preventDefault();
+        // React bubbles this to the task dialog, which would close too.
+        e.stopPropagation();
+        onClose();
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      className="m-auto w-[min(860px,calc(100vw-32px))] h-[calc(100dvh-48px)] max-w-none max-h-none p-0 rounded-[20px] bg-surface text-ink shadow-lift outline-none open:grid grid-rows-[auto_minmax(0,1fr)] backdrop:bg-[rgba(12,13,19,.7)] open:animate-[modal-rise_.24s_var(--ease-out)]"
+    >
+      <header className="flex items-center gap-3 py-3.5 pr-4 pl-6 border-b border-line max-md:pl-4">
+        <div className="flex-1 min-w-0 grid">
+          <Typography variant="title" className="truncate">
+            {file.name}
+          </Typography>
+          <Typography variant="chip" color="muted">
+            {meta(file)}
+          </Typography>
+        </div>
+        <Button
+          variant="icon"
+          aria-label="Close"
+          className="size-10"
+          onClick={onClose}
+        >
+          <Icon name="cross" />
+        </Button>
+      </header>
+      <div className="overflow-y-auto px-8 py-6 max-md:px-4">
+        {text.isError ? (
+          <Typography color="alert">Couldn’t load {file.name}.</Typography>
+        ) : text.data == null ? (
+          <Typography color="muted">Loading…</Typography>
+        ) : (
+          <RichText markdown={text.data} className="text-[15.5px]" />
+        )}
+      </div>
+    </dialog>
+  );
+};
+
 /**
  * A task's photos and files: browse, drop anywhere on the surrounding dialog, or paste.
- * Photos open in a full-screen viewer; other files open in a new tab or download.
+ * Photos open in a full-screen viewer, markdown in a reader; other files open in a new tab or download.
  */
 const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
   const upload = useUploadFiles(boardId, todo.id);
@@ -165,6 +220,7 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
   const [dropping, setDropping] = useState(false);
   const [error, setError] = useState("");
   const [viewing, setViewing] = useState<number | null>(null);
+  const [reading, setReading] = useState<TaskFile | null>(null);
   const photos = todo.files.filter(isImage);
   const docs = todo.files.filter((f) => !isImage(f));
 
@@ -322,8 +378,12 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
               </span>
               <Button
                 variant="bare"
-                title={`Open ${f.name} in a new tab`}
-                onClick={() => open(f)}
+                title={
+                  isMarkdown(f)
+                    ? `Read ${f.name}`
+                    : `Open ${f.name} in a new tab`
+                }
+                onClick={() => (isMarkdown(f) ? setReading(f) : open(f))}
                 className="flex-1 min-w-0 grid text-left hover:[&>:first-child]:underline"
               >
                 <Typography variant="label" className="truncate">
@@ -398,6 +458,7 @@ const Files = ({ boardId, todo }: { boardId: number; todo: ToDo }) => {
           onClose={() => setViewing(null)}
         />
       )}
+      {reading && <Reader file={reading} onClose={() => setReading(null)} />}
     </section>
   );
 };

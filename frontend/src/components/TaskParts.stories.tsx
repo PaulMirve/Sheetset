@@ -29,6 +29,7 @@ const todo: ToDo = {
   isBlocked: false,
   needsHumanReview: false,
   subtasks: [],
+  criteria: [],
   blockedBy: [],
   files: [],
   created_at: "2026-10-09",

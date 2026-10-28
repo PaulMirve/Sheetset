@@ -8,7 +8,17 @@ class SubtaskIn(BaseModel):
     done: bool = False
 
 
+class CriterionIn(SubtaskIn):
+    title: str = Field(min_length=1, max_length=500)  # criteria run longer than subtasks
+
+
 class Subtask(SubtaskIn):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+
+
+class Criterion(CriterionIn):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -37,11 +47,12 @@ class TaskIn(BaseModel):
     needs_human_review: bool = False
     epic_id: int | None = None
     subtasks: list[SubtaskIn] = []
+    criteria: list[CriterionIn] = []  # acceptance criteria
     blocked_by: list[int] = []  # ids of tasks on the same board
 
 
 class TaskPatch(BaseModel):
-    """Only the fields sent are changed. `subtasks` replaces the whole list."""
+    """Only the fields sent are changed. `subtasks` and `criteria` replace the whole list."""
 
     # Non-nullable fields default to None only to mean "not sent"; an explicit null fails validation.
     title: str = Field(None, min_length=1, max_length=200)
@@ -56,6 +67,7 @@ class TaskPatch(BaseModel):
     needs_human_review: bool = None
     epic_id: int | None = None
     subtasks: list[SubtaskIn] = None
+    criteria: list[CriterionIn] = None
     blocked_by: list[int] = None  # replaces the whole list
 
 
@@ -81,6 +93,7 @@ class Task(BaseModel):
     created_at: dt.datetime
     updated_at: dt.datetime
     subtasks: list[Subtask]
+    criteria: list[Criterion]
     files: list[TaskFile]
     blocked_by: list[int]
 

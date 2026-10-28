@@ -51,6 +51,9 @@ def test_tasks_flow():
     assert c.patch(f"/tasks/{a['id']}", json={"title": None}, headers=me).status_code == 422
     r = c.patch(f"/tasks/{a['id']}", json={"subtasks": [{"title": "two", "done": True}]}, headers=me).json()
     assert [(s["title"], s["done"]) for s in r["subtasks"]] == [("two", True)]
+    r = c.patch(f"/tasks/{a['id']}", json={"criteria": [{"title": "works", "done": True}]}, headers=me).json()
+    assert [(s["title"], s["done"]) for s in r["criteria"]] == [("works", True)]
+    assert r["subtasks"][0]["title"] == "two"
 
     # Epics must be epics on the same board.
     assert c.patch(f"/tasks/{a['id']}", json={"epic_id": b_["id"]}, headers=me).status_code == 422

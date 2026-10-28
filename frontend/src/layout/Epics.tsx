@@ -17,7 +17,7 @@ import { Column } from "@system-types/column";
 import { ToDo } from "@system-types/ToDo";
 import { User } from "@system-types/user";
 import classNames from "classnames";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, ReactNode, useState } from "react";
 import { epicHue, hashHue, hue } from "../hue";
 import {
   EpicStatus,
@@ -322,7 +322,7 @@ export const EpicList = ({
 
 export type TaskView = "cards" | "rows";
 
-// Picked once for every epic, on this device. Phones start on rows.
+// Picked once for the board and every epic, on this device. Phones start on rows.
 export const savedTaskView = (): TaskView =>
   (localStorage.getItem("epicView") as TaskView | null) ??
   (matchMedia("(max-width: 767px)").matches ? "rows" : "cards");
@@ -350,7 +350,7 @@ const About = ({
           onChange={(description) => save({ description })}
         />
       ) : (
-        <Typography className="line-clamp-3 max-w-[72ch]">
+        <Typography className="line-clamp-3 max-w-[72ch] wide:line-clamp-[14] wide:max-w-none">
           {plain(epic.description)}
         </Typography>
       )}
@@ -373,7 +373,10 @@ const About = ({
   );
 };
 
-/** The top of an epic's board: where it sits, what it's about, and how far along it is. */
+/**
+ * An epic's board: where it sits, what it's about, how far along it is, then its tasks.
+ * On wide screens what it's about moves beside the tasks.
+ */
 export const EpicHeader = ({
   board,
   columns,
@@ -382,11 +385,13 @@ export const EpicHeader = ({
   filter,
   counts,
   onFilter,
+  search,
   view,
   onView,
   onChange,
   onNewTask,
   onActivity,
+  children,
 }: {
   board: Board;
   columns: Column[];
@@ -396,11 +401,14 @@ export const EpicHeader = ({
   filter: TaskFilter;
   counts: Record<TaskFilter, number>;
   onFilter: (f: TaskFilter) => void;
+  search: ReactNode;
   view: TaskView;
   onView: (v: TaskView) => void;
   onChange: TaskActions["onChange"];
   onNewTask: () => void;
   onActivity: () => void;
+  // The epic's tasks, under the toolbar.
+  children: ReactNode;
 }) => {
   const { epic, stats } = entry;
   const [aboutOpen, setAboutOpen] = useState(
@@ -409,10 +417,18 @@ export const EpicHeader = ({
   const at = entries.findIndex((e) => e.epic.id === epic.id);
   const go = (i: number) => openEpics(board.key, entries[i].epic.key);
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-7 pt-[18px] pb-5 max-md:px-4 max-md:pt-3 max-md:gap-4">
+    <div
+      className={classNames(
+        "grid grid-cols-[minmax(0,1fr)] content-start gap-5 px-7 pt-[18px] max-md:px-4 max-md:pt-3 max-md:gap-4 wide:gap-x-7",
+        // Wide: lanes keep their width and the rest goes to what it's about; rows split it evenly.
+        view === "rows"
+          ? "wide:grid-cols-2"
+          : "wide:grid-cols-[minmax(0,max-content)_minmax(360px,1fr)]",
+      )}
+    >
       <nav
         aria-label="Breadcrumb"
-        className="flex flex-wrap items-center gap-1.5 min-h-10"
+        className="col-span-full flex flex-wrap items-center gap-1.5 min-h-10"
       >
         <Button
           variant="quiet"
@@ -478,7 +494,7 @@ export const EpicHeader = ({
       </nav>
 
       <header
-        className="flex items-start gap-4 max-md:flex-col"
+        className="col-span-full flex items-start gap-4 max-md:flex-col"
         style={epicHue(epic.id)}
       >
         <span aria-hidden className="tile size-12 rounded-[14px] max-md:hidden">
@@ -493,7 +509,8 @@ export const EpicHeader = ({
             <Faces users={people(stats.tasks)} />
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-none">
+        <div className="flex items-center gap-2 flex-none max-md:flex-wrap">
+          {search}
           <Button variant="secondary" onClick={onActivity}>
             <Icon name="expand" /> Activity
           </Button>
@@ -511,7 +528,12 @@ export const EpicHeader = ({
           setAboutOpen(open);
           localStorage.setItem("epicAbout", open ? "open" : "closed");
         }}
-        className="group/about rounded-[20px] bg-surface shadow-rest"
+        // Wide: the leftover space beside the tasks, kept in view.
+        className={classNames(
+          "@container group/about rounded-[20px] bg-surface shadow-rest wide:col-start-2 wide:self-start wide:sticky wide:top-[18px] wide:max-h-[calc(100dvh-36px)] wide:overflow-y-auto",
+          // Beside the tasks, under the toolbar when there is one.
+          stats.tasks.length > 0 ? "wide:row-start-4" : "wide:row-start-3",
+        )}
       >
         <Typography
           as="summary"
@@ -547,18 +569,18 @@ export const EpicHeader = ({
         </Typography>
         <section
           aria-label="About this epic"
-          className="grid grid-cols-[minmax(0,1fr)_320px] gap-8 px-6 pb-6 max-lg:grid-cols-1 max-lg:gap-5 max-md:px-4 max-md:pb-4"
+          className="grid grid-cols-[minmax(0,1fr)_320px] gap-8 px-6 pb-6 max-lg:grid-cols-1 max-lg:gap-5 max-md:px-4 max-md:pb-4 wide:grid-cols-1 wide:gap-6 wide:@3xl:grid-cols-[minmax(0,1fr)_320px] wide:@3xl:gap-8"
         >
           <About key={epic.id} epic={epic} onChange={onChange} />
           {/* Side by side, the Files heading (34px row) sits on the summary's line (52px row). */}
-          <div className="relative min-w-0 lg:-mt-[43px]">
+          <div className="relative min-w-0 lg:-mt-[43px] wide:mt-0 wide:@3xl:-mt-[43px]">
             <Files boardId={board.id} todo={epic} />
           </div>
         </section>
       </details>
 
       {stats.tasks.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="col-span-full flex flex-wrap items-center justify-between gap-4">
           <span className="flex flex-wrap items-center gap-2.5 min-w-0 max-w-full">
             <Segmented
               label="Task layout"
@@ -577,6 +599,7 @@ export const EpicHeader = ({
               onChange={onFilter}
               options={[
                 { value: "all", label: `All · ${counts.all}` },
+                { value: "ready", label: `Ready · ${counts.ready}` },
                 { value: "blocked", label: `Blocked · ${counts.blocked}` },
                 { value: "review", label: `Needs review · ${counts.review}` },
                 { value: "mine", label: `Mine · ${counts.mine}` },
@@ -590,6 +613,8 @@ export const EpicHeader = ({
           />
         </div>
       )}
+      {/* The tasks bring their own side padding. */}
+      <div className="min-w-0 -mx-7 max-md:-mx-4">{children}</div>
     </div>
   );
 };

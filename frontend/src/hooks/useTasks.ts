@@ -1,12 +1,18 @@
 import { Board } from "@system-types/Board";
 import { ColumnId } from "@system-types/column";
-import { SubtaskId } from "@system-types/Subtask";
+import { Subtask, SubtaskId } from "@system-types/Subtask";
 import { Task, TaskFile } from "@system-types/task";
 import { ToDo, ToDoId } from "@system-types/ToDo";
 import { TaskFields } from "../tasks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiBlob } from "../api";
 import { taskKeys } from "./queryKeys";
+
+const toSubtask = (s: Task["subtasks"][number]) => ({
+  id: s.id as unknown as SubtaskId,
+  title: s.title,
+  completed: s.done,
+});
 
 // ponytail: assignee isn't mapped until there's an endpoint for board members.
 export const toToDo = (t: Task, boardKey: string): ToDo => ({
@@ -18,11 +24,8 @@ export const toToDo = (t: Task, boardKey: string): ToDo => ({
   due: t.due ?? undefined,
   label: t.label ?? undefined,
   assigneeId: t.assignee_id ?? undefined,
-  subtasks: t.subtasks.map((s) => ({
-    id: s.id as unknown as SubtaskId,
-    title: s.title,
-    completed: s.done,
-  })),
+  subtasks: t.subtasks.map(toSubtask),
+  criteria: t.criteria.map(toSubtask),
   isEpic: t.is_epic,
   isBlocked: t.is_blocked,
   needsHumanReview: t.needs_human_review,
@@ -44,9 +47,9 @@ const toBody = (fields: Partial<TaskFields>) => {
     else if (k === "needsHumanReview") body.needs_human_review = v;
     else if (k === "epic") body.epic_id = v ?? null;
     else if (k === "blockedBy") body.blocked_by = v ?? [];
-    else if (k === "subtasks")
-      body.subtasks = fields
-        .subtasks!.filter((s) => s.title.trim())
+    else if (k === "subtasks" || k === "criteria")
+      body[k] = (v as Subtask[])
+        .filter((s) => s.title.trim())
         .map((s) => ({ title: s.title.trim(), done: s.completed }));
     else body[k] = v ?? null;
   }
@@ -169,3 +172,10 @@ export const fileUrlQuery = (fileId: number) => ({
 });
 
 export const useFileUrl = (fileId: number) => useQuery(fileUrlQuery(fileId));
+
+export const useFileText = (fileId: number) =>
+  useQuery({
+    queryKey: [...taskKeys.all, "file", fileId, "text"],
+    queryFn: async () => (await apiBlob(`/files/${fileId}`)).text(),
+    staleTime: Infinity,
+  });

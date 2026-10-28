@@ -22,6 +22,7 @@ const apiTask = (patch: Partial<Task> = {}): Task => ({
   created_at: "2026-10-09",
   updated_at: "2026-10-09",
   subtasks: [],
+  criteria: [],
   files: [],
   blocked_by: [],
   ...patch,

@@ -17,6 +17,35 @@ type Props = FieldProps & {
   className?: string;
 };
 
+// Underline has no markdown syntax; links stay in the app (Tauri webview).
+const extensions = [
+  StarterKit.configure({ underline: false, link: { openOnClick: false } }),
+  Markdown,
+];
+
+/** Read-only markdown, styled like the notes field. */
+export const RichText = ({
+  markdown,
+  className,
+}: {
+  markdown: string;
+  className?: string;
+}) => {
+  const editor = useEditor(
+    {
+      extensions,
+      editable: false,
+      content: markdown,
+      contentType: "markdown",
+      editorProps: {
+        attributes: { class: classNames("rich leading-[1.55]", className) },
+      },
+    },
+    [markdown],
+  );
+  return <EditorContent editor={editor} />;
+};
+
 /** Labelled rich-text field for notes; stored and emitted as markdown. */
 const RichTextArea = ({
   label,
@@ -32,12 +61,7 @@ const RichTextArea = ({
   const id = useId();
   const [value, setValue] = useState(defaultValue);
   const editor = useEditor({
-    extensions: [
-      // Underline has no markdown syntax; links stay in the app (Tauri webview).
-      StarterKit.configure({ underline: false, link: { openOnClick: false } }),
-      Markdown,
-      Placeholder.configure({ placeholder }),
-    ],
+    extensions: [...extensions, Placeholder.configure({ placeholder })],
     content: defaultValue,
     contentType: "markdown",
     editorProps: {

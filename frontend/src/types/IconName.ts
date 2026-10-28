@@ -27,6 +27,7 @@ export const ICON_NAMES = [
   "out",
   "pen",
   "plus",
+  "search",
   "spark",
   "status",
   "tag",

@@ -32,6 +32,8 @@ type Props = {
   optional?: boolean;
   // "First tasks" of a new epic: dot rows instead of checkboxes, no progress.
   epic?: boolean;
+  // Acceptance criteria: same checklist, different words.
+  criteria?: boolean;
 };
 
 // ponytail: negative ids mark unsaved rows; the backend assigns real ones.
@@ -46,10 +48,12 @@ const lockX: Modifier = ({ transform }) => ({ ...transform, x: 0 });
 const SortableRow = ({
   id,
   title,
+  word,
   children,
 }: {
   id: SubtaskId;
   title: string;
+  word: string;
   children: (grip: ReactNode) => ReactNode;
 }) => {
   const {
@@ -76,7 +80,7 @@ const SortableRow = ({
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
-          aria-label={`Reorder ${title || "subtask"}`}
+          aria-label={`Reorder ${title || word}`}
           className="-mx-1.5 flex-none w-6 cursor-grab touch-none active:cursor-grabbing"
         >
           <Icon name="grip" size={15} />
@@ -87,8 +91,14 @@ const SortableRow = ({
 };
 
 // Editable checklist: check, rename inline, remove, Enter to add.
-const Subtasks = ({ value, onChange, optional, epic }: Props) => {
-  const word = epic ? "task" : "subtask";
+const Subtasks = ({ value, onChange, optional, epic, criteria }: Props) => {
+  const word = epic ? "task" : criteria ? "criterion" : "subtask";
+  const maxLength = criteria ? 500 : 200;
+  const legend = epic
+    ? "First tasks"
+    : criteria
+      ? "Acceptance criteria"
+      : "Subtasks";
   const addRef = useRef<HTMLInputElement>(null);
   const done = value.filter((st) => st.completed).length;
   const allDone = value.length > 0 && done === value.length;
@@ -141,8 +151,11 @@ const Subtasks = ({ value, onChange, optional, epic }: Props) => {
         color="muted"
         className="flex items-center gap-1.5 w-full mb-1.5"
       >
-        <Icon name={epic ? "layers" : "check-circle"} size={15} />
-        {epic ? "First tasks" : "Subtasks"}
+        <Icon
+          name={epic ? "layers" : criteria ? "check" : "check-circle"}
+          size={15}
+        />
+        {legend}
         {optional && <span className="font-medium opacity-75">optional</span>}
         {!epic && value.length > 0 && (
           <span
@@ -157,7 +170,7 @@ const Subtasks = ({ value, onChange, optional, epic }: Props) => {
       {!epic && value.length > 0 && (
         <div
           role="progressbar"
-          aria-label="Subtasks done"
+          aria-label={`${legend} done`}
           aria-valuemin={0}
           aria-valuemax={value.length}
           aria-valuenow={done}
@@ -192,7 +205,7 @@ const Subtasks = ({ value, onChange, optional, epic }: Props) => {
           strategy={verticalListSortingStrategy}
         >
           {value.map((st) => (
-            <SortableRow key={st.id} id={st.id} title={st.title}>
+            <SortableRow key={st.id} id={st.id} title={st.title} word={word}>
               {(grip) => (
                 <>
                   {epic ? (
@@ -209,9 +222,9 @@ const Subtasks = ({ value, onChange, optional, epic }: Props) => {
                   )}
                   {grip}
                   <InlineInput
-                    aria-label={epic ? "Task title" : "Subtask title"}
+                    aria-label={`${word[0].toUpperCase()}${word.slice(1)} title`}
                     value={st.title}
-                    maxLength={200}
+                    maxLength={maxLength}
                     onChange={(e) => update(st.id, { title: e.target.value })}
                     // Emptied rows go away rather than save blank.
                     onBlur={() => !st.title.trim() && remove(st.id, false)}
@@ -248,7 +261,7 @@ const Subtasks = ({ value, onChange, optional, epic }: Props) => {
           ref={addRef}
           aria-label={`New ${word}`}
           placeholder={`Add a ${word}, press Enter`}
-          maxLength={200}
+          maxLength={maxLength}
           onKeyDown={add}
         />
       </label>

@@ -11,6 +11,7 @@ export type TaskFields = Pick<
 > & {
   isEpic?: boolean;
   blockedBy?: ToDoId[];
+  criteria?: ToDo["criteria"];
   isBlocked?: boolean;
   needsHumanReview?: boolean;
 };
@@ -93,7 +94,7 @@ export const newEpicTask = (epic: ToDo, title: string): TaskFields => ({
 });
 
 /** The epic board's quick filters. */
-export type TaskFilter = "all" | "blocked" | "review" | "mine";
+export type TaskFilter = "all" | "ready" | "blocked" | "review" | "mine";
 
 /** Whether `t` shows under `filter`. `me` is the signed-in user's id. */
 export const showsUnder = (
@@ -102,12 +103,23 @@ export const showsUnder = (
   todos: ToDo[],
   columns: Column[],
   me?: number,
-) =>
-  filter === "all" ||
-  (filter === "blocked" &&
-    (t.isBlocked || waitingOn(t, todos, columns).length > 0)) ||
-  (filter === "review" && t.needsHumanReview) ||
-  (filter === "mine" && me !== undefined && t.assigneeId === me);
+) => {
+  const blocked = t.isBlocked || waitingOn(t, todos, columns).length > 0;
+  return (
+    filter === "all" ||
+    // Nothing in the way: not flagged, no unfinished blockers, not done.
+    (filter === "ready" && !blocked && t.column !== doneColumn(columns)) ||
+    (filter === "blocked" && blocked) ||
+    (filter === "review" && t.needsHumanReview) ||
+    (filter === "mine" && me !== undefined && t.assigneeId === me)
+  );
+};
+
+/** Whether `t` matches a search: its key or title holds `query`, any case. */
+export const matchesQuery = (t: ToDo, query: string) => {
+  const q = query.trim().toLowerCase();
+  return !q || `${t.key} ${t.title}`.toLowerCase().includes(q);
+};
 
 /** Where an epic stands, worked out from its tasks. The epic's own column is ignored. */
 export type EpicStatus = "attention" | "progress" | "todo" | "done";

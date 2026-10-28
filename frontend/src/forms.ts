@@ -66,6 +66,14 @@ export const taskSchema = z.object({
       "Keep subtasks under 200 characters.",
     ),
   ),
+  criteria: z
+    .array(
+      z.custom<Subtask>(
+        (s) => (s as Subtask).title.length <= 500,
+        "Keep criteria under 500 characters.",
+      ),
+    )
+    .optional(),
 });
 
 /** First message per top-level field, e.g. `{ title: "Give the task a title." }`. */

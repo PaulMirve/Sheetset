@@ -20,7 +20,7 @@ export type FieldProps = {
 type Props = FieldProps & { id: string; children: ReactNode };
 
 const Field = ({ id, label, icon, error, optional, children }: Props) => (
-  <div className="grid gap-1.5">
+  <div className="grid grid-cols-1 gap-1.5">
     <label
       htmlFor={id}
       className="flex items-center gap-1.5 font-semibold text-[14px] text-muted"
